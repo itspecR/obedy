@@ -4,17 +4,16 @@ from django.utils import timezone
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts.models import Account, Role
+from accounts.models import Account
 from accounts.names import display_name
-from accounts.permissions import require_roles
 from accounts.security import session_auth
 from lunches.clock import today
 from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch
 from lunches.models import REASON_LIMIT, Lunch
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.service import WARNING_MINUTES, close_overdue
+from lunches.supervision import require_supervisor
 
-BOARD_ROLES = (Role.HR, Role.ADMIN)
 BOARD_ONLY = "Табло доступно HR и администратору"
 NOT_FOUND = "Обед не найден. Обновите страницу"
 PERSON_NOT_FOUND = "Сотрудник не найден. Обновите страницу"
@@ -71,7 +70,7 @@ def lunches_of_day(day):
 
 
 def board_actor(request):
-    return require_roles(request, BOARD_ROLES, BOARD_ONLY).account
+    return require_supervisor(request, BOARD_ONLY)
 
 
 def refused_as_bad_request(action):

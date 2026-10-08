@@ -30,6 +30,12 @@ export const routes = [
         meta: { roles: BOARD, title: "Табло" },
       },
       {
+        path: "stats",
+        name: "stats",
+        component: () => import("../pages/StatsPage.vue"),
+        meta: { roles: BOARD, title: "Статистика" },
+      },
+      {
         path: "staff",
         name: "staff",
         component: () => import("../pages/StaffPage.vue"),

@@ -54,10 +54,12 @@ describe("decideRoute", () => {
     expect(lunchRoute?.meta).toMatchObject({ roles: ["employee", "hr"] });
   });
 
-  it("opens the board to HR and the admin only", () => {
-    const board = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === "board");
+  it("opens the board and statistics to HR and the admin only", () => {
+    for (const name of ["board", "stats"]) {
+      const section = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === name);
 
-    expect(board?.meta).toMatchObject({ roles: ["hr", "admin"] });
+      expect(section?.meta).toMatchObject({ roles: ["hr", "admin"] });
+    }
   });
 
   it("keeps other roles out of admin sections", () => {
