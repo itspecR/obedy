@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "access",
     "directory",
     "staff",
+    "lunches",
 ]
 
 MIDDLEWARE = [
