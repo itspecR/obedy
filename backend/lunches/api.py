@@ -7,6 +7,7 @@ from ninja.errors import HttpError
 from accounts.security import session_auth
 from lunches.history import BadMonth, lunches_of_month, month_start, summary_of
 from lunches.rules import current_rules
+from lunches.rules_api import router as rules_router
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.service import (
     UNDO_WINDOW,
@@ -24,6 +25,7 @@ from lunches.service import (
 MONTH_FORMAT = "%Y-%m"
 
 router = Router(tags=["Обед"])
+router.add_router("/rules", rules_router)
 
 
 class StateOut(Schema):

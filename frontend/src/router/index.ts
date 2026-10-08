@@ -28,6 +28,12 @@ export const routes = [
         meta: { roles: ADMIN, title: "Сотрудники" },
       },
       {
+        path: "rules",
+        name: "rules",
+        component: () => import("../pages/RulesPage.vue"),
+        meta: { roles: ADMIN, title: "Правила обеда" },
+      },
+      {
         path: "access",
         name: "access",
         component: () => import("../pages/AccessPage.vue"),
