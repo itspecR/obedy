@@ -9,11 +9,12 @@ export interface Section {
 }
 
 const LUNCH: Section = { name: "lunch", path: "/lunch", label: "Обед", icon: "lunch" };
+const ACCESS: Section = { name: "access", path: "/access", label: "Доступ", icon: "shield" };
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
   hr: [LUNCH],
-  admin: [LUNCH],
+  admin: [LUNCH, ACCESS],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {

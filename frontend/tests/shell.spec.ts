@@ -16,10 +16,10 @@ function navLabels(role: Role): string[] {
 }
 
 describe("SideNav", () => {
-  it("shows the lunch section to every role", () => {
+  it("shows the lunch section to everyone and access settings to the admin", () => {
     expect(navLabels("employee")).toEqual(["Обед"]);
     expect(navLabels("hr")).toEqual(["Обед"]);
-    expect(navLabels("admin")).toEqual(["Обед"]);
+    expect(navLabels("admin")).toEqual(["Обед", "Доступ"]);
   });
 
   it("shows the app name and emits profile and logout", async () => {
