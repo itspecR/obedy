@@ -5,6 +5,7 @@ import { exportStats, fetchStats, type Stats, type StatsQuery } from "../api/sta
 import { PERIOD_PRESETS, samePeriod, thisMonth, type Period, type PeriodPreset } from "../components/stats/period";
 import StatsTable from "../components/stats/StatsTable.vue";
 import AppButton from "../components/ui/AppButton.vue";
+import DateField from "../components/ui/DateField.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import TextField from "../components/ui/TextField.vue";
 import { saveFile } from "../composables/saveFile";
@@ -82,8 +83,8 @@ onMounted(load);
         </AppButton>
       </div>
       <div class="stats__fields">
-        <TextField v-model="period.from" label="С" type="date" :max="today" plain />
-        <TextField v-model="period.to" label="По" type="date" :max="today" plain />
+        <DateField v-model="period.from" label="С" :max="today" />
+        <DateField v-model="period.to" label="По" :max="today" />
         <TextField v-model="search" label="Поиск" icon="search" placeholder="например: Иванов" plain />
       </div>
       <p class="stats__note">Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат.</p>

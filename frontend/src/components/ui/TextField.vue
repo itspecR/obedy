@@ -15,9 +15,8 @@ const props = withDefaults(
     placeholder?: string;
     hideLabel?: boolean;
     icon?: IconName;
-    max?: string;
   }>(),
-  { type: "text", autocomplete: "off", error: "", hint: "", disabled: false, required: false, plain: false, placeholder: undefined, hideLabel: false, icon: undefined, max: undefined },
+  { type: "text", autocomplete: "off", error: "", hint: "", disabled: false, required: false, plain: false, placeholder: undefined, hideLabel: false, icon: undefined },
 );
 
 const model = defineModel<string>({ default: "" });
@@ -40,7 +39,6 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
         :type="inputType"
         :autocomplete="autocomplete"
         :placeholder="placeholder"
-        :max="max"
         :disabled="disabled"
         :required="required"
         :aria-invalid="error ? 'true' : undefined"

@@ -139,3 +139,72 @@ input:-webkit-autofill:focus {
     transition: none !important;
   }
 }
+
+.field-label {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-field);
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion), background var(--motion), box-shadow var(--motion);
+}
+
+.field-control:focus-visible,
+.field-control--open {
+  border-color: var(--blue);
+  background: var(--field-focus);
+  box-shadow: 0 0 0 3px var(--blue-tint);
+  outline: none;
+}
+
+.field-control:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.field-placeholder {
+  color: var(--placeholder);
+}
+
+.popover {
+  position: absolute;
+  z-index: 950;
+  top: calc(100% + 6px);
+  left: 0;
+  padding: 12px;
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-menu);
+  background: var(--surface-glass-strong);
+  box-shadow: var(--shadow-menu), var(--card-shine);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  animation: popover-in var(--motion) ease-out;
+}
+
+.popover--end {
+  right: 0;
+  left: auto;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}

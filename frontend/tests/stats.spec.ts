@@ -4,7 +4,7 @@ import type { PersonStats, Stats } from "../src/api/stats";
 import { lastMonth, thisMonth, thisWeek } from "../src/components/stats/period";
 import { useToasts } from "../src/composables/useToasts";
 import StatsPage from "../src/pages/StatsPage.vue";
-import { routeFetch, wasRequested } from "./helpers";
+import { chooseDay, routeFetch, wasRequested } from "./helpers";
 
 const OCTOBER = "/api/lunch/stats?date_from=2026-10-01&date_to=2026-10-08";
 
@@ -128,8 +128,8 @@ describe("StatsPage", () => {
     const badUrl = "/api/lunch/stats?date_from=2026-10-08&date_to=2026-10-01";
     const { wrapper } = await mounted({ [badUrl]: [400, { detail: "Начало периода позже конца" }] });
 
-    await wrapper.findAll('input[type="date"]')[1].setValue("2026-10-01");
-    await wrapper.findAll('input[type="date"]')[0].setValue("2026-10-08");
+    await chooseDay(wrapper, "По", "2026-10-01");
+    await chooseDay(wrapper, "С", "2026-10-08");
     await flushPromises();
 
     expect(useToasts().items.map((toast) => toast.text)).toContain("Начало периода позже конца");

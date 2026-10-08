@@ -7,6 +7,7 @@ import BoardList from "../components/board/BoardList.vue";
 import CorrectionDialog from "../components/board/CorrectionDialog.vue";
 import { filterEntries, groupEntries } from "../components/board/groups";
 import AppButton from "../components/ui/AppButton.vue";
+import DateField from "../components/ui/DateField.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import TextField from "../components/ui/TextField.vue";
 import { useServerClock } from "../composables/useServerClock";
@@ -90,7 +91,7 @@ onUnmounted(() => {
   <section class="board">
     <PageHeader title="Табло" :subtitle="subtitle">
       <div v-if="board" class="board__day">
-        <TextField v-model="day" label="День" type="date" hide-label plain :max="board.today" @change="load" />
+        <DateField v-model="day" label="День" hide-label :max="board.today" @change="load" />
         <AppButton v-if="!isToday" @click="showToday">Сегодня</AppButton>
         <AppButton @click="adding = true">Добавить обед</AppButton>
       </div>

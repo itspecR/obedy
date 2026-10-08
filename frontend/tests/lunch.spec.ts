@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Lunch, LunchHistory, LunchState } from "../src/api/lunch";
 import { countdownText, countdownTone, formatClock, remainingSeconds, secondsUntil } from "../src/components/lunch/countdown";
 import LunchControl from "../src/components/lunch/LunchControl.vue";
-import { shiftMonth } from "../src/components/lunch/months";
+import { shiftMonth } from "../src/format/calendar";
 import { useToasts } from "../src/composables/useToasts";
 import { formatDay, formatMonth, formatTime } from "../src/format/dateTime";
 import LunchPage from "../src/pages/LunchPage.vue";

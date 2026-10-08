@@ -8,7 +8,7 @@ import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import { formatMinutes } from "./countdown";
 import { LUNCH_STATUS, MEASURED_STATUSES, correctionLabel } from "./lunchStatus";
-import { shiftMonth } from "./months";
+import { shiftMonth } from "../../format/calendar";
 
 const props = defineProps<{ revision: number }>();
 
