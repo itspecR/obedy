@@ -194,3 +194,102 @@ describe("StaffPage management", () => {
     wrapper.unmount();
   });
 });
+
+describe("StaffPage local accounts", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    useSession().me = { ...me("admin"), login: "boss" };
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+    document.body.innerHTML = "";
+  });
+
+  const dialog = () => document.body.querySelector('[role="dialog"]') as HTMLElement;
+  const buttonIn = (text: string) => [...dialog().querySelectorAll("button")].find((button) => button.textContent?.trim() === text) as HTMLButtonElement | undefined;
+  const fieldIn = (label: string) => {
+    const labelNode = [...dialog().querySelectorAll("label")].find((node) => node.textContent?.trim() === label) as HTMLLabelElement;
+    return document.getElementById(labelNode.htmlFor) as HTMLInputElement;
+  };
+  const type = (input: HTMLInputElement, value: string) => {
+    input.value = value;
+    input.dispatchEvent(new Event("input"));
+  };
+
+  const LOCAL = member({ id: 9, login: "kassa", full_name: "Кассир Касса", source: "local" });
+
+  async function page(people: StaffMember[], routes: Record<string, [number, unknown]> = {}) {
+    const spy = routeFetch({ "/api/staff": [200, people], ...routes });
+    const wrapper = mount(StaffPage, { attachTo: document.body });
+    await flushPromises();
+    return { spy, wrapper };
+  }
+
+  it("creates a local account and shows the one-time password", async () => {
+    const { wrapper } = await page(PEOPLE);
+    const created = routeFetch({ "/api/staff": [201, { member: LOCAL, temporary_password: "Temp12345a" }] });
+
+    await wrapper.findAll("button").find((button) => button.text() === "Добавить сотрудника")?.trigger("click");
+    type(fieldIn("Логин"), "kassa");
+    type(fieldIn("ФИО"), "Кассир Касса");
+    buttonIn("Создать")?.click();
+    await flushPromises();
+
+    expect(bodySentTo(created, "/api/staff")).toMatchObject({ login: "kassa", full_name: "Кассир Касса", role: "employee" });
+    expect(dialog().textContent).toContain("Учётная запись создана");
+    expect((dialog().querySelector('[aria-label="Временный пароль"]') as HTMLInputElement).value).toBe("Temp12345a");
+    expect(wrapper.text()).toContain("Всего 5");
+    wrapper.unmount();
+  });
+
+  it("shows why the account was not created", async () => {
+    const { wrapper } = await page(PEOPLE, {});
+    routeFetch({ "/api/staff": [409, { detail: "Логин kassa уже занят" }] });
+
+    await wrapper.findAll("button").find((button) => button.text() === "Добавить сотрудника")?.trigger("click");
+    buttonIn("Создать")?.click();
+    await flushPromises();
+
+    expect(dialog().querySelector('[role="alert"]')?.textContent).toBe("Логин kassa уже занят");
+    wrapper.unmount();
+  });
+
+  it("edits the profile of a local account", async () => {
+    const { spy, wrapper } = await page([LOCAL], { "/api/staff/9/profile": [200, { ...LOCAL, full_name: "Кассирова Анна" }] });
+    await wrapper.get('[aria-label="Действия: Кассир Касса"]').trigger("click");
+
+    expect(buttonIn("Сохранить данные")?.disabled).toBe(true);
+    type(fieldIn("ФИО"), "Кассирова Анна");
+    await flushPromises();
+    buttonIn("Сохранить данные")?.click();
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/staff/9/profile")).toEqual({ full_name: "Кассирова Анна", department: "Склад", position: "Кладовщик" });
+    expect(wrapper.text()).toContain("Кассирова Анна");
+    wrapper.unmount();
+  });
+
+  it("resets the password after confirmation and shows the new one", async () => {
+    const { wrapper } = await page([LOCAL], { "/api/staff/9/password": [200, { member: LOCAL, temporary_password: "NewTemp789b" }] });
+    await wrapper.get('[aria-label="Действия: Кассир Касса"]').trigger("click");
+
+    buttonIn("Сбросить пароль")?.click();
+    expect(useConfirm().current.request?.title).toBe("Сбросить пароль: Кассир Касса?");
+    useConfirm().answer(true);
+    await flushPromises();
+
+    expect((dialog().querySelector('[aria-label="Временный пароль"]') as HTMLInputElement).value).toBe("NewTemp789b");
+    wrapper.unmount();
+  });
+
+  it("keeps domain data read-only and offers no password reset", async () => {
+    const { wrapper } = await page(PEOPLE);
+    await wrapper.get('[aria-label="Действия: Иванов Иван"]').trigger("click");
+
+    expect(dialog().textContent).toContain("ФИО, отдел и должность берутся из Active Directory");
+    expect(buttonIn("Сбросить пароль")).toBeUndefined();
+    wrapper.unmount();
+  });
+});

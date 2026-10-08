@@ -1,6 +1,6 @@
 import type { Role } from "../../api/auth";
 import type { StaffMember, StaffStatus } from "../../api/staff";
-import { ROLE_LABELS } from "../../roles";
+import { ROLE_CHOICES } from "../../roles";
 import type { Tone } from "../ui/tone";
 
 export type RoleFilter = Role | "all";
@@ -28,7 +28,7 @@ export const STATUS_TONES: Record<StaffStatus, Tone> = {
 
 export const ROLE_OPTIONS: { value: RoleFilter; label: string }[] = [
   { value: "all", label: "Все" },
-  ...(Object.entries(ROLE_LABELS) as [Role, string][]).map(([value, label]) => ({ value, label })),
+  ...ROLE_CHOICES,
 ];
 
 export const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
