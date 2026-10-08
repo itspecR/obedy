@@ -2,27 +2,35 @@
 import { computed, ref } from "vue";
 import type { Role } from "../../api/auth";
 import { errorMessage } from "../../api/http";
-import { changeRole, setBlocked, setTrackLunch, type StaffMember } from "../../api/staff";
+import { changeRole, resetPassword, setBlocked, setTrackLunch, updateProfile, type Issued, type Profile, type StaffMember } from "../../api/staff";
 import { useConfirm } from "../../composables/useConfirm";
 import { useToasts } from "../../composables/useToasts";
-import { ROLE_LABELS } from "../../roles";
+import { ROLE_CHOICES, ROLE_LABELS } from "../../roles";
 import AppButton from "../ui/AppButton.vue";
 import AppModal from "../ui/AppModal.vue";
 import ChoiceField from "../ui/ChoiceField.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import SwitchField from "../ui/SwitchField.vue";
 import { STATUS_LABELS, STATUS_TONES, displayName } from "./filters";
+import ProfileFields from "./ProfileFields.vue";
+import TemporaryPassword from "./TemporaryPassword.vue";
 
 const props = defineProps<{ member: StaffMember; isSelf: boolean }>();
 const emit = defineEmits<{ close: []; updated: [member: StaffMember] }>();
 
-const ROLE_CHOICES = (Object.entries(ROLE_LABELS) as [Role, string][]).map(([value, label]) => ({ value, label }));
 const SAVE_FAILED = "Не удалось сохранить. Попробуйте ещё раз";
 
 const busy = ref(false);
 const { ask } = useConfirm();
 const { notify, fail } = useToasts();
 
+const profileOf = (member: StaffMember): Profile => ({ full_name: member.full_name, department: member.department, position: member.position });
+
+const draft = ref<Profile>(profileOf(props.member));
+const issued = ref<Issued | null>(null);
+
+const isLocal = computed(() => props.member.source === "local");
+const profileChanged = computed(() => JSON.stringify(draft.value) !== JSON.stringify(profileOf(props.member)));
 const blocked = computed(() => props.member.status === "blocked");
 const role = computed<Role>({
   get: () => props.member.role,
@@ -43,6 +51,26 @@ async function run(action: () => Promise<StaffMember>, success: string): Promise
 
 function toggleLunch(track: boolean): Promise<void> {
   return run(() => setTrackLunch(props.member.id, track), track ? "Обеды учитываются" : "Обеды не учитываются");
+}
+
+function saveProfile(): Promise<void> {
+  return run(() => updateProfile(props.member.id, draft.value), "Данные сохранены");
+}
+
+async function issuePassword(): Promise<void> {
+  const accepted = await ask({
+    title: `Сбросить пароль: ${displayName(props.member)}?`,
+    text: "Старый пароль перестанет работать, сотрудник выйдет со всех устройств. Новый временный пароль будет показан один раз.",
+    action: "Сбросить",
+    danger: true,
+  });
+  if (!accepted) {
+    return;
+  }
+  await run(async () => {
+    issued.value = await resetPassword(props.member.id);
+    return issued.value.member;
+  }, "Временный пароль выдан");
 }
 
 async function toggleBlock(): Promise<void> {
@@ -72,6 +100,14 @@ async function toggleBlock(): Promise<void> {
         Сотрудника нет в группе доступа в домене или он отключён в AD — войти он не сможет, пока его не вернут.
       </p>
 
+      <form v-if="isLocal" class="manage__profile" novalidate @submit.prevent="saveProfile">
+        <ProfileFields v-model="draft" :disabled="busy" />
+        <div>
+          <AppButton type="submit" size="small" :disabled="busy || !profileChanged">Сохранить данные</AppButton>
+        </div>
+      </form>
+      <p v-else class="manage__note">ФИО, отдел и должность берутся из Active Directory.</p>
+
       <ChoiceField v-model="role" label="Роль" :options="ROLE_CHOICES" :disabled="busy || isSelf" />
       <p v-if="isSelf" class="manage__note">Свою роль изменить нельзя — попросите другого администратора.</p>
 
@@ -87,8 +123,10 @@ async function toggleBlock(): Promise<void> {
         <AppButton :variant="blocked ? 'secondary' : 'danger'" :disabled="busy || isSelf" @click="toggleBlock">
           {{ blocked ? "Разблокировать" : "Заблокировать" }}
         </AppButton>
-        <span v-if="isSelf" class="manage__note">Себя заблокировать нельзя.</span>
+        <AppButton v-if="isLocal && !isSelf" :disabled="busy" @click="issuePassword">Сбросить пароль</AppButton>
+        <span v-if="isSelf" class="manage__note">Себя заблокировать нельзя. Свой пароль меняйте в профиле.</span>
       </div>
+      <TemporaryPassword v-if="issued" :login="issued.member.login" :password="issued.temporary_password" />
     </div>
   </AppModal>
 </template>
@@ -98,6 +136,12 @@ async function toggleBlock(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.manage__profile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .manage__summary {

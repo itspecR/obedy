@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { errorMessage } from "../api/http";
 import { fetchStaff, type StaffMember } from "../api/staff";
+import CreateAccountDialog from "../components/staff/CreateAccountDialog.vue";
 import StaffDialog from "../components/staff/StaffDialog.vue";
 import StaffFilters from "../components/staff/StaffFilters.vue";
 import StaffList from "../components/staff/StaffList.vue";
@@ -14,6 +15,7 @@ const members = ref<StaffMember[] | null>(null);
 const loadError = ref("");
 const filter = ref<StaffFilter>({ ...EMPTY_FILTER });
 const managedId = ref<number | null>(null);
+const creating = ref(false);
 const session = useSession();
 
 const managed = computed(() => members.value?.find((member) => member.id === managedId.value) ?? null);
@@ -37,12 +39,22 @@ function replace(updated: StaffMember): void {
   members.value = (members.value ?? []).map((member) => (member.id === updated.id ? updated : member));
 }
 
+function byName(left: StaffMember, right: StaffMember): number {
+  return (left.full_name || left.login).localeCompare(right.full_name || right.login, "ru");
+}
+
+function add(created: StaffMember): void {
+  members.value = [...(members.value ?? []), created].sort(byName);
+}
+
 onMounted(load);
 </script>
 
 <template>
   <section class="staff-page">
-    <PageHeader title="Сотрудники" :subtitle="members ? subtitle : 'Все, кто может входить на сайт'" />
+    <PageHeader title="Сотрудники" :subtitle="members ? subtitle : 'Все, кто может входить на сайт'">
+      <AppButton v-if="members" variant="primary" @click="creating = true">Добавить сотрудника</AppButton>
+    </PageHeader>
     <div v-if="loadError" class="panel staff-page__error" role="alert">
       <p>{{ loadError }}</p>
       <AppButton @click="load">Повторить</AppButton>
@@ -50,6 +62,7 @@ onMounted(load);
     <template v-else-if="members">
       <StaffFilters v-model="filter" />
       <StaffList :members="shown" :total="members.length" @manage="managedId = $event.id" />
+      <CreateAccountDialog v-if="creating" @created="add" @close="creating = false" />
       <StaffDialog v-if="managed" :member="managed" :is-self="managed.login === session.me?.login" @updated="replace" @close="managedId = null" />
     </template>
     <div v-else class="panel staff-page__loading" aria-busy="true">Загружаем…</div>
