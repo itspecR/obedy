@@ -8,6 +8,7 @@ from directory.models import Mode
 CONNECT_TIMEOUT_SECONDS = 5
 RECEIVE_TIMEOUT_SECONDS = 10
 INVALID_CREDENTIALS = 49
+TLS_FAILURE_MARKERS = ("ssl wrapping error", "wrap socket error")
 
 STRATEGY = SYNC
 
@@ -16,8 +17,18 @@ class DirectoryUnavailable(Exception):
     pass
 
 
+class CertificateRejected(DirectoryUnavailable):
+    pass
+
+
 class BindRejected(Exception):
     pass
+
+
+def unavailable(error):
+    if any(marker in str(error) for marker in TLS_FAILURE_MARKERS):
+        return CertificateRejected()
+    return DirectoryUnavailable()
 
 
 def tls_for(config):
@@ -49,7 +60,7 @@ def open_connection(config, user, password):
         start_tls_if_needed(connection, config)
         bind(connection)
     except LDAPException as error:
-        raise DirectoryUnavailable from error
+        raise unavailable(error) from error
     return connection
 
 

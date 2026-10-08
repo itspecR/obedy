@@ -4,13 +4,17 @@ from dataclasses import dataclass
 from ldap3.core.exceptions import LDAPException
 
 from directory.authentication import ServiceAccountRejected, service_connection
-from directory.connection import DirectoryUnavailable
+from directory.connection import CertificateRejected, DirectoryUnavailable
 from directory.users import count_users, group_exists
 
 USER_SAMPLE_LIMIT = 1000
 
 INCOMPLETE = "Сначала заполните и сохраните серверы, сервисную учётную запись, её пароль и базу поиска"
 UNREACHABLE = "Контроллер домена не отвечает или не принимает соединение. Проверьте адрес, порт, режим и сертификат"
+CERTIFICATE_REJECTED = (
+    "Контроллер ответил, но его сертификат не подошёл. Укажите контроллеры полными именами, как в их сертификатах "
+    "(не IP), и вставьте корневой сертификат вашего центра сертификации"
+)
 SERVICE_REJECTED = "Контроллер отклонил сервисную учётную запись: проверьте её логин и пароль"
 NO_USERS = "Подключение есть, но в базе поиска нет учётных записей. Проверьте поле «База поиска»"
 NO_GROUP = "Подключение есть, но группа не найдена. Проверьте поле «Группа доступа»"
@@ -45,6 +49,9 @@ def check_connection(config):
         connection = service_connection(config)
     except ServiceAccountRejected:
         return CheckResult(False, SERVICE_REJECTED)
+    except CertificateRejected as error:
+        logger.warning("Сертификат контроллера домена не подошёл: %r", error.__cause__)
+        return CheckResult(False, CERTIFICATE_REJECTED)
     except DirectoryUnavailable as error:
         logger.warning("Проверка подключения к домену не удалась: %r", error.__cause__ or error)
         return CheckResult(False, UNREACHABLE)

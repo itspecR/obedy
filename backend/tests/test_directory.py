@@ -6,6 +6,7 @@ import pytest
 from django.test import Client, override_settings
 from django.utils import timezone
 from ldap3 import MOCK_SYNC, Connection, Server
+from ldap3.core.exceptions import LDAPSocketOpenError, LDAPStartTLSError
 
 import directory.connection as connection_module
 from accounts.models import Account, Role, Source
@@ -240,6 +241,48 @@ def test_connection_check_explains_the_result(domain, changes, message):
 
     assert body["message"] == message
     assert body["ok"] is (not changes)
+
+
+@pytest.mark.parametrize(
+    ("failure", "message"),
+    [
+        (
+            LDAPSocketOpenError("socket ssl wrapping error: certificate doesn't match any name in ['192.168.0.252']"),
+            "Контроллер ответил, но его сертификат не подошёл. Укажите контроллеры полными именами, как в их сертификатах "
+            "(не IP), и вставьте корневой сертификат вашего центра сертификации",
+        ),
+        (
+            LDAPStartTLSError("wrap socket error: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed"),
+            "Контроллер ответил, но его сертификат не подошёл. Укажите контроллеры полными именами, как в их сертификатах "
+            "(не IP), и вставьте корневой сертификат вашего центра сертификации",
+        ),
+        (
+            LDAPSocketOpenError("unable to open socket"),
+            "Контроллер домена не отвечает или не принимает соединение. Проверьте адрес, порт, режим и сертификат",
+        ),
+    ],
+)
+def test_connection_check_tells_certificate_problems_apart(domain, monkeypatch, failure, message):
+    def failing(connection):
+        raise failure
+
+    monkeypatch.setattr(connection_module, "bind", failing)
+
+    body = admin_client().post("/api/directory/check", content_type="application/json").json()
+
+    assert body == {"ok": False, "message": message}
+
+
+def test_certificate_problem_on_login_is_reported_as_unavailable_domain(domain, monkeypatch):
+    def failing(connection):
+        raise LDAPSocketOpenError("socket ssl wrapping error: certificate verify failed")
+
+    monkeypatch.setattr(connection_module, "bind", failing)
+
+    response = login(Client(), "ivanov")
+
+    assert response.status_code == 503
+    assert response.json()["detail"].startswith("Домен сейчас недоступен")
 
 
 @pytest.mark.parametrize("role", [Role.EMPLOYEE, Role.HR])
