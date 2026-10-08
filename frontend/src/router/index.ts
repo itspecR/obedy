@@ -1,0 +1,74 @@
+import { createRouter, createWebHistory, type RouteLocationRaw, type RouteMeta } from "vue-router";
+import type { Role } from "../api/auth";
+import { onUnauthorized } from "../api/http";
+import { HOME_BY_ROLE } from "../navigation";
+import { useSession } from "../stores/session";
+
+const EVERYONE: Role[] = ["employee", "hr", "admin"];
+
+export const routes = [
+  { path: "/login", name: "login", component: () => import("../pages/LoginPage.vue"), meta: { guest: true, title: "Вход" } },
+  { path: "/change-password", name: "change-password", component: () => import("../pages/ChangePasswordPage.vue"), meta: { title: "Смена пароля" } },
+  {
+    path: "/",
+    component: () => import("../components/shell/AppShell.vue"),
+    children: [
+      { path: "", name: "home", redirect: "/lunch" },
+      {
+        path: "lunch",
+        name: "lunch",
+        component: () => import("../pages/LunchPage.vue"),
+        meta: { roles: EVERYONE, title: "Обед" },
+      },
+    ],
+  },
+  { path: "/:pathMatch(.*)*", redirect: "/" },
+];
+
+interface SessionState {
+  isLoggedIn: boolean;
+  mustChangePassword: boolean;
+  role: Role | null;
+}
+
+export function decideRoute(target: { name?: unknown; meta: RouteMeta }, state: SessionState): RouteLocationRaw | true {
+  if (!state.isLoggedIn || state.role === null) {
+    return target.meta.guest ? true : { name: "login" };
+  }
+  if (state.mustChangePassword) {
+    return target.name === "change-password" ? true : { name: "change-password" };
+  }
+  const home = { name: HOME_BY_ROLE[state.role] };
+  if (target.meta.guest || target.name === "change-password" || target.name === "home") {
+    return home;
+  }
+  if (target.meta.roles && !target.meta.roles.includes(state.role)) {
+    return home;
+  }
+  return true;
+}
+
+export const router = createRouter({ history: createWebHistory(), routes });
+
+router.beforeEach(async (to) => {
+  const session = useSession();
+  if (!session.loaded) {
+    await session.load();
+  }
+  return decideRoute(to, { isLoggedIn: session.isLoggedIn, mustChangePassword: session.mustChangePassword, role: session.me?.role ?? null });
+});
+
+const APP_TITLE = "Обеды";
+
+export function pageTitle(meta: RouteMeta): string {
+  return typeof meta.title === "string" ? `${meta.title} · ${APP_TITLE}` : APP_TITLE;
+}
+
+router.afterEach((to) => {
+  document.title = pageTitle(to.meta);
+});
+
+onUnauthorized(() => {
+  useSession().forget();
+  void router.replace({ name: "login" });
+});
