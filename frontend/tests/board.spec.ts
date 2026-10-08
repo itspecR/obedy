@@ -9,7 +9,7 @@ import CorrectionDialog from "../src/components/board/CorrectionDialog.vue";
 import { filterEntries, groupEntries } from "../src/components/board/groups";
 import { useToasts } from "../src/composables/useToasts";
 import BoardPage from "../src/pages/BoardPage.vue";
-import { bodySentTo, routeFetch, wasRequested } from "./helpers";
+import { bodySentTo, chooseDay, choosePerson, chooseTime, routeFetch, shownTime, wasRequested } from "./helpers";
 
 const NOON = "2026-10-08T09:00:00Z";
 const at = (minutes: number) => Date.parse(NOON) + minutes * 60_000;
@@ -105,13 +105,12 @@ describe("CorrectionDialog", () => {
     const saved = { ...UNRETURNED, lunch: { ...UNRETURNED.lunch, status: "on_time" as const } };
     const spy = routeFetch({ "/api/lunch/board/4/correction": [200, saved] });
     const wrapper = mount(CorrectionDialog, { props: { entry: UNRETURNED }, attachTo: document.body });
-    const [started, ended] = wrapper.findAll("input[type=time]");
     const submit = wrapper.get("button[type=submit]");
 
-    expect((started.element as HTMLInputElement).value).toBe("12:00");
-    expect((ended.element as HTMLInputElement).value).toBe("");
+    expect(shownTime(wrapper, "Ушёл")).toBe("12:00");
+    expect(shownTime(wrapper, "Вернулся")).toBe("--:--");
     expect(submit.attributes("disabled")).toBeDefined();
-    await ended.setValue("12:40");
+    await chooseTime(wrapper, "Вернулся", "12:40");
     await wrapper.get("textarea").setValue("Забыл нажать «Вернулся»");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
@@ -167,8 +166,7 @@ describe("BoardPage", () => {
     const past = board({ day: "2026-10-07", entries: [UNRETURNED] });
     const { spy, wrapper } = await mounted({ "/api/lunch/board": [200, board()], "/api/lunch/board?day=2026-10-07": [200, past] });
 
-    await wrapper.get("input[type=date]").setValue("2026-10-07");
-    await wrapper.get("input[type=date]").trigger("change");
+    await chooseDay(wrapper, "День", "2026-10-07");
     await flushPromises();
 
     expect(wasRequested(spy, "/api/lunch/board?day=2026-10-07", "GET")).toBe(true);
@@ -221,13 +219,13 @@ describe("AddLunchDialog", () => {
     const wrapper = mount(AddLunchDialog, { props: { day: "2026-10-07" }, attachTo: document.body });
     await flushPromises();
 
-    await wrapper.get("input[type=text]").setValue("иван");
-    expect(wrapper.findAll("option").map((option) => option.text())).toEqual(["Выберите сотрудника", "Иванов Иван"]);
+    await wrapper.get("input[role=combobox]").setValue("иван");
+    expect(wrapper.findAll("[role=option]").map((option) => option.text())).toEqual(["Иванов Иванivanov"]);
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
-    await wrapper.get("select").setValue("11");
-    const [started, ended] = wrapper.findAll("input[type=time]");
-    await started.setValue("12:00");
-    await ended.setValue("12:50");
+    await wrapper.get("[role=option]").trigger("mousedown");
+    expect((wrapper.get("input[role=combobox]").element as HTMLInputElement).value).toBe("Иванов Иван");
+    await chooseTime(wrapper, "Ушёл", "12:00");
+    await chooseTime(wrapper, "Вернулся", "12:50");
     await wrapper.get("textarea").setValue("Забыл нажать");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
@@ -245,10 +243,9 @@ describe("AddLunchDialog", () => {
     const wrapper = mount(AddLunchDialog, { props: { day: "2026-10-08" }, attachTo: document.body });
     await flushPromises();
 
-    await wrapper.get("select").setValue("12");
-    const [started, ended] = wrapper.findAll("input[type=time]");
-    await started.setValue("12:00");
-    await ended.setValue("12:30");
+    await choosePerson(wrapper, "petr", "Петрова Анна");
+    await chooseTime(wrapper, "Ушёл", "12:00");
+    await chooseTime(wrapper, "Вернулся", "12:30");
     await wrapper.get("textarea").setValue("Забыла");
     await wrapper.get("form").trigger("submit");
     await flushPromises();

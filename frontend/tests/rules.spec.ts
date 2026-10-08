@@ -5,7 +5,7 @@ import type { LunchRules } from "../src/api/lunchRules";
 import { draftFrom, formFrom, toggleDay } from "../src/components/rules/draft";
 import { useToasts } from "../src/composables/useToasts";
 import RulesPage from "../src/pages/RulesPage.vue";
-import { bodySentTo, routeFetch } from "./helpers";
+import { bodySentTo, chooseTime, routeFetch, shownTime } from "./helpers";
 
 function rules(overrides: Partial<LunchRules> = {}): LunchRules {
   return {
@@ -65,7 +65,8 @@ describe("RulesPage", () => {
     expect(day(wrapper, "Пятница").attributes("aria-pressed")).toBe("true");
     expect(day(wrapper, "Суббота").attributes("aria-pressed")).toBe("false");
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
-    expect(wrapper.findAll("input[type=time]")).toHaveLength(1);
+    expect(wrapper.findAll(".time-field")).toHaveLength(1);
+    expect(shownTime(wrapper, "Конец рабочего дня")).toBe("18:00");
   });
 
   it("saves changed days, limit and lunch window", async () => {
@@ -75,7 +76,8 @@ describe("RulesPage", () => {
     await day(wrapper, "Суббота").trigger("click");
     await wrapper.get("input[type=number]").setValue("30");
     await wrapper.get("[role=switch]").trigger("click");
-    expect(wrapper.findAll("input[type=time]")).toHaveLength(3);
+    expect(wrapper.findAll(".time-field")).toHaveLength(3);
+    await chooseTime(wrapper, "До", "15:30");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
@@ -85,7 +87,7 @@ describe("RulesPage", () => {
       day_end: "18:00",
       window_enabled: true,
       window_start: "12:00",
-      window_end: "15:00",
+      window_end: "15:30",
     });
     expect(useToasts().items.map((toast) => toast.text)).toContain("Правила обеда сохранены");
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();

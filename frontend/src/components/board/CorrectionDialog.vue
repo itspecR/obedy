@@ -9,7 +9,7 @@ import AppButton from "../ui/AppButton.vue";
 import AppModal from "../ui/AppModal.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import TextAreaField from "../ui/TextAreaField.vue";
-import TextField from "../ui/TextField.vue";
+import TimeField from "../ui/TimeField.vue";
 
 const props = defineProps<{ entry: BoardEntry }>();
 const emit = defineEmits<{ close: []; saved: [entry: BoardEntry] }>();
@@ -46,8 +46,8 @@ async function save(): Promise<void> {
         <StatusBadge :tone="status.tone" :label="status.label" />
       </div>
       <div class="correction__times">
-        <TextField v-model="startedAt" label="Ушёл" type="time" plain :disabled="busy" />
-        <TextField v-model="endedAt" label="Вернулся" type="time" plain :disabled="busy" />
+        <TimeField v-model="startedAt" label="Ушёл" :disabled="busy" />
+        <TimeField v-model="endedAt" label="Вернулся" :disabled="busy" />
       </div>
       <TextAreaField
         v-model="reason"

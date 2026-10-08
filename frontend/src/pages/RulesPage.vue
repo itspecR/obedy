@@ -7,6 +7,7 @@ import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import SwitchField from "../components/ui/SwitchField.vue";
 import TextField from "../components/ui/TextField.vue";
+import TimeField from "../components/ui/TimeField.vue";
 import { useToasts } from "../composables/useToasts";
 import { formatDateTime } from "../format/dateTime";
 
@@ -91,13 +92,11 @@ onMounted(load);
           </div>
           <span class="rules__note">В нерабочие дни кнопки обеда нет</span>
         </div>
-        <TextField
+        <TimeField
           v-model="draft.day_end"
           class="rules__narrow"
           label="Конец рабочего дня"
-          type="time"
           hint="Кто забыл нажать «Вернулся», тому обед закроется в это время со статусом «Возврат не отмечен»"
-          plain
           :disabled="busy"
         />
       </div>
@@ -111,8 +110,8 @@ onMounted(load);
           @change="draft.window_enabled = $event"
         />
         <div v-if="draft.window_enabled" class="rules__row">
-          <TextField v-model="draft.window_start" label="С" type="time" plain :disabled="busy" />
-          <TextField v-model="draft.window_end" label="До" type="time" plain :disabled="busy" />
+          <TimeField v-model="draft.window_start" label="С" :disabled="busy" />
+          <TimeField v-model="draft.window_end" label="До" :disabled="busy" />
         </div>
       </div>
 
