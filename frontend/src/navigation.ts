@@ -1,0 +1,33 @@
+import type { Role } from "./api/auth";
+import type { IconName } from "./components/ui/AppIcon.vue";
+
+export interface Section {
+  name: string;
+  path: string;
+  label: string;
+  icon: IconName;
+}
+
+const LUNCH: Section = { name: "lunch", path: "/lunch", label: "Обед", icon: "lunch" };
+
+export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
+  employee: [LUNCH],
+  hr: [LUNCH],
+  admin: [LUNCH],
+};
+
+export const HOME_BY_ROLE: Record<Role, string> = {
+  employee: "lunch",
+  hr: "lunch",
+  admin: "lunch",
+};
+
+export function initials(name: string): string {
+  const parts = name.split(/\s+/).filter(Boolean);
+  const letters = parts.length > 1 ? [parts[0][0], parts[1][0]] : [name[0] ?? "", name[1] ?? ""];
+  return letters.join("").toUpperCase();
+}
+
+export function shortName(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).join(" ");
+}

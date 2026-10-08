@@ -1,0 +1,54 @@
+:root {
+  --ink: #18283f;
+  --brand: #0f2d69;
+  --blue: #234b9b;
+  --blue-hover: #0f2d69;
+  --blue-tint: #cddcf0;
+  --hover: #edf2fc;
+  --hover-menu: #f0f3f8;
+  --canvas: #f3f5f9;
+  --line: #e6e6e6;
+  --line-strong: #c6c6c6;
+  --control-line: #848fa2;
+  --surface: #ffffff;
+  --green: #207552;
+  --green-bg: #eaf5ef;
+  --green-line: #c9e4d5;
+  --amber: #9b6115;
+  --amber-bg: #fff5dc;
+  --amber-line: #edddba;
+  --red: #b33b48;
+  --red-bg: #fbedef;
+  --red-line: #f1cdd2;
+  --gray-bg: #eef0f4;
+  --gray-line: #dde1e8;
+  --muted: #5f6c81;
+  --toast-error: #8c2735;
+  --focus: #3f6cb5;
+  --login-art: linear-gradient(145deg, #0f2d69 0%, #234b9b 55%, #3f6cb5 100%);
+  --login-art-text: #c6d7f5;
+  --login-art-caption: #aec6f3;
+  --glass-fill: rgba(255, 255, 255, 0.14);
+  --glass-edge: rgba(255, 255, 255, 0.32);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-base: 14px;
+  --text-small: 12px;
+  --text-pill: 10px;
+  --text-h1: 28px;
+  --text-h2: 20px;
+  --text-h3: 15px;
+
+  --radius-panel: 8px;
+  --radius-menu: 12px;
+  --radius-button: 6px;
+  --radius-pill: 4px;
+
+  --shadow-menu: 0 8px 24px rgba(15, 45, 105, 0.12);
+
+  --motion: 140ms;
+  --shimmer: 1.2s;
+}

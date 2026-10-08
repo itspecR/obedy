@@ -1,0 +1,36 @@
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+
+from accounts.models import Account, Role, Source
+from accounts.names import normalize_login
+from accounts.passwords import hash_password
+from accounts.temporary import temporary_password
+
+ADMIN_NAME = "Администратор"
+DEFAULT_LOGIN = "admin"
+
+
+class Command(BaseCommand):
+    help = "Создаёт локального администратора с временным паролем"
+
+    def add_arguments(self, parser):
+        parser.add_argument("--login", default=DEFAULT_LOGIN)
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        existing = Account.objects.filter(source=Source.LOCAL, role=Role.ADMIN).first()
+        if existing is not None:
+            raise CommandError(f"Администратор уже есть: {existing.login}. Новый пароль: sudo ./scripts/change-password.sh {existing.login}")
+        login = normalize_login(options["login"])
+        if Account.objects.filter(login=login).exists():
+            raise CommandError(f"Логин {login} уже занят. Укажите другой: --login <логин>")
+        password = temporary_password()
+        Account.objects.create(
+            login=login,
+            full_name=ADMIN_NAME,
+            source=Source.LOCAL,
+            role=Role.ADMIN,
+            password_hash=hash_password(password),
+            must_change_password=True,
+        )
+        self.stdout.write(f"Логин: {login}\nВременный пароль: {password}\nПри первом входе система попросит задать новый пароль.")
