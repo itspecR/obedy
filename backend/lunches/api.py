@@ -4,6 +4,8 @@ from django.utils import timezone
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
+from accounts.lunch_policy import LUNCH_ROLES
+from accounts.permissions import require_roles
 from accounts.security import session_auth
 from lunches.board_api import router as board_router
 from lunches.history import BadMonth, lunches_of_month, month_start, summary_of
@@ -24,6 +26,7 @@ from lunches.service import (
 )
 
 MONTH_FORMAT = "%Y-%m"
+NO_LUNCH_FOR_ROLE = "Администратор обеды не отмечает"
 
 router = Router(tags=["Обед"])
 router.add_router("/rules", rules_router)
@@ -78,8 +81,12 @@ def state_of(account, now):
     )
 
 
+def lunch_taker(request):
+    return require_roles(request, LUNCH_ROLES, NO_LUNCH_FOR_ROLE).account
+
+
 def acted(request, action):
-    account = request.auth.account
+    account = lunch_taker(request)
     try:
         action(account, timezone.now())
     except LunchRefused as refused:
@@ -89,7 +96,7 @@ def acted(request, action):
 
 @router.get("/me", auth=session_auth, response=StateOut)
 def my_state(request):
-    return state_of(request.auth.account, timezone.now())
+    return state_of(lunch_taker(request), timezone.now())
 
 
 @router.post("/start", auth=session_auth, response=StateOut)
@@ -109,12 +116,13 @@ def undo(request):
 
 @router.get("/history", auth=session_auth, response=HistoryOut)
 def history(request, month: str = ""):
+    account = lunch_taker(request)
     now = timezone.now()
     try:
         first = month_start(month, now)
     except BadMonth as bad:
         raise HttpError(400, str(bad)) from bad
-    lunches = lunches_of_month(request.auth.account, first)
+    lunches = lunches_of_month(account, first)
     summary = summary_of(lunches, now)
     return HistoryOut(
         month=first.strftime(MONTH_FORMAT),

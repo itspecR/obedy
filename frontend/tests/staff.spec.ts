@@ -21,6 +21,7 @@ function member(overrides: Partial<StaffMember> = {}): StaffMember {
     source: "domain",
     status: "active",
     track_lunch: true,
+    can_track_lunch: true,
     last_login_at: null,
     ...overrides,
   };
@@ -147,6 +148,14 @@ describe("StaffPage management", () => {
     await flushPromises();
 
     expect(bodySentTo(spy, "/api/staff/1/track-lunch")).toEqual({ track_lunch: false });
+    wrapper.unmount();
+  });
+
+  it("does not offer lunch tracking to an administrator", async () => {
+    const admin = member({ id: 7, login: "chief", full_name: "Главный Админ", role: "admin", track_lunch: false, can_track_lunch: false });
+    const { wrapper } = await opened([...PEOPLE, admin], "chief");
+
+    expect(dialog().querySelector('[role="switch"]')).toBeNull();
     wrapper.unmount();
   });
 

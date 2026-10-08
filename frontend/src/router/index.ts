@@ -4,7 +4,7 @@ import { onUnauthorized } from "../api/http";
 import { HOME_BY_ROLE } from "../navigation";
 import { useSession } from "../stores/session";
 
-const EVERYONE: Role[] = ["employee", "hr", "admin"];
+const LUNCH_TAKERS: Role[] = ["employee", "hr"];
 const ADMIN: Role[] = ["admin"];
 const BOARD: Role[] = ["hr", "admin"];
 const RESOLVED_BY_GUARD = { render: () => null };
@@ -21,7 +21,7 @@ export const routes = [
         path: "lunch",
         name: "lunch",
         component: () => import("../pages/LunchPage.vue"),
-        meta: { roles: EVERYONE, title: "Обед" },
+        meta: { roles: LUNCH_TAKERS, title: "Обед" },
       },
       {
         path: "board",

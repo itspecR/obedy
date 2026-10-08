@@ -112,6 +112,7 @@ async function toggleBlock(): Promise<void> {
       <p v-if="isSelf" class="manage__note">Свою роль изменить нельзя — попросите другого администратора.</p>
 
       <SwitchField
+        v-if="member.can_track_lunch"
         label="Учитывать обеды"
         hint="Сотрудник отмечает уход на обед и возвращение, его видно на табло HR"
         :checked="member.track_lunch"

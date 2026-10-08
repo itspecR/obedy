@@ -59,7 +59,8 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 20px 24px;
+  min-width: 0;
+  padding: 20px 22px;
 }
 
 .board-list__title {
@@ -85,7 +86,7 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
 
 .board-list__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 112px 184px 168px 36px;
+  grid-template-columns: minmax(0, 1fr) auto 36px;
   align-items: center;
   gap: 4px 12px;
   padding: 10px 0;
@@ -100,21 +101,23 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
 
 .board-list__name {
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .board-list__details {
   font-size: var(--text-small);
   color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.board-list__range {
+  grid-row: 2;
+  grid-column: 1 / 2;
+  color: var(--muted);
 }
 
 .board-list__timer,
 .board-list__duration {
+  grid-row: 1;
+  grid-column: 2 / 3;
   text-align: right;
 }
 
@@ -136,7 +139,15 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
 }
 
 .board-list__status {
+  grid-row: 2;
+  grid-column: 2 / 3;
   justify-self: end;
+}
+
+.board-list__more,
+.board-list__more-placeholder {
+  grid-row: 1 / 3;
+  grid-column: 3 / 4;
 }
 
 .board-list__more {
@@ -169,45 +180,9 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
   color: var(--muted);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 650px) {
   .board-list {
     padding: 18px 16px;
-  }
-
-  .board-list__row {
-    grid-template-columns: minmax(0, 1fr) auto 36px;
-  }
-
-  .board-list__who {
-    grid-column: 1 / 2;
-  }
-
-  .board-list__name,
-  .board-list__details {
-    white-space: normal;
-  }
-
-  .board-list__range {
-    grid-row: 2;
-    grid-column: 1 / 2;
-    color: var(--muted);
-  }
-
-  .board-list__timer,
-  .board-list__duration {
-    grid-row: 1;
-    grid-column: 2 / 3;
-  }
-
-  .board-list__status {
-    grid-row: 2;
-    grid-column: 2 / 3;
-  }
-
-  .board-list__more,
-  .board-list__more-placeholder {
-    grid-row: 1 / 3;
-    grid-column: 3 / 4;
   }
 }
 </style>

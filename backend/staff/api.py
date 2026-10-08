@@ -3,6 +3,7 @@ from datetime import datetime
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
+from accounts.lunch_policy import can_have_lunch
 from accounts.models import Account, Role, Source
 from accounts.permissions import require_admin
 from accounts.security import session_auth
@@ -27,6 +28,7 @@ class StaffOut(Schema):
     source: Source
     status: StaffStatus
     track_lunch: bool
+    can_track_lunch: bool
     last_login_at: datetime | None
 
 
@@ -72,6 +74,7 @@ def describe(account):
         source=account.source,
         status=status_of(account),
         track_lunch=account.track_lunch,
+        can_track_lunch=can_have_lunch(account.role),
         last_login_at=account.last_login_at,
     )
 

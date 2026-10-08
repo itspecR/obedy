@@ -112,6 +112,18 @@ def test_lunch_tracking_can_be_switched_by_hand():
     assert Account.objects.get(pk=worker.pk).track_lunch is False
 
 
+def test_admin_lunch_tracking_cannot_be_switched_on():
+    client = signed_in("boss", Role.ADMIN)
+    other = domain_account("second", "Второй Админ", in_directory=True, role=Role.ADMIN, track_lunch=False)
+
+    response = put(client, other, "track-lunch", {"track_lunch": True})
+    people = {person["login"]: person["can_track_lunch"] for person in client.get("/api/staff").json()}
+
+    assert (response.status_code, response.json()["detail"]) == (409, "Администратор обеды не отмечает. Чтобы учитывать обеды, назначьте другую роль")
+    assert Account.objects.get(pk=other.pk).track_lunch is False
+    assert people == {"boss": False, "second": False}
+
+
 def test_new_role_applies_without_signing_in_again():
     client = signed_in("boss", Role.ADMIN)
     other = signed_in("deputy", Role.ADMIN)

@@ -107,7 +107,7 @@ onUnmounted(() => {
         <p class="board__empty-title">{{ isToday ? "Сегодня ещё никто не уходил на обед" : "В этот день обедов не отмечено" }}</p>
         <p>Здесь появятся сотрудники, как только они нажмут «Ушёл на обед».</p>
       </div>
-      <template v-else>
+      <div v-else class="board__columns" :class="{ 'board__columns--archive': !isToday }">
         <BoardList
           v-if="isToday"
           title="На обеде сейчас"
@@ -133,7 +133,7 @@ onUnmounted(() => {
           empty="Пока никто не вернулся"
           @correct="editing = $event"
         />
-      </template>
+      </div>
     </template>
     <CorrectionDialog v-if="editing" :entry="editing" @close="editing = null" @saved="replace" />
   </section>
@@ -157,6 +157,23 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
   gap: 12px;
   padding: 18px 20px;
+}
+
+.board__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+@media (min-width: 1100px) {
+  .board__columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .board__columns--archive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .board__message {
