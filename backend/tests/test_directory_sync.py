@@ -231,3 +231,12 @@ def test_command_prints_result(directory, capsys):
 def test_command_fails_loudly_when_directory_is_down(directory, unreachable):
     with pytest.raises(CommandError, match="Контроллер домена не отвечает"):
         call_command("sync_directory")
+
+
+def test_sync_keeps_manual_block(directory):
+    sync()
+    Account.objects.filter(login="ivanov").update(is_active=False)
+
+    sync()
+
+    assert Account.objects.get(login="ivanov").is_active is False

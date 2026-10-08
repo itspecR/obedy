@@ -17,3 +17,7 @@ export interface StaffMember {
 }
 
 export const fetchStaff = () => request<StaffMember[]>("GET", "/staff");
+
+export const changeRole = (id: number, role: Role) => request<StaffMember>("PUT", `/staff/${id}/role`, { role });
+export const setTrackLunch = (id: number, track_lunch: boolean) => request<StaffMember>("PUT", `/staff/${id}/track-lunch`, { track_lunch });
+export const setBlocked = (id: number, blocked: boolean) => request<StaffMember>("PUT", `/staff/${id}/blocked`, { blocked });
