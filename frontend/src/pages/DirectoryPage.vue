@@ -86,7 +86,7 @@ onMounted(load);
 
       <div class="panel directory__card">
         <h2 class="directory__title">Подключение</h2>
-        <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="dc1.company.local dc2.company.local" hint="Один или несколько адресов через пробел — второй используется, если первый не отвечает" plain :disabled="busy" />
+        <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="dc1.company.local dc2.company.local" hint="Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP). Второй используется, если первый не отвечает" plain :disabled="busy" />
         <div class="directory__row">
           <ChoiceField v-model="draft.mode" label="Защита соединения" :options="MODE_OPTIONS" :disabled="busy" />
           <TextField v-model="draft.port" class="directory__port" label="Порт" type="number" :hint="portHint" plain :disabled="busy" />

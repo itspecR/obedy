@@ -48,6 +48,7 @@ describe("DirectoryPage", () => {
 
     expect(wrapper.text()).toContain("Пароль сохранён. Оставьте поле пустым, чтобы не менять его");
     expect(wrapper.text()).toContain("Пусто — стандартный порт 636");
+    expect(wrapper.text()).toContain("Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP)");
     expect(button(wrapper, "Сохранить").attributes("disabled")).toBeDefined();
     expect(button(wrapper, "Проверить подключение").attributes("disabled")).toBeUndefined();
   });

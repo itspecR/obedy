@@ -44,3 +44,8 @@ env_value() {
 latest_backup() {
     ls -1t "${BACKUP_DIR:-/var/backups/obedy}"/obedy-*.sql.gz 2>/dev/null | head -n 1
 }
+
+fail() {
+    echo "$1" >&2
+    exit 1
+}
