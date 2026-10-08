@@ -42,19 +42,32 @@ def inspect(connection, config):
     return success(found)
 
 
-def check_connection(config):
+class ConnectionProblem(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+
+def explained_connection(config):
     if not config.complete:
-        return CheckResult(False, INCOMPLETE)
+        raise ConnectionProblem(INCOMPLETE)
     try:
-        connection = service_connection(config)
-    except ServiceAccountRejected:
-        return CheckResult(False, SERVICE_REJECTED)
+        return service_connection(config)
+    except ServiceAccountRejected as error:
+        raise ConnectionProblem(SERVICE_REJECTED) from error
     except CertificateRejected as error:
         logger.warning("Сертификат контроллера домена не подошёл: %r", error.__cause__)
-        return CheckResult(False, CERTIFICATE_REJECTED)
+        raise ConnectionProblem(CERTIFICATE_REJECTED) from error
     except DirectoryUnavailable as error:
-        logger.warning("Проверка подключения к домену не удалась: %r", error.__cause__ or error)
-        return CheckResult(False, UNREACHABLE)
+        logger.warning("Подключение к домену не удалось: %r", error.__cause__ or error)
+        raise ConnectionProblem(UNREACHABLE) from error
+
+
+def check_connection(config):
+    try:
+        connection = explained_connection(config)
+    except ConnectionProblem as problem:
+        return CheckResult(False, problem.message)
     try:
         return inspect(connection, config)
     except LDAPException as error:

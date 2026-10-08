@@ -28,3 +28,18 @@ export const fetchDirectory = () => request<DirectorySettings>("GET", "/director
 export const saveDirectory = (form: DirectoryForm) => request<DirectorySettings>("PUT", "/directory", form);
 export const checkDirectory = () => request<CheckResult>("POST", "/directory/check");
 export const fetchDirectoryStatus = () => request<{ enabled: boolean }>("GET", "/directory/public");
+
+export type SyncStatus = "done" | "skipped" | "guarded" | "failed";
+
+export interface SyncReport {
+  finished_at: string | null;
+  status: SyncStatus | null;
+  message: string;
+  created: number;
+  updated: number;
+  deactivated: number;
+  skipped: number;
+}
+
+export const fetchSyncReport = () => request<SyncReport>("GET", "/directory/sync");
+export const runSync = () => request<SyncReport>("POST", "/directory/sync");

@@ -24,6 +24,7 @@ class Account(models.Model):
     must_change_password = models.BooleanField(default=False)
     weak_password = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    in_directory = models.BooleanField(default=True)
     last_login_at = models.DateTimeField(null=True, blank=True)
     failed_count = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
