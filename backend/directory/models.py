@@ -22,3 +22,20 @@ class DirectorySettings(models.Model):
     group_dn = models.CharField(max_length=500, blank=True)
     session_days = models.PositiveSmallIntegerField(default=DEFAULT_SESSION_DAYS)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class SyncStatus(models.TextChoices):
+    DONE = "done", "Выполнена"
+    SKIPPED = "skipped", "Не выполнялась"
+    GUARDED = "guarded", "Остановлена защитой"
+    FAILED = "failed", "Ошибка"
+
+
+class SyncReport(models.Model):
+    finished_at = models.DateTimeField()
+    status = models.CharField(max_length=16, choices=SyncStatus.choices)
+    message = models.CharField(max_length=1000)
+    created = models.PositiveIntegerField(default=0)
+    updated = models.PositiveIntegerField(default=0)
+    deactivated = models.PositiveIntegerField(default=0)
+    skipped = models.PositiveIntegerField(default=0)

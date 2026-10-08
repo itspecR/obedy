@@ -13,17 +13,19 @@ main() {
     fi
     mode="$(choose_mode "${1:-}")"
     [[ $# -gt 0 ]] && shift
-    step "1/6" "Устанавливаем пакеты: ${PACKAGES[*]}"
+    step "1/7" "Устанавливаем пакеты: ${PACKAGES[*]}"
     install_packages
-    step "2/6" "Готовим базу данных и файл .env"
+    step "2/7" "Готовим базу данных и файл .env"
     prepare_env "$root"
-    step "3/6" "Собираем и запускаем систему"
+    step "3/7" "Собираем и запускаем систему"
     (cd "$root" && docker compose up -d --build --remove-orphans && wait_for_app "$root" && docker compose exec -T app python manage.py migrate --noinput)
-    step "4/6" "Создаём локального администратора"
+    step "4/7" "Создаём локального администратора"
     (cd "$root" && docker compose exec -T app python manage.py create_admin || true)
-    step "5/6" "Включаем ежедневную резервную копию"
+    step "5/7" "Включаем ежедневную резервную копию"
     "$root/scripts/backup-timer.sh" install
-    step "6/6" "Режим работы: ${mode^^}"
+    step "6/7" "Включаем синхронизацию с доменом раз в час"
+    "$root/scripts/directory-sync-timer.sh" install
+    step "7/7" "Режим работы: ${mode^^}"
     enable_mode "$root" "$mode" "$@"
     echo
     echo "Готово. Откройте ${mode}://$(server_ip)/ и войдите логином и временным паролем администратора выше."

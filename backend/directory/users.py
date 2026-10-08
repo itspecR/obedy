@@ -6,6 +6,7 @@ from ldap3.utils.conv import escape_filter_chars
 
 ACCOUNT_DISABLED_FLAG = 0x2
 MAX_GROUP_DEPTH = 10
+PERSON_FILTER = "(&(objectCategory=person)(objectClass=user))"
 USER_ATTRIBUTES = ["sAMAccountName", "displayName", "cn", "department", "title", "userAccountControl", "memberOf", "objectGUID"]
 
 
@@ -22,7 +23,7 @@ class DirectoryUser:
 
 
 def user_filter(login):
-    return f"(&(objectClass=user)(sAMAccountName={escape_filter_chars(login)}))"
+    return f"(&(objectCategory=person)(objectClass=user)(sAMAccountName={escape_filter_chars(login)}))"
 
 
 def values(attributes, name):
@@ -102,5 +103,5 @@ def group_exists(connection, group_dn):
 
 
 def count_users(connection, base_dn, limit):
-    connection.search(base_dn, "(objectClass=user)", SUBTREE, attributes=["sAMAccountName"], size_limit=limit)
+    connection.search(base_dn, PERSON_FILTER, SUBTREE, attributes=["sAMAccountName"], size_limit=limit)
     return len(entries(connection))

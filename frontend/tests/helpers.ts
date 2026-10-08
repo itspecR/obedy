@@ -28,3 +28,7 @@ export function bodySentTo(spy: ReturnType<typeof vi.fn>, url: string): unknown 
   const call = spy.mock.calls.find(([target, init]) => target === url && (init as RequestInit | undefined)?.body);
   return call ? JSON.parse((call[1] as RequestInit).body as string) : undefined;
 }
+
+export function wasRequested(spy: ReturnType<typeof vi.fn>, url: string, method: string): boolean {
+  return spy.mock.calls.some(([target, init]) => target === url && (init as RequestInit | undefined)?.method === method);
+}

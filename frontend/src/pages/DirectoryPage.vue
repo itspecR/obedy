@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { checkDirectory, fetchDirectory, saveDirectory, type CheckResult, type DirectorySettings } from "../api/directory";
 import { errorMessage } from "../api/http";
 import { DEFAULT_PORTS, MODE_OPTIONS, draftFrom, formFrom, sameDraft, type DirectoryDraft } from "../components/directory/draft";
+import SyncPanel from "../components/directory/SyncPanel.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import ChoiceField from "../components/ui/ChoiceField.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
@@ -20,6 +21,12 @@ const { notify, fail } = useToasts();
 
 const dirty = computed(() => Boolean(settings.value && draft.value && !sameDraft(draftFrom(settings.value), draft.value)));
 const portHint = computed(() => (draft.value ? `Пусто — стандартный порт ${DEFAULT_PORTS[draft.value.mode]}` : ""));
+const syncBlocked = computed(() => {
+  if (dirty.value) {
+    return "Сохраните изменения, чтобы синхронизировать сотрудников";
+  }
+  return settings.value?.enabled ? "" : "Включите вход через домен и сохраните, чтобы синхронизировать сотрудников";
+});
 const passwordHint = computed(() => (settings.value?.has_bind_password ? "Пароль сохранён. Оставьте поле пустым, чтобы не менять его" : "Пароль ещё не задан"));
 
 function accept(next: DirectorySettings): void {
@@ -126,7 +133,8 @@ onMounted(load);
       </div>
       <p v-if="check" class="directory__check" :class="check.ok ? 'directory__check--ok' : 'directory__check--fail'" role="status">{{ check.message }}</p>
     </form>
-    <div v-else class="panel directory__card directory__loading" aria-busy="true">Загружаем…</div>
+    <SyncPanel v-if="draft && !loadError" :blocked-reason="syncBlocked" />
+    <div v-if="!draft && !loadError" class="panel directory__card directory__loading" aria-busy="true">Загружаем…</div>
   </section>
 </template>
 

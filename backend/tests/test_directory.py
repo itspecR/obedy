@@ -43,6 +43,7 @@ SETTINGS = {
 def person(login, full_name, groups, guid=None, flags=512, department="Бухгалтерия", title="Бухгалтер"):
     return {
         "objectClass": ["top", "person", "user"],
+        "objectCategory": "person",
         "sAMAccountName": login,
         "displayName": full_name,
         "department": department,

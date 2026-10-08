@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.utils import timezone
 from ninja import Field, Router, Schema
 from ninja.errors import HttpError
 
@@ -8,6 +11,7 @@ from directory.config import config_from, current_config, stored_settings
 from directory.diagnostics import check_connection
 from directory.models import DEFAULT_SESSION_DAYS, Mode
 from directory.settings_store import IncompleteSettings, save_settings
+from directory.sync import SyncBusy, latest_report, run_sync
 
 TEXT_LIMIT = 500
 SECRET_LIMIT = 255
@@ -16,6 +20,7 @@ MIN_SESSION_DAYS = 1
 MAX_SESSION_DAYS = 90
 MAX_PORT = 65535
 
+SYNC_BUSY = "Синхронизация уже идёт. Подождите минуту и обновите страницу"
 INVALID_CERTIFICATE = "Сертификат не распознан. Вставьте корневой сертификат домена в формате PEM (-----BEGIN CERTIFICATE-----)"
 
 router = Router(tags=["Active Directory"])
@@ -54,6 +59,16 @@ class CheckOut(Schema):
 
 class PublicOut(Schema):
     enabled: bool
+
+
+class SyncOut(Schema):
+    finished_at: datetime | None = None
+    status: str | None = None
+    message: str = ""
+    created: int = 0
+    updated: int = 0
+    deactivated: int = 0
+    skipped: int = 0
 
 
 def describe(stored):
@@ -99,3 +114,34 @@ def check(request):
     require_admin(request)
     result = check_connection(config_from(stored_settings()))
     return CheckOut(ok=result.ok, message=result.message)
+
+
+def sync_report():
+    report = latest_report()
+    if report is None:
+        return SyncOut()
+    return SyncOut(
+        finished_at=report.finished_at,
+        status=report.status,
+        message=report.message,
+        created=report.created,
+        updated=report.updated,
+        deactivated=report.deactivated,
+        skipped=report.skipped,
+    )
+
+
+@router.get("/sync", auth=session_auth, response=SyncOut)
+def sync_status(request):
+    require_admin(request)
+    return sync_report()
+
+
+@router.post("/sync", auth=session_auth, response=SyncOut)
+def sync_now(request):
+    require_admin(request)
+    try:
+        run_sync(timezone.now())
+    except SyncBusy as error:
+        raise HttpError(409, SYNC_BUSY) from error
+    return sync_report()

@@ -9,14 +9,27 @@ def existing_account(user):
     return Account.objects.filter(login=user.login, source=Source.DOMAIN).first()
 
 
-def save_account(user):
-    account = existing_account(user) or Account(source=Source.DOMAIN, role=Role.EMPLOYEE)
-    account.login = user.login
-    account.full_name = user.full_name
-    account.department = user.department
-    account.position = user.position
-    account.external_id = user.external_id or None
+def profile_of(user):
+    return {
+        "login": user.login,
+        "full_name": user.full_name,
+        "department": user.department,
+        "position": user.position,
+        "external_id": user.external_id or None,
+    }
+
+
+def is_outdated(account, user):
+    profile = profile_of(user)
+    return not account.in_directory or any(getattr(account, field) != value for field, value in profile.items())
+
+
+def save_account(user, account=None):
+    account = account or existing_account(user) or Account(source=Source.DOMAIN, role=Role.EMPLOYEE)
+    for field, value in profile_of(user).items():
+        setattr(account, field, value)
     account.source = Source.DOMAIN
     account.password_hash = ""
+    account.in_directory = True
     account.save()
     return account
