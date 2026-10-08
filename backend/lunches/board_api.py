@@ -4,7 +4,6 @@ from django.utils import timezone
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts.models import Account
 from accounts.names import display_name
 from accounts.security import session_auth
 from lunches.clock import today
@@ -13,6 +12,7 @@ from lunches.models import REASON_LIMIT, Lunch
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.service import WARNING_MINUTES, close_overdue
 from lunches.supervision import require_supervisor
+from staff.status import gone, present_accounts
 
 BOARD_ONLY = "Табло доступно HR и администратору"
 NOT_FOUND = "Обед не найден. Обновите страницу"
@@ -64,7 +64,7 @@ def describe_entry(lunch, actor, now):
 
 
 def lunches_of_day(day):
-    return Lunch.objects.filter(day=day).select_related("account", "corrected_by").order_by("started_at")
+    return Lunch.objects.filter(day=day).exclude(gone("account__")).select_related("account", "corrected_by").order_by("started_at")
 
 
 def board_actor(request):
@@ -96,14 +96,14 @@ def board(request, day: date | None = None):
 @router.get("/people", auth=session_auth, response=list[PersonOut])
 def people(request):
     actor = board_actor(request)
-    candidates = Account.objects.filter(is_active=True, track_lunch=True).exclude(pk=actor.pk).order_by("full_name", "login")
+    candidates = present_accounts().filter(is_active=True, track_lunch=True).exclude(pk=actor.pk).order_by("full_name", "login")
     return [describe_person(account) for account in candidates if can_receive_lunch(account)]
 
 
 @router.post("/lunches", auth=session_auth, response={201: BoardEntryOut})
 def add(request, payload: AddLunchIn):
     actor = board_actor(request)
-    account = Account.objects.filter(pk=payload.account_id).first()
+    account = present_accounts().filter(pk=payload.account_id).first()
     if account is None:
         raise HttpError(404, PERSON_NOT_FOUND)
     now = timezone.now()

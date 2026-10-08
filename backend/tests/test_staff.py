@@ -27,12 +27,13 @@ def domain_account(login, full_name, **fields):
     return Account.objects.create(login=login, full_name=full_name, source=Source.DOMAIN, **fields)
 
 
-def test_admin_sees_everyone_with_status_sorted_by_name():
+def test_admin_sees_present_staff_with_status_sorted_by_name():
     client = signed_in("boss", Role.ADMIN)
     domain_account("petrov", "Петров Пётр")
     domain_account("ivanov", "Иванов Иван")
     domain_account("sidorov", "Сидоров Сидор", in_directory=False)
-    domain_account("blocked", "Блоков Борис", is_active=False, in_directory=False)
+    domain_account("blocked", "Блоков Борис", is_active=False)
+    domain_account("left", "Ушедший Блокированный", is_active=False, in_directory=False)
 
     people = client.get("/api/staff").json()
 
@@ -41,7 +42,6 @@ def test_admin_sees_everyone_with_status_sorted_by_name():
         ("blocked", "blocked"),
         ("ivanov", "active"),
         ("petrov", "active"),
-        ("sidorov", "gone"),
     ]
     ivanov = people[2]
     assert (ivanov["role"], ivanov["source"], ivanov["track_lunch"]) == ("employee", "domain", True)

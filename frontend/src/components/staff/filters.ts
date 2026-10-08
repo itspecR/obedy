@@ -18,13 +18,11 @@ export const EMPTY_FILTER: StaffFilter = { query: "", role: "all", status: "all"
 export const STATUS_LABELS: Record<StaffStatus, string> = {
   active: "Активен",
   blocked: "Заблокирован",
-  gone: "Нет в домене",
 };
 
 export const STATUS_TONES: Record<StaffStatus, Tone> = {
   active: "ok",
   blocked: "alarm",
-  gone: "neutral",
 };
 
 export const ROLE_OPTIONS: { value: RoleFilter; label: string }[] = [
@@ -36,7 +34,6 @@ export const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Все" },
   { value: "active", label: "Активные" },
   { value: "blocked", label: "Заблокированные" },
-  { value: "gone", label: "Нет в домене" },
 ];
 
 export function displayName(member: StaffMember): string {

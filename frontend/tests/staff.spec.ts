@@ -29,7 +29,6 @@ const PEOPLE = [
   member(),
   member({ id: 2, login: "petrov", full_name: "Пётр Петров", role: "hr", track_lunch: false }),
   member({ id: 3, login: "sidorov", full_name: "", status: "blocked", source: "local" }),
-  member({ id: 4, login: "gone", full_name: "Ушедший", status: "gone" }),
 ];
 
 const logins = (members: StaffMember[]) => members.map((item) => item.login);
@@ -47,8 +46,8 @@ describe("staff filters", () => {
 
   it("filters by role and status", () => {
     expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, role: "hr" }))).toEqual(["petrov"]);
-    expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, status: "gone" }))).toEqual(["gone"]);
-    expect(logins(filterStaff(PEOPLE, EMPTY_FILTER))).toEqual(["ivanov", "petrov", "sidorov", "gone"]);
+    expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, status: "blocked" }))).toEqual(["sidorov"]);
+    expect(logins(filterStaff(PEOPLE, EMPTY_FILTER))).toEqual(["ivanov", "petrov", "sidorov"]);
   });
 });
 
@@ -71,15 +70,15 @@ describe("StaffPage", () => {
     const wrapper = await mounted([200, PEOPLE]);
     const rows = wrapper.findAll(".staff__row");
 
-    expect(wrapper.text()).toContain("Всего 4");
-    expect(rows).toHaveLength(4);
+    expect(wrapper.text()).toContain("Всего 3");
+    expect(rows).toHaveLength(3);
     expect(rows[1].text()).toContain("Пётр Петров");
     expect(rows[1].text()).toContain("HR");
     expect(rows[1].text()).toContain("Не учитываются");
     expect(rows[2].text()).toContain("sidorov");
     expect(wrapper.text()).not.toContain("Отдел");
     expect(rows[2].get(".badge").classes()).toContain("badge--alarm");
-    expect(rows[3].get(".badge").text()).toBe("Нет в домене");
+    expect(wrapper.text()).not.toContain("Нет в домене");
   });
 
   it("counts shown people and explains an empty search", async () => {
@@ -87,7 +86,7 @@ describe("StaffPage", () => {
 
     await wrapper.get("input").setValue("никого такого");
 
-    expect(wrapper.text()).toContain("Показано 0 из 4");
+    expect(wrapper.text()).toContain("Показано 0 из 3");
     expect(wrapper.text()).toContain("Никого не нашли");
   });
 
@@ -248,7 +247,7 @@ describe("StaffPage local accounts", () => {
     expect(bodySentTo(created, "/api/staff")).toMatchObject({ login: "kassa", full_name: "Кассир Касса", role: "employee" });
     expect(dialog().textContent).toContain("Учётная запись создана");
     expect((dialog().querySelector('[aria-label="Временный пароль"]') as HTMLInputElement).value).toBe("Temp12345a");
-    expect(wrapper.text()).toContain("Всего 5");
+    expect(wrapper.text()).toContain("Всего 4");
     wrapper.unmount();
   });
 

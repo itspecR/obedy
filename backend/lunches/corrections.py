@@ -7,7 +7,7 @@ from accounts.lunch_policy import can_have_lunch
 from lunches.clock import moment_of, today
 from lunches.models import Lunch
 from lunches.rules import current_rules
-from staff.status import StaffStatus, status_of
+from staff.status import StaffStatus, gone, status_of
 
 OWN_LUNCH = "Свой обед исправить нельзя — попросите коллегу"
 REASON_REQUIRED = "Укажите причину исправления"
@@ -60,7 +60,7 @@ def can_receive_lunch(account):
 
 @transaction.atomic
 def correct_lunch(actor, lunch_id, correction, now):
-    lunch = Lunch.objects.select_for_update().get(pk=lunch_id)
+    lunch = Lunch.objects.select_for_update().exclude(gone("account__")).get(pk=lunch_id)
     refuse_own(actor, lunch.account_id, OWN_LUNCH)
     reason = required_reason(correction)
     lunch.started_at, lunch.ended_at = checked_moments(lunch.day, correction, now)

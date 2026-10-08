@@ -5,6 +5,7 @@ from accounts.names import display_name
 from lunches.history import summary_of
 from lunches.models import Lunch
 from lunches.status import LunchStatus, duration_of, is_overrun, limit_of, status_of
+from staff.status import gone
 
 MAX_PERIOD_DAYS = 366
 SECONDS_IN_MINUTE = 60
@@ -54,7 +55,7 @@ def checked_period(first, last):
 
 
 def period_query(period):
-    return Lunch.objects.filter(day__gte=period.first, day__lte=period.last)
+    return Lunch.objects.filter(day__gte=period.first, day__lte=period.last).exclude(gone("account__"))
 
 
 def lunches_in(period):

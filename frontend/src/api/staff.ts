@@ -1,7 +1,7 @@
 import type { Role, Source } from "./auth";
 import { request } from "./http";
 
-export type StaffStatus = "active" | "blocked" | "gone";
+export type StaffStatus = "active" | "blocked";
 
 export interface StaffMember {
   id: number;
