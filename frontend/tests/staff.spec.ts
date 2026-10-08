@@ -1,9 +1,14 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { createPinia, setActivePinia } from "pinia";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StaffMember } from "../src/api/staff";
 import { EMPTY_FILTER, filterStaff } from "../src/components/staff/filters";
 import StaffPage from "../src/pages/StaffPage.vue";
-import { routeFetch } from "./helpers";
+import { useConfirm } from "../src/composables/useConfirm";
+import { useToasts } from "../src/composables/useToasts";
+import { useSession } from "../src/stores/session";
+import { bodySentTo, routeFetch } from "./helpers";
+import { me } from "./people";
 
 function member(overrides: Partial<StaffMember> = {}): StaffMember {
   return {
@@ -48,7 +53,12 @@ describe("staff filters", () => {
 });
 
 describe("StaffPage", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  beforeEach(() => setActivePinia(createPinia()));
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
 
   async function mounted(response: [number, unknown]) {
     routeFetch({ "/api/staff": response });
@@ -92,5 +102,95 @@ describe("StaffPage", () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain("На сервере произошла ошибка");
     expect(wrapper.findAll("button").some((button) => button.text() === "Повторить")).toBe(true);
+  });
+});
+
+describe("StaffPage management", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    useSession().me = { ...me("admin"), login: "boss" };
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
+
+  async function opened(people: StaffMember[], login: string, routes: Record<string, [number, unknown]> = {}) {
+    const spy = routeFetch({ "/api/staff": [200, people], ...routes });
+    const wrapper = mount(StaffPage, { attachTo: document.body });
+    await flushPromises();
+    const target = people.find((person) => person.login === login);
+    await wrapper.get(`[aria-label="Действия: ${target?.full_name || login}"]`).trigger("click");
+    return { spy, wrapper };
+  }
+
+  const dialog = () => document.body.querySelector('[role="dialog"]') as HTMLElement;
+  const buttonIn = (text: string) => [...dialog().querySelectorAll("button")].find((button) => button.textContent?.trim() === text) as HTMLButtonElement;
+
+  it("changes the role and shows the server answer in the list", async () => {
+    const promoted = member({ role: "hr", track_lunch: false });
+    const { spy, wrapper } = await opened(PEOPLE, "ivanov", { "/api/staff/1/role": [200, promoted] });
+
+    buttonIn("HR").click();
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/staff/1/role")).toEqual({ role: "hr" });
+    expect(wrapper.findAll(".staff__row")[0].text()).toContain("Не учитываются");
+    wrapper.unmount();
+  });
+
+  it("switches lunch tracking", async () => {
+    const { spy, wrapper } = await opened(PEOPLE, "ivanov", { "/api/staff/1/track-lunch": [200, member({ track_lunch: false })] });
+
+    (dialog().querySelector('[role="switch"]') as HTMLButtonElement).click();
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/staff/1/track-lunch")).toEqual({ track_lunch: false });
+    wrapper.unmount();
+  });
+
+  it("asks before blocking and blocks after confirmation", async () => {
+    const { spy, wrapper } = await opened(PEOPLE, "ivanov", { "/api/staff/1/blocked": [200, member({ status: "blocked" })] });
+
+    buttonIn("Заблокировать").click();
+    expect(useConfirm().current.request?.title).toBe("Заблокировать: Иванов Иван?");
+    useConfirm().answer(true);
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/staff/1/blocked")).toEqual({ blocked: true });
+    expect(buttonIn("Разблокировать")).toBeTruthy();
+    wrapper.unmount();
+  });
+
+  it("does not block when the admin changes their mind", async () => {
+    const { spy, wrapper } = await opened(PEOPLE, "ivanov");
+
+    buttonIn("Заблокировать").click();
+    useConfirm().answer(false);
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/staff/1/blocked")).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it("keeps the admin from changing their own role or blocking themselves", async () => {
+    const self = member({ id: 7, login: "boss", full_name: "Начальник", role: "admin" });
+    const { wrapper } = await opened([self], "boss");
+
+    expect(buttonIn("Сотрудник").disabled).toBe(true);
+    expect(buttonIn("Заблокировать").disabled).toBe(true);
+    expect(dialog().textContent).toContain("Свою роль изменить нельзя");
+    wrapper.unmount();
+  });
+
+  it("shows the server refusal", async () => {
+    const { wrapper } = await opened(PEOPLE, "ivanov", { "/api/staff/1/role": [409, { detail: "Нельзя: это последний активный администратор" }] });
+
+    buttonIn("Администратор").click();
+    await flushPromises();
+
+    expect(useToasts().items.map((toast) => toast.text)).toContain("Нельзя: это последний активный администратор");
+    wrapper.unmount();
   });
 });

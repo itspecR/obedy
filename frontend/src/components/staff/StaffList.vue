@@ -5,6 +5,7 @@ import StatusBadge from "../ui/StatusBadge.vue";
 import { STATUS_LABELS, STATUS_TONES, displayName } from "./filters";
 
 defineProps<{ members: StaffMember[]; total: number }>();
+const emit = defineEmits<{ manage: [member: StaffMember] }>();
 
 const SOURCE_LABELS = { domain: "Домен", local: "Локальная" } as const;
 
@@ -21,6 +22,7 @@ function details(member: StaffMember): string {
       <span>Роль</span>
       <span>Обеды</span>
       <span>Статус</span>
+      <span />
     </div>
     <ul v-if="members.length" class="staff__list">
       <li v-for="member in members" :key="member.id" class="staff__row">
@@ -32,6 +34,7 @@ function details(member: StaffMember): string {
         <span class="staff__role">{{ ROLE_LABELS[member.role] }}</span>
         <span class="staff__lunch">{{ member.track_lunch ? "Учитываются" : "Не учитываются" }}</span>
         <StatusBadge class="staff__status" :tone="STATUS_TONES[member.status]" :label="STATUS_LABELS[member.status]" />
+        <button type="button" class="staff__more" :aria-label="`Действия: ${displayName(member)}`" @click="emit('manage', member)">⋯</button>
       </li>
     </ul>
     <div v-else class="staff__empty">
@@ -50,6 +53,7 @@ function details(member: StaffMember): string {
 <style scoped>
 .staff {
   --status-column: 136px;
+  --more-column: 36px;
   padding: 8px 20px;
 }
 
@@ -61,7 +65,7 @@ function details(member: StaffMember): string {
 .staff__head,
 .staff__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) var(--status-column);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) var(--status-column) var(--more-column);
   align-items: center;
   gap: 16px;
 }
@@ -108,6 +112,27 @@ function details(member: StaffMember): string {
   color: var(--muted);
 }
 
+.staff__more {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.staff__more:hover,
+.staff__more:focus-visible {
+  border-color: var(--line-strong);
+  background: var(--hover);
+  color: var(--ink);
+}
+
 .staff__empty {
   padding: 28px 4px;
   text-align: center;
@@ -129,8 +154,13 @@ function details(member: StaffMember): string {
   }
 
   .staff__row {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 4px 12px;
+  }
+
+  .staff__more {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .staff__who {

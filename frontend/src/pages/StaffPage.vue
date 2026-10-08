@@ -2,15 +2,21 @@
 import { computed, onMounted, ref } from "vue";
 import { errorMessage } from "../api/http";
 import { fetchStaff, type StaffMember } from "../api/staff";
+import StaffDialog from "../components/staff/StaffDialog.vue";
 import StaffFilters from "../components/staff/StaffFilters.vue";
 import StaffList from "../components/staff/StaffList.vue";
 import { EMPTY_FILTER, filterStaff, type StaffFilter } from "../components/staff/filters";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
+import { useSession } from "../stores/session";
 
 const members = ref<StaffMember[] | null>(null);
 const loadError = ref("");
 const filter = ref<StaffFilter>({ ...EMPTY_FILTER });
+const managedId = ref<number | null>(null);
+const session = useSession();
+
+const managed = computed(() => members.value?.find((member) => member.id === managedId.value) ?? null);
 
 const shown = computed(() => filterStaff(members.value ?? [], filter.value));
 const subtitle = computed(() => {
@@ -27,6 +33,10 @@ async function load(): Promise<void> {
   }
 }
 
+function replace(updated: StaffMember): void {
+  members.value = (members.value ?? []).map((member) => (member.id === updated.id ? updated : member));
+}
+
 onMounted(load);
 </script>
 
@@ -39,7 +49,8 @@ onMounted(load);
     </div>
     <template v-else-if="members">
       <StaffFilters v-model="filter" />
-      <StaffList :members="shown" :total="members.length" />
+      <StaffList :members="shown" :total="members.length" @manage="managedId = $event.id" />
+      <StaffDialog v-if="managed" :member="managed" :is-self="managed.login === session.me?.login" @updated="replace" @close="managedId = null" />
     </template>
     <div v-else class="panel staff-page__loading" aria-busy="true">Загружаем…</div>
   </section>
