@@ -15,8 +15,6 @@ function member(overrides: Partial<StaffMember> = {}): StaffMember {
     id: 1,
     login: "ivanov",
     full_name: "Иванов Иван",
-    department: "Склад",
-    position: "Кладовщик",
     role: "employee",
     source: "domain",
     status: "active",
@@ -29,16 +27,17 @@ function member(overrides: Partial<StaffMember> = {}): StaffMember {
 
 const PEOPLE = [
   member(),
-  member({ id: 2, login: "petrov", full_name: "Пётр Петров", department: "Бухгалтерия", role: "hr", track_lunch: false }),
-  member({ id: 3, login: "sidorov", full_name: "", department: "", position: "", status: "blocked", source: "local" }),
+  member({ id: 2, login: "petrov", full_name: "Пётр Петров", role: "hr", track_lunch: false }),
+  member({ id: 3, login: "sidorov", full_name: "", status: "blocked", source: "local" }),
   member({ id: 4, login: "gone", full_name: "Ушедший", status: "gone" }),
 ];
 
 const logins = (members: StaffMember[]) => members.map((item) => item.login);
 
 describe("staff filters", () => {
-  it("finds by several words across name, login, department and position", () => {
-    expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, query: "иван склад" }))).toEqual(["ivanov"]);
+  it("finds by several words across name and login", () => {
+    expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, query: "иван ivanov" }))).toEqual(["ivanov"]);
+    expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, query: "склад" }))).toEqual([]);
     expect(logins(filterStaff(PEOPLE, { ...EMPTY_FILTER, query: "SIDOROV" }))).toEqual(["sidorov"]);
   });
 
@@ -78,7 +77,7 @@ describe("StaffPage", () => {
     expect(rows[1].text()).toContain("HR");
     expect(rows[1].text()).toContain("Не учитываются");
     expect(rows[2].text()).toContain("sidorov");
-    expect(rows[2].text()).toContain("Отдел и должность не указаны");
+    expect(wrapper.text()).not.toContain("Отдел");
     expect(rows[2].get(".badge").classes()).toContain("badge--alarm");
     expect(rows[3].get(".badge").text()).toBe("Нет в домене");
   });
@@ -275,7 +274,7 @@ describe("StaffPage local accounts", () => {
     buttonIn("Сохранить данные")?.click();
     await flushPromises();
 
-    expect(bodySentTo(spy, "/api/staff/9/profile")).toEqual({ full_name: "Кассирова Анна", department: "Склад", position: "Кладовщик" });
+    expect(bodySentTo(spy, "/api/staff/9/profile")).toEqual({ full_name: "Кассирова Анна" });
     expect(wrapper.text()).toContain("Кассирова Анна");
     wrapper.unmount();
   });

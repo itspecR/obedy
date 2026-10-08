@@ -24,7 +24,7 @@ def signed_in(login, role):
 
 
 def domain_account(login, full_name, **fields):
-    return Account.objects.create(login=login, full_name=full_name, source=Source.DOMAIN, department="Склад", position="Кладовщик", **fields)
+    return Account.objects.create(login=login, full_name=full_name, source=Source.DOMAIN, **fields)
 
 
 def test_admin_sees_everyone_with_status_sorted_by_name():
@@ -44,13 +44,8 @@ def test_admin_sees_everyone_with_status_sorted_by_name():
         ("sidorov", "gone"),
     ]
     ivanov = people[2]
-    assert (ivanov["department"], ivanov["position"], ivanov["role"], ivanov["source"], ivanov["track_lunch"]) == (
-        "Склад",
-        "Кладовщик",
-        "employee",
-        "domain",
-        True,
-    )
+    assert (ivanov["role"], ivanov["source"], ivanov["track_lunch"]) == ("employee", "domain", True)
+    assert "department" not in ivanov and "position" not in ivanov
 
 
 @pytest.mark.parametrize("role", [Role.EMPLOYEE, Role.HR])
@@ -198,7 +193,7 @@ def test_only_admin_changes_people(role):
 
 
 def create(client, **fields):
-    payload = {"login": "kassa", "full_name": "Кассир Касса", "department": "Магазин", "position": "Кассир", "role": "employee", **fields}
+    payload = {"login": "kassa", "full_name": "Кассир Касса", "role": "employee", **fields}
     return client.post("/api/staff", json.dumps(payload), content_type="application/json")
 
 
@@ -253,12 +248,13 @@ def test_local_profile_is_edited_and_domain_profile_is_not():
     client = signed_in("boss", Role.ADMIN)
     local = Account.objects.get(login=create(client).json()["member"]["login"])
     domain = employee()
-    changes = {"full_name": " Кассирова Анна ", "department": "Магазин 2", "position": "Старший кассир"}
+    changes = {"full_name": " Кассирова Анна "}
 
     edited = put(client, local, "profile", changes)
     refused = put(client, domain, "profile", changes)
 
-    assert (edited.json()["full_name"], edited.json()["department"]) == ("Кассирова Анна", "Магазин 2")
+    assert edited.json()["full_name"] == "Кассирова Анна"
+    assert "department" not in edited.json()
     assert refused.status_code == 409
     assert refused.json()["detail"].startswith("Это доменная учётная запись")
 

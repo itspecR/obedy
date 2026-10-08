@@ -6,7 +6,7 @@ import type { Lunch } from "../src/api/lunch";
 import AddLunchDialog from "../src/components/board/AddLunchDialog.vue";
 import BoardList from "../src/components/board/BoardList.vue";
 import CorrectionDialog from "../src/components/board/CorrectionDialog.vue";
-import { EMPTY_BOARD_FILTER, departmentsOf, filterEntries, groupEntries } from "../src/components/board/groups";
+import { filterEntries, groupEntries } from "../src/components/board/groups";
 import { useToasts } from "../src/composables/useToasts";
 import BoardPage from "../src/pages/BoardPage.vue";
 import { bodySentTo, routeFetch, wasRequested } from "./helpers";
@@ -15,9 +15,9 @@ const NOON = "2026-10-08T09:00:00Z";
 const at = (minutes: number) => Date.parse(NOON) + minutes * 60_000;
 const iso = (minutes: number) => new Date(at(minutes)).toISOString();
 
-function entry(id: number, name: string, lunch: Partial<Lunch> = {}, department = "Склад"): BoardEntry {
+function entry(id: number, name: string, lunch: Partial<Lunch> = {}): BoardEntry {
   return {
-    person: { id, name, login: `user${id}`, department, position: "Кассир" },
+    person: { id, name, login: `user${id}` },
     lunch: {
       id,
       day: "2026-10-08",
@@ -35,10 +35,10 @@ function entry(id: number, name: string, lunch: Partial<Lunch> = {}, department 
 }
 
 const AWAY_EARLY = entry(1, "Ранний Роман", { started_at: iso(-50) });
-const AWAY_LATE = entry(2, "Поздний Пётр", { started_at: iso(-10) }, "Бухгалтерия");
+const AWAY_LATE = entry(2, "Поздний Пётр", { started_at: iso(-10) });
 const OVERRUN = entry(3, "Долгий Денис", { ended_at: iso(-5), status: "overrun", duration_seconds: 3000 });
 const UNRETURNED = entry(4, "Забывчивая Зоя", { ended_at: iso(360), status: "unreturned", auto_closed: true });
-const RETURNED = entry(5, "Вовремя Вера", { ended_at: iso(30), status: "on_time", duration_seconds: 1800 }, "Бухгалтерия");
+const RETURNED = entry(5, "Вовремя Вера", { ended_at: iso(30), status: "on_time", duration_seconds: 1800 });
 const ENTRIES = [AWAY_LATE, AWAY_EARLY, OVERRUN, UNRETURNED, RETURNED];
 
 function board(overrides: Partial<Board> = {}): Board {
@@ -56,10 +56,10 @@ describe("board groups", () => {
     expect(names(groups.returned)).toEqual(["Вовремя Вера"]);
   });
 
-  it("filters by words and department", () => {
-    expect(names(filterEntries(ENTRIES, { ...EMPTY_BOARD_FILTER, query: "петр" }))).toEqual(["Поздний Пётр"]);
-    expect(names(filterEntries(ENTRIES, { query: "", department: "Бухгалтерия" }))).toEqual(["Поздний Пётр", "Вовремя Вера"]);
-    expect(departmentsOf(ENTRIES)).toEqual(["Бухгалтерия", "Склад"]);
+  it("filters by name or login words", () => {
+    expect(names(filterEntries(ENTRIES, "петр"))).toEqual(["Поздний Пётр"]);
+    expect(names(filterEntries(ENTRIES, "user5"))).toEqual(["Вовремя Вера"]);
+    expect(names(filterEntries(ENTRIES, ""))).toHaveLength(5);
   });
 });
 
@@ -154,12 +154,13 @@ describe("BoardPage", () => {
     expect(wrapper.text()).toContain("обновляется каждые 30 секунд");
   });
 
-  it("filters by department", async () => {
+  it("filters by search and shows no department filter", async () => {
     const { wrapper } = await mounted({ "/api/lunch/board": [200, board()] });
 
-    await wrapper.get("select").setValue("Бухгалтерия");
+    await wrapper.get('input[placeholder="например: Иванов"]').setValue("вер");
 
-    expect(wrapper.findAll(".board-list__name").map((name) => name.text())).toEqual(["Поздний Пётр", "Вовремя Вера"]);
+    expect(wrapper.findAll(".board-list__name").map((name) => name.text())).toEqual(["Вовремя Вера"]);
+    expect(wrapper.find("select").exists()).toBe(false);
   });
 
   it("opens a past day without the live block", async () => {
@@ -210,8 +211,8 @@ describe("AddLunchDialog", () => {
   });
 
   const PEOPLE = [
-    { id: 11, name: "Иванов Иван", login: "ivanov", department: "Склад", position: "Кладовщик" },
-    { id: 12, name: "Петрова Анна", login: "petrova", department: "Бухгалтерия", position: "Бухгалтер" },
+    { id: 11, name: "Иванов Иван", login: "ivanov" },
+    { id: 12, name: "Петрова Анна", login: "petrova" },
   ];
 
   it("finds a colleague and adds a forgotten lunch for the board day", async () => {
@@ -220,8 +221,8 @@ describe("AddLunchDialog", () => {
     const wrapper = mount(AddLunchDialog, { props: { day: "2026-10-07" }, attachTo: document.body });
     await flushPromises();
 
-    await wrapper.get("input[type=text]").setValue("склад");
-    expect(wrapper.findAll("option").map((option) => option.text())).toEqual(["Выберите сотрудника", "Иванов Иван — Склад"]);
+    await wrapper.get("input[type=text]").setValue("иван");
+    expect(wrapper.findAll("option").map((option) => option.text())).toEqual(["Выберите сотрудника", "Иванов Иван"]);
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
     await wrapper.get("select").setValue("11");
     const [started, ended] = wrapper.findAll("input[type=time]");

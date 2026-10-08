@@ -3,19 +3,11 @@ import { matchesQuery } from "../../format/search";
 import { remainingSeconds } from "../lunch/countdown";
 import { VIOLATION_STATUSES } from "../lunch/lunchStatus";
 
-export interface BoardFilter {
-  query: string;
-  department: string;
-}
-
 export interface BoardGroups {
   away: BoardEntry[];
   violations: BoardEntry[];
   returned: BoardEntry[];
 }
-
-export const ALL_DEPARTMENTS = "";
-export const EMPTY_BOARD_FILTER: BoardFilter = { query: "", department: ALL_DEPARTMENTS };
 
 const remainingOf = (entry: BoardEntry, now: number) => remainingSeconds(entry.lunch.started_at, entry.lunch.limit_minutes, now);
 
@@ -27,14 +19,6 @@ export function groupEntries(entries: BoardEntry[], now: number): BoardGroups {
   };
 }
 
-export function filterEntries(entries: BoardEntry[], filter: BoardFilter): BoardEntry[] {
-  return entries.filter(
-    ({ person }) =>
-      (filter.department === ALL_DEPARTMENTS || person.department === filter.department) &&
-      matchesQuery(filter.query, [person.name, person.login, person.department, person.position]),
-  );
-}
-
-export function departmentsOf(entries: BoardEntry[]): string[] {
-  return [...new Set(entries.map((entry) => entry.person.department).filter(Boolean))].sort((left, right) => left.localeCompare(right, "ru"));
+export function filterEntries(entries: BoardEntry[], query: string): BoardEntry[] {
+  return entries.filter(({ person }) => matchesQuery(query, [person.name, person.login]));
 }

@@ -33,11 +33,9 @@ class Issued:
 @dataclass(frozen=True)
 class Profile:
     full_name: str
-    department: str
-    position: str
 
     def cleaned(self):
-        cleaned = Profile(self.full_name.strip(), self.department.strip(), self.position.strip())
+        cleaned = Profile(self.full_name.strip())
         if not cleaned.full_name:
             raise InvalidProfile(NO_NAME)
         return cleaned
@@ -65,8 +63,6 @@ def create_local_account(raw_login, profile, role):
     account = Account.objects.create(
         login=login,
         full_name=details.full_name,
-        department=details.department,
-        position=details.position,
         source=Source.LOCAL,
         role=role,
         track_lunch=tracks_lunch_by_default(role),
@@ -80,9 +76,7 @@ def update_local_profile(account, profile):
     require_local(account)
     details = profile.cleaned()
     account.full_name = details.full_name
-    account.department = details.department
-    account.position = details.position
-    account.save(update_fields=["full_name", "department", "position"])
+    account.save(update_fields=["full_name"])
     return account
 
 

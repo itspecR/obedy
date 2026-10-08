@@ -94,7 +94,7 @@ def test_first_login_creates_domain_employee(domain):
     assert response.status_code == 200
     assert response.json()["display_name"] == "Иванов Иван"
     assert response.json()["source"] == Source.DOMAIN
-    assert (account.role, account.department, account.position) == (Role.EMPLOYEE, "Бухгалтерия", "Бухгалтер")
+    assert account.role == Role.EMPLOYEE
     assert account.external_id == str(IVANOV_GUID)
     assert account.password_hash == ""
 
@@ -132,12 +132,12 @@ def test_domain_session_lasts_configured_days(domain):
 
 def test_second_login_refreshes_profile_from_directory(domain):
     login(Client(), "ivanov")
-    Account.objects.filter(login="ivanov").update(full_name="Старое имя", department="")
+    Account.objects.filter(login="ivanov").update(full_name="Старое имя")
 
     login(Client(), "ivanov")
 
     account = Account.objects.get(login="ivanov")
-    assert (account.full_name, account.department) == ("Иванов Иван", "Бухгалтерия")
+    assert account.full_name == "Иванов Иван"
 
 
 def test_wrong_domain_passwords_lock_known_account(domain):

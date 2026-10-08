@@ -12,7 +12,7 @@ import TemporaryPassword from "./TemporaryPassword.vue";
 
 const emit = defineEmits<{ close: []; created: [member: StaffMember] }>();
 
-const form = ref<LocalAccountForm>({ login: "", full_name: "", department: "", position: "", role: "employee" });
+const form = ref<LocalAccountForm>({ login: "", full_name: "", role: "employee" });
 const issued = ref<Issued | null>(null);
 const error = ref("");
 const busy = ref(false);

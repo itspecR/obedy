@@ -10,7 +10,6 @@ const emit = defineEmits<{ correct: [entry: BoardEntry] }>();
 
 const remaining = (entry: BoardEntry) => remainingSeconds(entry.lunch.started_at, entry.lunch.limit_minutes, props.now);
 const range = ({ lunch }: BoardEntry) => (lunch.ended_at ? `${formatTime(lunch.started_at)}–${formatTime(lunch.ended_at)}` : `с ${formatTime(lunch.started_at)}`);
-const details = ({ person }: BoardEntry) => [person.department, person.position].filter(Boolean).join(" · ") || person.login;
 const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.status) ? formatMinutes(lunch.duration_seconds) : "—");
 </script>
 
@@ -23,7 +22,7 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
       <li v-for="entry in entries" :key="entry.lunch.id" class="board-list__row">
         <div class="board-list__who">
           <span class="board-list__name">{{ entry.person.name }}</span>
-          <span class="board-list__details">{{ details(entry) }}</span>
+          <span class="board-list__details">{{ entry.person.login }}</span>
         </div>
         <span class="board-list__range numeric">{{ range(entry) }}</span>
         <span

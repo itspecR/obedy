@@ -15,8 +15,6 @@ class Source(models.TextChoices):
 class Account(models.Model):
     login = models.CharField(max_length=150, unique=True)
     full_name = models.CharField(max_length=255, blank=True)
-    department = models.CharField(max_length=255, blank=True)
-    position = models.CharField(max_length=255, blank=True)
     external_id = models.CharField(max_length=64, unique=True, null=True, blank=True)
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.LOCAL)
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.EMPLOYEE)

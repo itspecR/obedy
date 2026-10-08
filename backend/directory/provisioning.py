@@ -13,8 +13,6 @@ def profile_of(user):
     return {
         "login": user.login,
         "full_name": user.full_name,
-        "department": user.department,
-        "position": user.position,
         "external_id": user.external_id or None,
     }
 

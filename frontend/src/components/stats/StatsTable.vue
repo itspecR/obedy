@@ -3,7 +3,6 @@ import type { PersonStats } from "../../api/stats";
 
 defineProps<{ people: PersonStats[] }>();
 
-const details = (person: PersonStats) => [person.department, person.position].filter(Boolean).join(" · ") || person.login;
 const minutes = (value: number | null) => (value === null ? "—" : `${value} мин`);
 </script>
 
@@ -22,7 +21,7 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
       <li v-for="person in people" :key="person.id" class="stats-table__row" :class="{ 'stats-table__row--alarm': person.violations > 0 }">
         <div class="stats-table__who">
           <span class="stats-table__name">{{ person.name }}</span>
-          <span class="stats-table__details">{{ details(person) }}</span>
+          <span class="stats-table__details">{{ person.login }}</span>
         </div>
         <span class="stats-table__cell numeric" data-label="Обедов">{{ person.count }}</span>
         <span class="stats-table__cell stats-table__violations numeric" data-label="Нарушений">{{ person.violations }}</span>

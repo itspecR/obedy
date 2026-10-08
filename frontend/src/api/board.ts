@@ -5,8 +5,6 @@ export interface Person {
   id: number;
   name: string;
   login: string;
-  department: string;
-  position: string;
 }
 
 export interface BoardEntry {
