@@ -24,9 +24,9 @@ describe("decideRoute", () => {
     expect(decideRoute(change, as("hr", true))).toBe(true);
   });
 
-  it("opens the lunch page from home, login and change pages", () => {
+  it("opens the home page of the role from home, login and change pages", () => {
     expect(decideRoute(home, as("employee"))).toEqual({ name: "lunch" });
-    expect(decideRoute(login, as("hr"))).toEqual({ name: "lunch" });
+    expect(decideRoute(login, as("hr"))).toEqual({ name: "board" });
     expect(decideRoute(change, as("admin"))).toEqual({ name: "lunch" });
   });
 
@@ -42,9 +42,21 @@ describe("decideRoute", () => {
     expect(section?.meta).toMatchObject({ roles: ["admin"] });
   });
 
+  it("leaves the home page to the role check instead of a fixed redirect", () => {
+    const homeRoute = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === "home");
+
+    expect(homeRoute).not.toHaveProperty("redirect");
+  });
+
+  it("opens the board to HR and the admin only", () => {
+    const board = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === "board");
+
+    expect(board?.meta).toMatchObject({ roles: ["hr", "admin"] });
+  });
+
   it("keeps other roles out of admin sections", () => {
     expect(decideRoute(adminOnly, as("employee"))).toEqual({ name: "lunch" });
-    expect(decideRoute(adminOnly, as("hr"))).toEqual({ name: "lunch" });
+    expect(decideRoute(adminOnly, as("hr"))).toEqual({ name: "board" });
     expect(decideRoute(adminOnly, as("admin"))).toBe(true);
   });
 });
