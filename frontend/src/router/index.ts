@@ -6,6 +6,8 @@ import { useSession } from "../stores/session";
 
 const EVERYONE: Role[] = ["employee", "hr", "admin"];
 const ADMIN: Role[] = ["admin"];
+const BOARD: Role[] = ["hr", "admin"];
+const RESOLVED_BY_GUARD = { render: () => null };
 
 export const routes = [
   { path: "/login", name: "login", component: () => import("../pages/LoginPage.vue"), meta: { guest: true, title: "Вход" } },
@@ -14,12 +16,18 @@ export const routes = [
     path: "/",
     component: () => import("../components/shell/AppShell.vue"),
     children: [
-      { path: "", name: "home", redirect: "/lunch" },
+      { path: "", name: "home", component: RESOLVED_BY_GUARD },
       {
         path: "lunch",
         name: "lunch",
         component: () => import("../pages/LunchPage.vue"),
         meta: { roles: EVERYONE, title: "Обед" },
+      },
+      {
+        path: "board",
+        name: "board",
+        component: () => import("../pages/BoardPage.vue"),
+        meta: { roles: BOARD, title: "Табло" },
       },
       {
         path: "staff",

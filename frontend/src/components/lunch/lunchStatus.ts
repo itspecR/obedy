@@ -14,3 +14,4 @@ export const LUNCH_STATUS: Record<LunchStatus, StatusView> = {
 };
 
 export const MEASURED_STATUSES: LunchStatus[] = ["on_time", "overrun"];
+export const VIOLATION_STATUSES: LunchStatus[] = ["overrun", "unreturned"];

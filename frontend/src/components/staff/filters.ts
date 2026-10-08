@@ -1,5 +1,6 @@
 import type { Role } from "../../api/auth";
 import type { StaffMember, StaffStatus } from "../../api/staff";
+import { matchesQuery } from "../../format/search";
 import { ROLE_CHOICES } from "../../roles";
 import type { Tone } from "../ui/tone";
 
@@ -42,21 +43,11 @@ export function displayName(member: StaffMember): string {
   return member.full_name || member.login;
 }
 
-function normalize(text: string): string {
-  return text.toLowerCase().replaceAll("ё", "е");
-}
-
-function searchable(member: StaffMember): string {
-  return normalize([member.full_name, member.login, member.department, member.position].join(" "));
-}
-
 export function matches(member: StaffMember, filter: StaffFilter): boolean {
-  const words = normalize(filter.query).split(/\s+/).filter(Boolean);
-  const text = searchable(member);
   return (
     (filter.role === "all" || member.role === filter.role) &&
     (filter.status === "all" || member.status === filter.status) &&
-    words.every((word) => text.includes(word))
+    matchesQuery(filter.query, [member.full_name, member.login, member.department, member.position])
   );
 }
 

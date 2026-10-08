@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useId } from "vue";
 
-withDefaults(defineProps<{ label: string; hint?: string; placeholder?: string; rows?: number; disabled?: boolean }>(), {
+withDefaults(defineProps<{ label: string; hint?: string; placeholder?: string; rows?: number; disabled?: boolean; code?: boolean }>(), {
   hint: "",
+  code: true,
   placeholder: undefined,
   rows: 4,
   disabled: false,
@@ -17,7 +18,8 @@ const id = useId();
     <textarea
       :id="id"
       v-model="model"
-      class="area__input code"
+      class="area__input"
+      :class="code ? 'code' : 'area__input--text'"
       :rows="rows"
       :placeholder="placeholder"
       :disabled="disabled"
@@ -52,6 +54,11 @@ const id = useId();
   resize: vertical;
   outline: none;
   transition: border-color var(--motion), box-shadow var(--motion);
+}
+
+.area__input--text {
+  font-family: var(--font-sans);
+  font-size: 15px;
 }
 
 .area__input::placeholder {
