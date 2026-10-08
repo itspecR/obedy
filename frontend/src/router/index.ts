@@ -5,6 +5,7 @@ import { HOME_BY_ROLE } from "../navigation";
 import { useSession } from "../stores/session";
 
 const EVERYONE: Role[] = ["employee", "hr", "admin"];
+const ADMIN: Role[] = ["admin"];
 
 export const routes = [
   { path: "/login", name: "login", component: () => import("../pages/LoginPage.vue"), meta: { guest: true, title: "Вход" } },
@@ -19,6 +20,12 @@ export const routes = [
         name: "lunch",
         component: () => import("../pages/LunchPage.vue"),
         meta: { roles: EVERYONE, title: "Обед" },
+      },
+      {
+        path: "access",
+        name: "access",
+        component: () => import("../pages/AccessPage.vue"),
+        meta: { roles: ADMIN, title: "Доступ" },
       },
     ],
   },
