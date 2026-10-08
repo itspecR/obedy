@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "accounts",
     "access",
     "directory",
+    "staff",
 ]
 
 MIDDLEWARE = [

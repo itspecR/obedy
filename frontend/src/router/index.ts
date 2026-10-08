@@ -22,6 +22,12 @@ export const routes = [
         meta: { roles: EVERYONE, title: "Обед" },
       },
       {
+        path: "staff",
+        name: "staff",
+        component: () => import("../pages/StaffPage.vue"),
+        meta: { roles: ADMIN, title: "Сотрудники" },
+      },
+      {
         path: "access",
         name: "access",
         component: () => import("../pages/AccessPage.vue"),

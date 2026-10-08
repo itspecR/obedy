@@ -1,5 +1,5 @@
 <script setup lang="ts">
-export type IconName = "lunch" | "logout" | "user" | "lock" | "eye" | "eye-off" | "shield" | "server";
+export type IconName = "lunch" | "logout" | "user" | "users" | "search" | "lock" | "eye" | "eye-off" | "shield" | "server";
 
 defineProps<{ name: IconName }>();
 </script>
@@ -24,6 +24,15 @@ defineProps<{ name: IconName }>();
     <template v-else-if="name === 'user'">
       <circle cx="10" cy="7" r="3.25" />
       <path d="M3.75 16.5c.6-3 3.2-4.75 6.25-4.75s5.65 1.75 6.25 4.75" />
+    </template>
+    <template v-else-if="name === 'users'">
+      <circle cx="7.5" cy="7" r="2.75" />
+      <path d="M2.5 16c.5-2.6 2.5-4.25 5-4.25s4.5 1.65 5 4.25" />
+      <path d="M12.75 4.6a2.75 2.75 0 0 1 0 5.1M14.25 11.9c1.7.45 2.9 1.9 3.25 4.1" />
+    </template>
+    <template v-else-if="name === 'search'">
+      <circle cx="8.75" cy="8.75" r="5.25" />
+      <path d="m12.6 12.6 4.15 4.15" />
     </template>
     <template v-else-if="name === 'lock'">
       <rect x="4" y="8.75" width="12" height="8" rx="2" />
