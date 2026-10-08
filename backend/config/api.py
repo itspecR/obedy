@@ -8,6 +8,7 @@ from ninja.errors import AuthenticationError
 
 from access.api import router as access_router
 from accounts.api import router as auth_router
+from directory.api import router as directory_router
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +58,4 @@ def server_error(request, exc):
 
 api.add_router("/auth", auth_router)
 api.add_router("/access", access_router)
+api.add_router("/directory", directory_router)

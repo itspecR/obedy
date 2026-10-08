@@ -11,14 +11,18 @@ from accounts.password_policy import WeakPassword
 from accounts.security import pending_password_auth
 from accounts.sessions import find_active_session, revoke_session
 from accounts.throttle import ServerBusy
+from accounts.verification import VerifierUnavailable
 
 LOGIN_FAILED = "Неверный логин или пароль. После 5 ошибок подряд вход закрывается на 15 минут"
 LOCKED = (423, "Учётная запись закрыта на 15 минут")
 BUSY = (503, "Сервер занят. Попробуйте ещё раз через минуту")
 
+DOMAIN_UNAVAILABLE = (503, "Домен сейчас недоступен. Попробуйте через несколько минут или обратитесь к администратору")
+
 LOGIN_ERRORS = {
     InvalidCredentials: (401, LOGIN_FAILED),
     ServerBusy: BUSY,
+    VerifierUnavailable: DOMAIN_UNAVAILABLE,
 }
 
 PASSWORD_CHANGE_ERRORS = {
