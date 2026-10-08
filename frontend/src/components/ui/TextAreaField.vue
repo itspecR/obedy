@@ -54,6 +54,10 @@ const id = useId();
   transition: border-color var(--motion), box-shadow var(--motion);
 }
 
+.area__input::placeholder {
+  color: var(--placeholder);
+}
+
 .area__input:focus {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px var(--blue-tint);
