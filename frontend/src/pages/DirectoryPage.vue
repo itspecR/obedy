@@ -86,7 +86,7 @@ onMounted(load);
 
       <div class="panel directory__card">
         <h2 class="directory__title">Подключение</h2>
-        <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="dc1.company.local dc2.company.local" hint="Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP). Второй используется, если первый не отвечает" plain :disabled="busy" />
+        <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="например: dc1.company.local dc2.company.local" hint="Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP). Второй используется, если первый не отвечает" plain :disabled="busy" />
         <div class="directory__row">
           <ChoiceField v-model="draft.mode" label="Защита соединения" :options="MODE_OPTIONS" :disabled="busy" />
           <TextField v-model="draft.port" class="directory__port" label="Порт" type="number" :hint="portHint" plain :disabled="busy" />
@@ -97,7 +97,7 @@ onMounted(load);
         <TextAreaField
           v-model="draft.ca_certificate"
           label="Корневой сертификат домена (PEM)"
-          placeholder="-----BEGIN CERTIFICATE-----"
+          placeholder="Вставьте текст сертификата: -----BEGIN CERTIFICATE----- …"
           hint="Нужен, если сертификат контроллера выдан внутренним центром сертификации"
           :disabled="busy"
         />
@@ -107,15 +107,15 @@ onMounted(load);
         <h2 class="directory__title">Сервисная учётная запись</h2>
         <p class="directory__note">Учётная запись только на чтение: через неё сайт ищет сотрудников в домене.</p>
         <div class="directory__row directory__row--even">
-          <TextField v-model="draft.bind_user" label="Логин" placeholder="svc-obedy@company.local" plain :disabled="busy" />
+          <TextField v-model="draft.bind_user" label="Логин" placeholder="например: svc-obedy@company.local" plain :disabled="busy" />
           <TextField v-model="draft.bind_password" label="Пароль" type="password" autocomplete="new-password" :hint="passwordHint" :disabled="busy" />
         </div>
       </div>
 
       <div class="panel directory__card">
         <h2 class="directory__title">Кто может входить</h2>
-        <TextField v-model="draft.base_dn" label="База поиска" placeholder="OU=Сотрудники,DC=company,DC=local" hint="Подразделение (OU), в котором искать сотрудников" plain :disabled="busy" />
-        <TextField v-model="draft.group_dn" label="Группа доступа" placeholder="CN=Обеды,OU=Группы,DC=company,DC=local" hint="Входить смогут только члены этой группы, в том числе через вложенные группы. Пусто — все из базы поиска" plain :disabled="busy" />
+        <TextField v-model="draft.base_dn" label="База поиска" placeholder="например: DC=company,DC=local" hint="Где искать сотрудников: весь домен (DC=…) или подразделение (OU=…,DC=…)" plain :disabled="busy" />
+        <TextField v-model="draft.group_dn" label="Группа доступа" placeholder="например: CN=Obedy,CN=Users,DC=company,DC=local" hint="Входить смогут только члены этой группы, в том числе через вложенные группы. Пусто — все из базы поиска" plain :disabled="busy" />
         <TextField v-model="draft.session_days" class="directory__days" label="Срок входа, дней" type="number" hint="От 1 до 90. Потом сотрудник вводит пароль заново" plain :disabled="busy" />
       </div>
 

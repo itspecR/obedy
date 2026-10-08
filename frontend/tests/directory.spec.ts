@@ -67,6 +67,16 @@ describe("DirectoryPage", () => {
     expect(bodySentTo(spy, "/api/directory")).toMatchObject({ port: 3269, session_days: 30, bind_password: "" });
   });
 
+  it("marks every example as an example so it is not mistaken for a stored value", async () => {
+    const { wrapper } = await mounted({});
+    const examples = [...wrapper.findAll("input"), ...wrapper.findAll("textarea")]
+      .map((field) => field.attributes("placeholder"))
+      .filter((text): text is string => Boolean(text));
+
+    expect(examples).toHaveLength(5);
+    expect(examples.every((text) => text.startsWith("например: ") || text.startsWith("Вставьте текст сертификата"))).toBe(true);
+  });
+
   it("warns about unencrypted LDAP", async () => {
     const { wrapper } = await mounted({});
 

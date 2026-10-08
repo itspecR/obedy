@@ -23,8 +23,8 @@ async function send(): Promise<void> {
 
 <template>
   <form class="add-network" novalidate @submit.prevent="send">
-    <TextField v-model="network" label="Адрес или подсеть" placeholder="192.168.1.10 или 192.168.1.0/24" plain :error="error" :disabled="busy" />
-    <TextField v-model="note" label="Пометка" placeholder="Например, RDP-1" :disabled="busy" />
+    <TextField v-model="network" label="Адрес или подсеть" placeholder="например: 192.168.1.10 или 192.168.1.0/24" plain :error="error" :disabled="busy" />
+    <TextField v-model="note" label="Пометка" placeholder="например: RDP-1" :disabled="busy" />
     <AppButton type="submit" variant="primary" class="add-network__button" :disabled="busy">Добавить</AppButton>
   </form>
 </template>

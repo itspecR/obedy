@@ -121,7 +121,7 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
 }
 
 .field__input::placeholder {
-  color: var(--muted);
+  color: var(--placeholder);
 }
 
 .field__reveal {
