@@ -36,10 +36,10 @@ describe("decideRoute", () => {
     expect(decideRoute(lunch, as("admin"))).toBe(true);
   });
 
-  it("opens the staff section to the admin only", () => {
-    const staff = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === "staff");
+  it.each(["staff", "rules"])("opens the %s section to the admin only", (name) => {
+    const section = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === name);
 
-    expect(staff?.meta).toMatchObject({ roles: ["admin"] });
+    expect(section?.meta).toMatchObject({ roles: ["admin"] });
   });
 
   it("keeps other roles out of admin sections", () => {

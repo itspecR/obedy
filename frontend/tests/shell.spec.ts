@@ -19,7 +19,7 @@ describe("SideNav", () => {
   it("shows the lunch section to everyone and access settings to the admin", () => {
     expect(navLabels("employee")).toEqual(["Обед"]);
     expect(navLabels("hr")).toEqual(["Обед"]);
-    expect(navLabels("admin")).toEqual(["Обед", "Сотрудники", "Доступ", "Домен"]);
+    expect(navLabels("admin")).toEqual(["Обед", "Сотрудники", "Правила", "Доступ", "Домен"]);
   });
 
   it("shows the app name and emits profile and logout", async () => {

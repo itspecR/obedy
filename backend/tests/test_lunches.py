@@ -338,3 +338,68 @@ def test_history_rejects_bad_month(frozen):
     response = signed_in().get("/api/lunch/history?month=2026-13")
 
     assert (response.status_code, response.json()["detail"]) == (400, "Месяц указывается так: 2026-10")
+
+
+RULES = {"limit_minutes": 30, "workdays": "6123", "day_end": "17:00", "window_enabled": True, "window_start": "11:30", "window_end": "15:00"}
+
+
+def put_rules(client, **changes):
+    return client.put("/api/lunch/rules", json.dumps({**RULES, **changes}), content_type=JSON)
+
+
+def test_admin_reads_default_rules():
+    rules = signed_in("boss", Role.ADMIN).get("/api/lunch/rules").json()
+
+    assert (rules["limit_minutes"], rules["workdays"], rules["day_end"], rules["window_enabled"]) == (45, "12345", "18:00:00", False)
+    assert (rules["min_limit_minutes"], rules["max_limit_minutes"]) == (5, 240)
+
+
+@pytest.mark.parametrize("role", [Role.EMPLOYEE, Role.HR])
+def test_only_admin_manages_rules(role):
+    client = signed_in("worker", role)
+
+    assert client.get("/api/lunch/rules").status_code == 403
+    assert put_rules(client).status_code == 403
+
+
+def test_admin_saves_rules_with_sorted_workdays():
+    rules = put_rules(signed_in("boss", Role.ADMIN)).json()
+
+    assert (rules["limit_minutes"], rules["workdays"], rules["day_end"]) == (30, "1236", "17:00:00")
+    assert (rules["window_start"], rules["window_end"]) == ("11:30:00", "15:00:00")
+    assert current_rules().limit_minutes == 30
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"limit_minutes": 4}, "Лимит обеда — от 5 до 240 минут"),
+        ({"limit_minutes": 241}, "Лимит обеда — от 5 до 240 минут"),
+        ({"workdays": ""}, "Отметьте хотя бы один рабочий день"),
+        ({"workdays": "18"}, "Дни недели указываются цифрами от 1 (понедельник) до 7 (воскресенье)"),
+        ({"window_start": "15:00"}, "Окно обеда должно начинаться раньше, чем заканчиваться"),
+        ({"window_end": "17:30"}, "Окно обеда должно закончиться не позже конца рабочего дня (17:00)"),
+    ],
+)
+def test_invalid_rules_are_explained(changes, message):
+    response = put_rules(signed_in("boss", Role.ADMIN), **changes)
+
+    assert (response.status_code, response.json()["detail"]) == (400, message)
+    assert current_rules().limit_minutes == 45
+
+
+def test_disabled_window_times_are_not_checked():
+    response = put_rules(signed_in("boss", Role.ADMIN), window_enabled=False, window_start="16:00", window_end="10:00")
+
+    assert response.status_code == 200
+
+
+def test_new_rules_apply_to_next_lunch_only(frozen):
+    employee = signed_in()
+    employee.post("/api/lunch/start", content_type=JSON)
+    put_rules(signed_in("boss", Role.ADMIN), limit_minutes=20, workdays="12345", window_enabled=False)
+
+    state = employee.get("/api/lunch/me").json()
+
+    assert (state["limit_minutes"], state["today"]["limit_minutes"]) == (45, 45)
+    assert start_lunch(worker("next"), NOON).limit_minutes == 20
