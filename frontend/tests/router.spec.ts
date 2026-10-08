@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Role } from "../src/api/auth";
-import { decideRoute, pageTitle } from "../src/router";
+import { decideRoute, pageTitle, routes } from "../src/router";
 
 const login = { name: "login", meta: { guest: true } };
 const home = { name: "home", meta: {} };
@@ -34,6 +34,12 @@ describe("decideRoute", () => {
     expect(decideRoute(lunch, as("employee"))).toBe(true);
     expect(decideRoute(lunch, as("hr"))).toBe(true);
     expect(decideRoute(lunch, as("admin"))).toBe(true);
+  });
+
+  it("opens the staff section to the admin only", () => {
+    const staff = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === "staff");
+
+    expect(staff?.meta).toMatchObject({ roles: ["admin"] });
   });
 
   it("keeps other roles out of admin sections", () => {

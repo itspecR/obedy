@@ -1,7 +1,6 @@
 import type { SyncReport, SyncStatus } from "../../api/directory";
 import { formatDateTime } from "../../format/dateTime";
-
-export type Tone = "ok" | "neutral" | "attention" | "alarm";
+import type { Tone } from "../ui/tone";
 
 export interface SyncView {
   tone: Tone;

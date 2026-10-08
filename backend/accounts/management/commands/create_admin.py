@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from accounts.lunch_policy import tracks_lunch_by_default
 from accounts.models import Account, Role, Source
 from accounts.names import normalize_login
 from accounts.passwords import hash_password
@@ -32,5 +33,6 @@ class Command(BaseCommand):
             role=Role.ADMIN,
             password_hash=hash_password(password),
             must_change_password=True,
+            track_lunch=tracks_lunch_by_default(Role.ADMIN),
         )
         self.stdout.write(f"Логин: {login}\nВременный пароль: {password}\nПри первом входе система попросит задать новый пароль.")
