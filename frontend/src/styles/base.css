@@ -8,26 +8,43 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--canvas);
 }
 
 body {
   margin: 0;
-  background: var(--canvas);
+  min-height: 100vh;
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 26% at 76% 18%, rgba(255, 150, 95, 0.32), transparent 70%),
+    radial-gradient(ellipse 22% 30% at 92% 40%, rgba(120, 240, 215, 0.16), transparent 70%),
+    radial-gradient(ellipse 95% 80% at 70% 108%, transparent 56%, rgba(40, 90, 255, 0.5) 61%, rgba(130, 200, 255, 0.85) 64.5%, rgba(60, 110, 255, 0.45) 67%, transparent 73%),
+    radial-gradient(ellipse 70% 95% at 112% 40%, transparent 58%, rgba(80, 120, 255, 0.35) 63%, rgba(200, 225, 255, 0.55) 65.5%, rgba(255, 170, 120, 0.25) 67.5%, transparent 72%),
+    radial-gradient(ellipse 60% 45% at 25% 105%, rgba(30, 80, 255, 0.4), transparent 70%),
+    var(--canvas);
 }
 
 h1,
 h2,
 h3 {
   margin: 0;
+  font-family: var(--font-display);
   font-weight: 600;
 }
 
 h1 {
-  font-family: var(--font-sans);
   font-size: var(--text-h1);
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -47,22 +64,40 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 4px;
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--field-solid) inset;
+  caret-color: var(--ink);
 }
 
 .eyebrow {
   margin: 0 0 6px;
   font-size: var(--text-small);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 
 .panel {
-  background: var(--surface);
+  background: var(--surface-glass);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
+  box-shadow: var(--card-shine);
+}
+
+.glass-card {
+  background: var(--card-fill);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card), var(--card-shine);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .numeric {
@@ -85,6 +120,14 @@ a {
 @media (max-width: 1150px) {
   h1 {
     font-size: 24px;
+  }
+}
+
+@media (max-width: 650px), (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .glass-card {
+    background: var(--surface-glass-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 

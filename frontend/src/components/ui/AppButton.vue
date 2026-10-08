@@ -29,19 +29,21 @@ withDefaults(
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 14px;
+  min-height: 42px;
+  padding: 10px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-button);
-  background: var(--surface);
+  background: var(--field);
   color: var(--ink);
   font: inherit;
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
-  transition: background var(--motion), transform var(--motion), border-color var(--motion);
+  transition: background var(--motion), transform var(--motion), border-color var(--motion), box-shadow var(--motion);
 }
 
 .button:hover:not(:disabled) {
+  border-color: var(--line-strong);
   background: var(--hover);
 }
 
@@ -51,11 +53,12 @@ withDefaults(
 
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .button--small {
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 6px 12px;
   font-size: var(--text-small);
 }
 
@@ -64,31 +67,38 @@ withDefaults(
 }
 
 .button--primary {
-  border-color: var(--blue);
-  background: var(--blue);
-  color: #fff;
+  min-height: 48px;
+  border-color: transparent;
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
 
 .button--primary:hover:not(:disabled) {
-  border-color: var(--blue-hover);
-  background: var(--blue-hover);
+  border-color: transparent;
+  background: var(--primary-hover);
 }
 
 .button--danger {
-  border-color: var(--red);
-  background: var(--red);
+  border-color: var(--red-strong);
+  background: var(--red-strong);
   color: #fff;
 }
 
 .button--danger:hover:not(:disabled) {
-  border-color: #9a3240;
-  background: #9a3240;
+  border-color: var(--red-strong-hover);
+  background: var(--red-strong-hover);
 }
 
 .button--ghost {
   border-color: transparent;
   background: transparent;
   color: var(--blue);
+}
+
+.button--ghost:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--blue-tint);
 }
 
 .button--pressed {

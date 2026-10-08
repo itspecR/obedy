@@ -73,17 +73,18 @@ defineExpose({ focusFirst });
   display: grid;
   place-items: center;
   padding: 14px;
-  background: rgba(15, 45, 105, 0.35);
+  background: var(--overlay);
 }
 
 .modal {
   width: min(460px, 100%);
   max-height: calc(100vh - 28px);
   overflow: auto;
-  padding: 22px;
-  border: 1px solid var(--line);
+  padding: 24px;
+  border: 1px solid var(--card-edge);
   border-radius: var(--radius-panel);
-  background: var(--surface);
+  background: var(--surface-glass-strong);
+  box-shadow: var(--shadow-card), var(--card-shine);
   animation: appear var(--motion) ease-out;
 }
 

@@ -38,9 +38,11 @@ const { items, dismiss } = useToasts();
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  border-radius: var(--radius-panel);
-  background: var(--ink);
-  color: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-menu);
+  background: var(--toast);
+  color: var(--ink);
+  box-shadow: var(--shadow-menu);
   pointer-events: auto;
   animation: appear var(--motion) ease-out;
 }

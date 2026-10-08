@@ -72,3 +72,30 @@ describe("ConfirmDialog", () => {
     wrapper.unmount();
   });
 });
+
+describe("TextField password", () => {
+  it("shows and hides the password with the eye button", async () => {
+    const wrapper = mount(TextField, { props: { label: "Пароль", type: "password", modelValue: "secret-1" } });
+    const input = () => wrapper.get("input").element as HTMLInputElement;
+    const eye = wrapper.get("button.field__reveal");
+
+    expect(input().type).toBe("password");
+    expect(eye.attributes("aria-label")).toBe("Показать пароль");
+    expect(eye.attributes("aria-pressed")).toBe("false");
+
+    await eye.trigger("click");
+    expect(input().type).toBe("text");
+    expect(eye.attributes("aria-label")).toBe("Скрыть пароль");
+    expect(eye.attributes("aria-pressed")).toBe("true");
+
+    await eye.trigger("click");
+    expect(input().type).toBe("password");
+  });
+
+  it("has no eye button on ordinary fields and shows the leading icon", () => {
+    const wrapper = mount(TextField, { props: { label: "Логин", icon: "user" } });
+
+    expect(wrapper.find("button.field__reveal").exists()).toBe(false);
+    expect(wrapper.find("svg.field__icon").exists()).toBe(true);
+  });
+});

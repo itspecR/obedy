@@ -35,11 +35,11 @@ async function submit(): Promise<void> {
 
 <template>
   <form class="login-form" novalidate @submit.prevent="submit">
-    <TextField v-model="login" label="Логин" autocomplete="username" plain :disabled="busy" />
-    <TextField v-model="password" label="Пароль" type="password" autocomplete="current-password" :disabled="busy" />
+    <TextField v-model="login" label="Логин" icon="user" placeholder="Введите логин" autocomplete="username" plain :disabled="busy" />
+    <TextField v-model="password" label="Пароль" icon="lock" placeholder="Введите пароль" type="password" autocomplete="current-password" :disabled="busy" />
     <p v-if="error" class="login-form__error" role="alert">{{ error }}</p>
     <AppButton type="submit" variant="primary" block :disabled="busy">{{ busy ? "Входим…" : "Войти →" }}</AppButton>
-    <div>
+    <div class="login-form__help-box">
       <button type="button" class="login-form__link" :aria-expanded="showHelp" @click="showHelp = !showHelp">Не получается войти?</button>
       <p v-if="showHelp" class="login-form__help">Обратитесь к администратору системы – он поможет восстановить доступ.</p>
     </div>
@@ -56,18 +56,24 @@ async function submit(): Promise<void> {
 .login-form__error {
   margin: 0;
   padding: 10px 12px;
+  border: 1px solid var(--red-line);
   border-radius: var(--radius-button);
   background: var(--red-bg);
   color: var(--red);
 }
 
 .login-form__link {
+  align-self: center;
   padding: 0;
   border: 0;
   background: none;
   color: var(--blue);
   font: inherit;
   cursor: pointer;
+}
+
+.login-form__help-box {
+  text-align: center;
 }
 
 .login-form__help {
