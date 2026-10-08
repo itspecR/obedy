@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { fetchBoard, type Board, type BoardEntry } from "../api/board";
 import { errorMessage } from "../api/http";
+import AddLunchDialog from "../components/board/AddLunchDialog.vue";
 import BoardList from "../components/board/BoardList.vue";
 import CorrectionDialog from "../components/board/CorrectionDialog.vue";
 import { ALL_DEPARTMENTS, EMPTY_BOARD_FILTER, departmentsOf, filterEntries, groupEntries } from "../components/board/groups";
@@ -20,6 +21,7 @@ const day = ref("");
 const filter = ref({ ...EMPTY_BOARD_FILTER });
 const loadError = ref("");
 const editing = ref<BoardEntry | null>(null);
+const adding = ref(false);
 const { now, sync } = useServerClock();
 const { fail } = useToasts();
 let refresher: number | undefined;
@@ -66,8 +68,13 @@ function replace(entry: BoardEntry): void {
   editing.value = null;
 }
 
+function added(): void {
+  adding.value = false;
+  void load();
+}
+
 function refreshToday(): void {
-  if (document.visibilityState === "visible" && isToday.value && !editing.value) {
+  if (document.visibilityState === "visible" && isToday.value && !editing.value && !adding.value) {
     void load();
   }
 }
@@ -90,6 +97,7 @@ onUnmounted(() => {
       <div v-if="board" class="board__day">
         <TextField v-model="day" label="День" type="date" hide-label plain :max="board.today" @change="load" />
         <AppButton v-if="!isToday" @click="showToday">Сегодня</AppButton>
+        <AppButton @click="adding = true">Добавить обед</AppButton>
       </div>
     </PageHeader>
 
@@ -136,6 +144,7 @@ onUnmounted(() => {
       </div>
     </template>
     <CorrectionDialog v-if="editing" :entry="editing" @close="editing = null" @saved="replace" />
+    <AddLunchDialog v-if="adding && board" :day="board.day" @close="adding = false" @saved="added" />
   </section>
 </template>
 
@@ -148,6 +157,7 @@ onUnmounted(() => {
 
 .board__day {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }

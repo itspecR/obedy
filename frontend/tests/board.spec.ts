@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Board, BoardEntry } from "../src/api/board";
 import type { Lunch } from "../src/api/lunch";
+import AddLunchDialog from "../src/components/board/AddLunchDialog.vue";
 import BoardList from "../src/components/board/BoardList.vue";
 import CorrectionDialog from "../src/components/board/CorrectionDialog.vue";
 import { EMPTY_BOARD_FILTER, departmentsOf, filterEntries, groupEntries } from "../src/components/board/groups";
@@ -75,7 +76,7 @@ describe("BoardList", () => {
   });
 
   it("shows duration, status, correction and the menu only when allowed", async () => {
-    const corrected = { ...RETURNED, lunch: { ...RETURNED.lunch, correction: { by: "Кадрова Ольга", at: NOON, reason: "Забыл нажать" } } };
+    const corrected = { ...RETURNED, lunch: { ...RETURNED.lunch, correction: { by: "Кадрова Ольга", at: NOON, reason: "Забыл нажать", added: false } } };
     const own = { ...OVERRUN, can_correct: false };
     const wrapper = list([corrected, own]);
     const rows = wrapper.findAll(".board-list__row");
@@ -175,6 +176,19 @@ describe("BoardPage", () => {
     expect(wrapper.text()).toContain("Сегодня");
   });
 
+  it("opens the add lunch form for the shown day", async () => {
+    routeFetch({ "/api/lunch/board": [200, board()], "/api/lunch/board/people": [200, []] });
+    const wrapper = mount(BoardPage, { attachTo: document.body });
+    await flushPromises();
+
+    const button = wrapper.findAll("button").find((item) => item.text() === "Добавить обед");
+    await button?.trigger("click");
+    await flushPromises();
+
+    expect(document.body.querySelector('[role="dialog"]')?.textContent).toContain("чт, 08.10");
+    wrapper.unmount();
+  });
+
   it("explains a day without lunches", async () => {
     const { wrapper } = await mounted({ "/api/lunch/board": [200, board({ entries: [] })] });
 
@@ -185,5 +199,67 @@ describe("BoardPage", () => {
     const { wrapper } = await mounted({ "/api/lunch/board": [403, { detail: "Табло доступно HR и администратору" }] });
 
     expect(wrapper.get("[role=alert]").text()).toContain("Табло доступно HR и администратору");
+  });
+});
+
+describe("AddLunchDialog", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
+
+  const PEOPLE = [
+    { id: 11, name: "Иванов Иван", login: "ivanov", department: "Склад", position: "Кладовщик" },
+    { id: 12, name: "Петрова Анна", login: "petrova", department: "Бухгалтерия", position: "Бухгалтер" },
+  ];
+
+  it("finds a colleague and adds a forgotten lunch for the board day", async () => {
+    const added = entry(11, "Иванов Иван", { ended_at: iso(50), status: "overrun", correction: { by: "Кадрова Ольга", at: NOON, reason: "Забыл", added: true } });
+    const spy = routeFetch({ "/api/lunch/board/people": [200, PEOPLE], "/api/lunch/board/lunches": [201, added] });
+    const wrapper = mount(AddLunchDialog, { props: { day: "2026-10-07" }, attachTo: document.body });
+    await flushPromises();
+
+    await wrapper.get("input[type=text]").setValue("склад");
+    expect(wrapper.findAll("option").map((option) => option.text())).toEqual(["Выберите сотрудника", "Иванов Иван — Склад"]);
+    expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
+    await wrapper.get("select").setValue("11");
+    const [started, ended] = wrapper.findAll("input[type=time]");
+    await started.setValue("12:00");
+    await ended.setValue("12:50");
+    await wrapper.get("textarea").setValue("Забыл нажать");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/lunch/board/lunches")).toEqual({ account_id: 11, day: "2026-10-07", started_at: "12:00", ended_at: "12:50", reason: "Забыл нажать" });
+    expect(wrapper.emitted("saved")?.[0]).toEqual([added]);
+    wrapper.unmount();
+  });
+
+  it("shows the server refusal", async () => {
+    routeFetch({
+      "/api/lunch/board/people": [200, PEOPLE],
+      "/api/lunch/board/lunches": [400, { detail: "У сотрудника уже есть обед в этот день — исправьте его время через «⋯»" }],
+    });
+    const wrapper = mount(AddLunchDialog, { props: { day: "2026-10-08" }, attachTo: document.body });
+    await flushPromises();
+
+    await wrapper.get("select").setValue("12");
+    const [started, ended] = wrapper.findAll("input[type=time]");
+    await started.setValue("12:00");
+    await ended.setValue("12:30");
+    await wrapper.get("textarea").setValue("Забыла");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(useToasts().items.map((toast) => toast.text)).toContain("У сотрудника уже есть обед в этот день — исправьте его время через «⋯»");
+    wrapper.unmount();
+  });
+
+  it("labels added lunches differently from corrected ones", () => {
+    const added = { ...RETURNED, lunch: { ...RETURNED.lunch, correction: { by: "Кадрова Ольга", at: NOON, reason: "Забыл", added: true } } };
+    const wrapper = mount(BoardList, { props: { title: "Вернулись вовремя", entries: [added], now: at(0), warningMinutes: 5, empty: "" } });
+
+    expect(wrapper.text()).toContain("Добавлено: Кадрова Ольга. Причина: Забыл");
   });
 });

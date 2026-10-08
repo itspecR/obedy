@@ -7,7 +7,7 @@ import { formatDateTime, formatDay, formatMonth, formatTime } from "../../format
 import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import { formatMinutes } from "./countdown";
-import { LUNCH_STATUS, MEASURED_STATUSES } from "./lunchStatus";
+import { LUNCH_STATUS, MEASURED_STATUSES, correctionLabel } from "./lunchStatus";
 import { shiftMonth } from "./months";
 
 const props = defineProps<{ revision: number }>();
@@ -76,7 +76,7 @@ watch(
         <span class="history__duration numeric">{{ duration(lunch) }}</span>
         <StatusBadge class="history__status" :tone="LUNCH_STATUS[lunch.status].tone" :label="LUNCH_STATUS[lunch.status].label" />
         <p v-if="lunch.correction" class="history__correction">
-          Исправлено: {{ lunch.correction.by }}, {{ formatDateTime(lunch.correction.at) }}. Причина: {{ lunch.correction.reason }}
+          {{ correctionLabel(lunch.correction) }}: {{ lunch.correction.by }}, {{ formatDateTime(lunch.correction.at) }}. Причина: {{ lunch.correction.reason }}
         </p>
       </li>
     </ul>

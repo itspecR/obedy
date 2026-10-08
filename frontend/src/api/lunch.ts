@@ -6,6 +6,7 @@ export interface Correction {
   by: string;
   at: string;
   reason: string;
+  added: boolean;
 }
 
 export interface Lunch {

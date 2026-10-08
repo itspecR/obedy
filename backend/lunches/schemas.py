@@ -10,6 +10,7 @@ class CorrectionOut(Schema):
     by: str
     at: datetime
     reason: str
+    added: bool
 
 
 class LunchOut(Schema):
@@ -28,7 +29,7 @@ def correction_of(lunch):
     if lunch.corrected_at is None:
         return None
     author = display_name(lunch.corrected_by) if lunch.corrected_by else "—"
-    return CorrectionOut(by=author, at=lunch.corrected_at, reason=lunch.correction_reason)
+    return CorrectionOut(by=author, at=lunch.corrected_at, reason=lunch.correction_reason, added=lunch.added_by_hand)
 
 
 def describe_lunch(lunch, now):
