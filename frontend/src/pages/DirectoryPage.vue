@@ -80,60 +80,64 @@ onMounted(load);
       <p>{{ loadError }}</p>
       <AppButton @click="load">Повторить</AppButton>
     </div>
-    <form v-else-if="draft" class="directory__form" novalidate @submit.prevent="save">
-      <div class="panel directory__card">
-        <SwitchField
-          label="Вход через домен"
-          hint="Сотрудники входят своим логином и паролем Windows. Локальный администратор входит всегда"
-          :checked="draft.enabled"
-          :disabled="busy"
-          @change="draft.enabled = $event"
-        />
-      </div>
-
-      <div class="panel directory__card">
-        <h2 class="directory__title">Подключение</h2>
-        <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="например: dc1.company.local dc2.company.local" hint="Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP). Второй используется, если первый не отвечает" plain :disabled="busy" />
-        <div class="directory__row">
-          <ChoiceField v-model="draft.mode" label="Защита соединения" :options="MODE_OPTIONS" :disabled="busy" />
-          <TextField v-model="draft.port" class="directory__port" label="Порт" type="number" :hint="portHint" plain :disabled="busy" />
+    <div v-else-if="draft" class="directory__layout">
+      <form class="directory__form" novalidate @submit.prevent="save">
+        <div class="panel directory__card">
+          <SwitchField
+            label="Вход через домен"
+            hint="Сотрудники входят своим логином и паролем Windows. Локальный администратор входит всегда"
+            :checked="draft.enabled"
+            :disabled="busy"
+            @change="draft.enabled = $event"
+          />
         </div>
-        <p v-if="draft.mode === 'plain'" class="directory__warning" role="note">
-          Без шифрования пароли сотрудников передаются по сети открытым текстом. Используйте только для проверки.
-        </p>
-        <TextAreaField
-          v-model="draft.ca_certificate"
-          label="Корневой сертификат домена (PEM)"
-          placeholder="Вставьте текст сертификата: -----BEGIN CERTIFICATE----- …"
-          hint="Нужен, если сертификат контроллера выдан внутренним центром сертификации"
-          :disabled="busy"
-        />
-      </div>
 
-      <div class="panel directory__card">
-        <h2 class="directory__title">Сервисная учётная запись</h2>
-        <p class="directory__note">Учётная запись только на чтение: через неё сайт ищет сотрудников в домене.</p>
-        <div class="directory__row directory__row--even">
-          <TextField v-model="draft.bind_user" label="Логин" placeholder="например: svc-obedy@company.local" plain :disabled="busy" />
-          <TextField v-model="draft.bind_password" label="Пароль" type="password" autocomplete="new-password" :hint="passwordHint" :disabled="busy" />
+        <div class="panel directory__card">
+          <h2 class="directory__title">Подключение</h2>
+          <TextField v-model="draft.servers" label="Контроллеры домена" placeholder="например: dc1.company.local dc2.company.local" hint="Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP). Второй используется, если первый не отвечает" plain :disabled="busy" />
+          <div class="directory__row">
+            <ChoiceField v-model="draft.mode" label="Защита соединения" :options="MODE_OPTIONS" :disabled="busy" />
+            <TextField v-model="draft.port" class="directory__port" label="Порт" type="number" :hint="portHint" plain :disabled="busy" />
+          </div>
+          <p v-if="draft.mode === 'plain'" class="directory__warning" role="note">
+            Без шифрования пароли сотрудников передаются по сети открытым текстом. Используйте только для проверки.
+          </p>
+          <TextAreaField
+            v-model="draft.ca_certificate"
+            label="Корневой сертификат домена (PEM)"
+            placeholder="Вставьте текст сертификата: -----BEGIN CERTIFICATE----- …"
+            hint="Нужен, если сертификат контроллера выдан внутренним центром сертификации"
+            :disabled="busy"
+          />
         </div>
-      </div>
 
-      <div class="panel directory__card">
-        <h2 class="directory__title">Кто может входить</h2>
-        <TextField v-model="draft.base_dn" label="База поиска" placeholder="например: DC=company,DC=local" hint="Где искать сотрудников: весь домен (DC=…) или подразделение (OU=…,DC=…)" plain :disabled="busy" />
-        <TextField v-model="draft.group_dn" label="Группа доступа" placeholder="например: CN=Obedy,CN=Users,DC=company,DC=local" hint="Входить смогут только члены этой группы, в том числе через вложенные группы. Пусто — все из базы поиска" plain :disabled="busy" />
-        <TextField v-model="draft.session_days" class="directory__days" label="Срок входа, дней" type="number" hint="От 1 до 90. Потом сотрудник вводит пароль заново" plain :disabled="busy" />
-      </div>
+        <div class="panel directory__card">
+          <h2 class="directory__title">Сервисная учётная запись</h2>
+          <p class="directory__note">Учётная запись только на чтение: через неё сайт ищет сотрудников в домене.</p>
+          <div class="directory__row directory__row--even">
+            <TextField v-model="draft.bind_user" label="Логин" placeholder="например: svc-obedy@company.local" plain :disabled="busy" />
+            <TextField v-model="draft.bind_password" label="Пароль" type="password" autocomplete="new-password" :hint="passwordHint" :disabled="busy" />
+          </div>
+        </div>
 
-      <div class="directory__actions">
-        <AppButton type="submit" variant="primary" :disabled="busy || !dirty">Сохранить</AppButton>
-        <AppButton :disabled="busy || dirty" @click="runCheck">Проверить подключение</AppButton>
-        <span v-if="dirty" class="directory__note">Сохраните изменения, чтобы проверить подключение</span>
-      </div>
-      <p v-if="check" class="directory__check" :class="check.ok ? 'directory__check--ok' : 'directory__check--fail'" role="status">{{ check.message }}</p>
-    </form>
-    <SyncPanel v-if="draft && !loadError" :blocked-reason="syncBlocked" />
+        <div class="panel directory__card">
+          <h2 class="directory__title">Кто может входить</h2>
+          <TextField v-model="draft.base_dn" label="База поиска" placeholder="например: DC=company,DC=local" hint="Где искать сотрудников: весь домен (DC=…) или подразделение (OU=…,DC=…)" plain :disabled="busy" />
+          <TextField v-model="draft.group_dn" label="Группа доступа" placeholder="например: CN=Obedy,CN=Users,DC=company,DC=local" hint="Входить смогут только члены этой группы, в том числе через вложенные группы. Пусто — все из базы поиска" plain :disabled="busy" />
+          <TextField v-model="draft.session_days" class="directory__days" label="Срок входа, дней" type="number" hint="От 1 до 90. Потом сотрудник вводит пароль заново" plain :disabled="busy" />
+        </div>
+
+        <div class="directory__actions">
+          <AppButton type="submit" variant="primary" :disabled="busy || !dirty">Сохранить</AppButton>
+          <AppButton :disabled="busy || dirty" @click="runCheck">Проверить подключение</AppButton>
+          <span v-if="dirty" class="directory__note">Сохраните изменения, чтобы проверить подключение</span>
+        </div>
+        <p v-if="check" class="directory__check" :class="check.ok ? 'directory__check--ok' : 'directory__check--fail'" role="status">{{ check.message }}</p>
+      </form>
+      <aside class="directory__side">
+        <SyncPanel :blocked-reason="syncBlocked" />
+      </aside>
+    </div>
     <div v-if="!draft && !loadError" class="panel directory__card directory__loading" aria-busy="true">Загружаем…</div>
   </section>
 </template>
@@ -144,7 +148,31 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.directory__form,
+.directory__error,
+.directory__loading {
+  min-width: 0;
   max-width: 880px;
+}
+
+.directory__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+@media (min-width: 1200px) {
+  .directory__layout {
+    grid-template-columns: minmax(0, 880px) minmax(300px, 400px);
+  }
+
+  .directory__side {
+    position: sticky;
+    top: 24px;
+  }
 }
 
 .directory__card {
