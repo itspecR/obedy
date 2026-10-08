@@ -60,15 +60,16 @@ function onKeydown(event: KeyboardEvent): void {
   display: grid;
   place-items: center;
   padding: 14px;
-  background: rgba(24, 40, 63, 0.35);
+  background: var(--overlay);
 }
 
 .confirm {
   width: min(440px, 100%);
-  padding: 22px;
-  border: 1px solid var(--line);
+  padding: 24px;
+  border: 1px solid var(--card-edge);
   border-radius: var(--radius-panel);
-  background: var(--surface);
+  background: var(--surface-glass-strong);
+  box-shadow: var(--shadow-card), var(--card-shine);
   animation: appear var(--motion) ease-out;
 }
 

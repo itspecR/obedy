@@ -1,35 +1,60 @@
 :root {
-  --ink: #18283f;
-  --brand: #0f2d69;
-  --blue: #234b9b;
-  --blue-hover: #0f2d69;
-  --blue-tint: #cddcf0;
-  --hover: #edf2fc;
-  --hover-menu: #f0f3f8;
-  --canvas: #f3f5f9;
-  --line: #e6e6e6;
-  --line-strong: #c6c6c6;
-  --control-line: #848fa2;
-  --surface: #ffffff;
-  --green: #207552;
-  --green-bg: #eaf5ef;
-  --green-line: #c9e4d5;
-  --amber: #9b6115;
-  --amber-bg: #fff5dc;
-  --amber-line: #edddba;
-  --red: #b33b48;
-  --red-bg: #fbedef;
-  --red-line: #f1cdd2;
-  --gray-bg: #eef0f4;
-  --gray-line: #dde1e8;
-  --muted: #5f6c81;
-  --toast-error: #8c2735;
-  --focus: #3f6cb5;
-  --login-art: linear-gradient(145deg, #0f2d69 0%, #234b9b 55%, #3f6cb5 100%);
-  --login-art-text: #c6d7f5;
-  --login-art-caption: #aec6f3;
-  --glass-fill: rgba(255, 255, 255, 0.14);
-  --glass-edge: rgba(255, 255, 255, 0.32);
+  color-scheme: dark;
+
+  --ink: #f2f3f5;
+  --muted: #9a9ea8;
+  --canvas: #050608;
+  --surface: #17181c;
+  --surface-glass: rgba(24, 25, 30, 0.72);
+  --surface-glass-strong: rgba(30, 31, 37, 0.94);
+  --field: rgba(255, 255, 255, 0.05);
+  --field-focus: rgba(255, 255, 255, 0.08);
+  --field-solid: #1b1c21;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --hover: rgba(255, 255, 255, 0.07);
+  --hover-menu: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --blue: #6ea8ff;
+  --blue-hover: #8fbcff;
+  --blue-tint: rgba(110, 168, 255, 0.16);
+  --brand: #cfe0ff;
+  --focus: #6ea8ff;
+
+  --primary: linear-gradient(180deg, #ffffff 0%, #e6e7eb 100%);
+  --primary-hover: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+  --primary-ink: #0b0c0f;
+
+  --green: #4fd18b;
+  --green-bg: rgba(79, 209, 139, 0.12);
+  --green-line: rgba(79, 209, 139, 0.3);
+  --amber: #f2c14e;
+  --amber-bg: rgba(242, 193, 78, 0.12);
+  --amber-line: rgba(242, 193, 78, 0.3);
+  --red: #ff7a7a;
+  --red-strong: #e5484d;
+  --red-strong-hover: #f05d62;
+  --red-bg: rgba(255, 107, 107, 0.12);
+  --red-line: rgba(255, 107, 107, 0.32);
+  --gray-bg: rgba(255, 255, 255, 0.06);
+  --gray-line: rgba(255, 255, 255, 0.12);
+  --toast: rgba(36, 37, 43, 0.96);
+  --toast-error: #b3343f;
+
+  --pill-active: rgba(255, 255, 255, 0.1);
+  --pill-hover: rgba(255, 255, 255, 0.05);
+  --pill-raised: rgba(255, 255, 255, 0.14);
+  --pill-layer: rgba(34, 35, 41, 0.985);
+  --pill-active-solid: #2a2c33;
+  --pill-hover-solid: #202227;
+
+  --card-fill: linear-gradient(160deg, rgba(44, 45, 52, 0.8) 0%, rgba(20, 21, 26, 0.82) 100%);
+  --card-edge: rgba(255, 255, 255, 0.1);
+  --card-shine: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --glass-blur: blur(24px) saturate(140%);
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, Arial, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, Arial, sans-serif;
@@ -42,12 +67,12 @@
   --text-h2: 20px;
   --text-h3: 15px;
 
-  --radius-panel: 8px;
-  --radius-menu: 12px;
-  --radius-button: 6px;
-  --radius-pill: 4px;
-
-  --shadow-menu: 0 8px 24px rgba(15, 45, 105, 0.12);
+  --radius-card: 28px;
+  --radius-panel: 18px;
+  --radius-menu: 14px;
+  --radius-button: 10px;
+  --radius-field: 10px;
+  --radius-pill: 6px;
 
   --motion: 140ms;
   --shimmer: 1.2s;

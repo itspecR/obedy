@@ -115,6 +115,7 @@ async function submit(): Promise<void> {
 .password-form__error {
   margin: 0;
   padding: 10px 12px;
+  border: 1px solid var(--red-line);
   border-radius: var(--radius-button);
   background: var(--red-bg);
   color: var(--red);

@@ -82,7 +82,7 @@ const glass = useGlassNav(nav, {
   height: 100vh;
   padding: 24px 16px;
   border-right: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--surface-glass);
 }
 
 .side__top,
@@ -145,7 +145,7 @@ const glass = useGlassNav(nav, {
 }
 
 .side__nav .side__item:focus-visible {
-  outline: 2px solid rgba(24, 40, 63, 0.55);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -194,7 +194,7 @@ const glass = useGlassNav(nav, {
     overflow-x: auto;
     scrollbar-width: none;
     border-radius: 999px;
-    background: rgba(118, 118, 128, 0.07);
+    background: var(--pill-hover);
   }
 
   .side__nav .side__item {

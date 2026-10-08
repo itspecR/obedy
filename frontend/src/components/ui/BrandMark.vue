@@ -1,14 +1,15 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ onDark?: boolean; caption?: boolean }>(), { onDark: false, caption: true });
+withDefaults(defineProps<{ caption?: boolean }>(), { caption: true });
 </script>
 
 <template>
-  <div :class="['brand', { 'brand--dark': onDark }]">
-    <svg class="brand__sign" viewBox="0 0 48 48" aria-hidden="true">
-      <rect class="brand__tile" x="1" y="1" width="46" height="46" rx="13" />
-      <circle class="brand__plate" cx="24" cy="24" r="13" />
-      <path class="brand__hands" d="M24 16.5V24l5 3" />
-    </svg>
+  <div class="brand">
+    <span class="brand__sign" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="7.5" />
+        <path d="M12 7.75V12l3 1.75" />
+      </svg>
+    </span>
     <span class="brand__text">
       <span class="brand__name">Обеды</span>
       <span v-if="caption" class="brand__caption">Учёт перерывов</span>
@@ -24,31 +25,25 @@ withDefaults(defineProps<{ onDark?: boolean; caption?: boolean }>(), { onDark: f
 }
 
 .brand__sign {
-  display: block;
-  width: 44px;
-  height: 44px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
   flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(130, 200, 255, 0.45), transparent 60%),
+    linear-gradient(150deg, #2c2f38 0%, #111216 100%);
+  box-shadow: var(--card-shine);
 }
 
-.brand__tile {
-  fill: var(--blue);
-}
-
-.brand--dark .brand__tile {
-  fill: var(--glass-fill);
-  stroke: var(--glass-edge);
-}
-
-.brand__plate {
+.brand__sign svg {
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: #fff;
-  stroke-width: 2.5;
-}
-
-.brand__hands {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.5;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -60,24 +55,16 @@ withDefaults(defineProps<{ onDark?: boolean; caption?: boolean }>(), { onDark: f
 
 .brand__name {
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.3px;
   color: var(--ink);
 }
 
-.brand--dark .brand__name {
-  color: #fff;
-}
-
 .brand__caption {
   margin-top: 3px;
   font-size: 11px;
   color: var(--muted);
-}
-
-.brand--dark .brand__caption {
-  color: var(--login-art-caption);
 }
 </style>

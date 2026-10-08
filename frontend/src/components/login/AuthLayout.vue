@@ -1,73 +1,56 @@
 <script setup lang="ts">
 import BrandMark from "../ui/BrandMark.vue";
-import LoginArt from "./LoginArt.vue";
 
 defineProps<{ title: string }>();
 </script>
 
 <template>
-  <div class="auth">
-    <LoginArt class="auth__art" />
-    <main class="auth__main">
-      <div class="auth__column">
-        <BrandMark class="auth__brand" :caption="false" />
-        <p class="eyebrow">Учёт обеденных перерывов</p>
-        <h1 class="auth__title">{{ title }}</h1>
-        <slot />
-      </div>
-    </main>
-  </div>
+  <main class="auth">
+    <section class="auth__card glass-card" :aria-label="title">
+      <BrandMark class="auth__brand" />
+      <h1 class="auth__title">{{ title }}</h1>
+      <slot />
+    </section>
+  </main>
 </template>
 
 <style scoped>
 .auth {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 100vh;
+  padding: 40px 16px;
 }
 
-.auth__main {
-  display: grid;
-  place-items: center;
-  padding: 40px 24px;
-}
-
-.auth__column {
-  width: 100%;
-  max-width: 390px;
+.auth__card {
+  width: min(440px, 100%);
+  padding: 36px 36px 32px;
 }
 
 .auth__brand {
-  display: none;
   margin-bottom: 28px;
 }
 
 .auth__title {
   margin-bottom: 24px;
-  font-size: 32px;
+  font-size: 30px;
+  letter-spacing: -0.5px;
 }
 
-@media (max-width: 1150px) {
+@media (max-width: 650px) {
   .auth {
-    grid-template-columns: 0.8fr 1fr;
-  }
-}
-
-@media (max-width: 850px) {
-  .auth {
-    grid-template-columns: 1fr;
+    align-items: flex-start;
+    padding: 24px 12px;
   }
 
-  .auth__art {
-    display: none;
+  .auth__card {
+    padding: 28px 20px 24px;
+    border-radius: 24px;
   }
 
-  .auth__brand {
-    display: flex;
-  }
-
-  .auth__main {
-    padding: 32px 14px;
+  .auth__title {
+    font-size: 26px;
   }
 }
 </style>

@@ -25,7 +25,7 @@ const name = computed(() => shortName(props.me.display_name));
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  background: var(--canvas);
+  background: var(--field);
   color: var(--ink);
   font: inherit;
   text-align: left;

@@ -79,8 +79,8 @@ watchEffect(() => {
 .glass--active .glass__body,
 .glass--raised .glass__body {
   box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.08);
+    0 6px 18px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .glass__warp {
@@ -92,15 +92,15 @@ watchEffect(() => {
 }
 
 .glass--active .glass__warp {
-  background: rgba(118, 118, 128, 0.12);
+  background: var(--pill-active);
 }
 
 .glass--raised .glass__warp {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--pill-raised);
 }
 
 .glass--hover .glass__warp {
-  background: rgba(118, 118, 128, 0.07);
+  background: var(--pill-hover);
 }
 
 .glass__warp::before {
@@ -109,7 +109,7 @@ watchEffect(() => {
   inset: 0;
   background: radial-gradient(
     circle 60px at calc(var(--mx, -100px) - var(--left, 0px)) calc(var(--my, -100px) - var(--top, 0px)),
-    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.18),
     transparent 70%
   );
 }
@@ -121,9 +121,9 @@ watchEffect(() => {
   background: linear-gradient(
     105deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.6) 45%,
-    rgba(236, 244, 255, 0.5) 52%,
-    rgba(255, 246, 252, 0.45) 58%,
+    rgba(255, 255, 255, 0.16) 45%,
+    rgba(150, 200, 255, 0.14) 52%,
+    rgba(255, 190, 160, 0.12) 58%,
     transparent 72%
   );
   background-size: 260% 100%;
@@ -167,8 +167,8 @@ watchEffect(() => {
 
 .glass--lifted .glass__body {
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.16),
-    0 2px 6px rgba(0, 0, 0, 0.1);
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .glass--lifted .glass__warp {
@@ -177,7 +177,7 @@ watchEffect(() => {
 }
 
 .glass--lifted .glass__warp {
-  background: rgba(255, 255, 255, 0.985);
+  background: var(--pill-layer);
 }
 
 .glass__view {
@@ -204,7 +204,7 @@ watchEffect(() => {
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.985);
+  background: var(--pill-layer);
 }
 
 
@@ -236,15 +236,15 @@ watchEffect(() => {
 
 @media (prefers-reduced-transparency: reduce) {
   .glass--active .glass__warp {
-    background: #e7e7ec;
+    background: var(--pill-active-solid);
   }
 
   .glass--raised .glass__warp {
-  background: rgba(255, 255, 255, 0.82);
-}
+    background: var(--pill-active-solid);
+  }
 
-.glass--hover .glass__warp {
-    background: #f0f0f3;
+  .glass--hover .glass__warp {
+    background: var(--pill-hover-solid);
   }
 
   .glass__rim,

@@ -90,7 +90,7 @@ function passwordChanged(): void {
   padding: 10px 12px 10px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  background: var(--canvas);
+  background: var(--field);
 }
 
 .profile__label {
