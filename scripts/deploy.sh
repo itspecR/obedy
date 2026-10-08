@@ -53,13 +53,15 @@ sync_branch() {
     git reset --hard "origin/$1"
 }
 
+health() {
+    curl -fsSLk --max-redirs 1 http://127.0.0.1/api/health
+}
+
 wait_for_health() {
+    local body
     for _ in $(seq 1 30); do
-        if curl -fsSk https://127.0.0.1/api/health >/dev/null 2>&1; then
-            curl -fsSk https://127.0.0.1/api/health; echo; return 0
-        fi
-        if curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; then
-            curl -fsS http://127.0.0.1/api/health; echo; return 0
+        if body="$(health 2>/dev/null)"; then
+            echo "$body"; return 0
         fi
         sleep 2
     done
