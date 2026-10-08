@@ -1,12 +1,13 @@
 from django.db import transaction
 from django.db.models import Q
 
-from accounts.lunch_policy import tracks_lunch_by_default
+from accounts.lunch_policy import can_have_lunch, tracks_lunch_by_default
 from accounts.models import Account, Role, Source
 from accounts.sessions import revoke_all_sessions
 
 OWN_ROLE = "Нельзя снять роль администратора с себя. Попросите об этом другого администратора"
 OWN_BLOCK = "Нельзя заблокировать себя"
+ADMIN_LUNCH = "Администратор обеды не отмечает. Чтобы учитывать обеды, назначьте другую роль"
 LAST_ADMIN = "Нельзя: это последний активный администратор. Сначала назначьте администратором кого-то ещё"
 
 
@@ -45,6 +46,8 @@ def change_role(actor, account, role):
 
 
 def set_track_lunch(account, track_lunch):
+    if track_lunch and not can_have_lunch(account.role):
+        raise ChangeRefused(ADMIN_LUNCH)
     account.track_lunch = track_lunch
     account.save(update_fields=["track_lunch"])
     return account

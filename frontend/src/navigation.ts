@@ -17,14 +17,14 @@ const DIRECTORY: Section = { name: "directory", path: "/directory", label: "До
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
-  hr: [BOARD, LUNCH],
-  admin: [LUNCH, BOARD, STAFF, RULES, ACCESS, DIRECTORY],
+  hr: [LUNCH, BOARD],
+  admin: [BOARD, STAFF, RULES, ACCESS, DIRECTORY],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {
   employee: "lunch",
   hr: "board",
-  admin: "lunch",
+  admin: "board",
 };
 
 export function initials(name: string): string {

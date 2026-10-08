@@ -403,3 +403,19 @@ def test_new_rules_apply_to_next_lunch_only(frozen):
 
     assert (state["limit_minutes"], state["today"]["limit_minutes"]) == (45, 45)
     assert start_lunch(worker("next"), NOON).limit_minutes == 20
+
+
+@pytest.mark.parametrize(("method", "path"), [("get", "/api/lunch/me"), ("post", "/api/lunch/start"), ("get", "/api/lunch/history")])
+def test_admin_has_no_lunch(method, path):
+    client = signed_in("boss", Role.ADMIN)
+
+    response = getattr(client, method)(path, content_type=JSON)
+
+    assert (response.status_code, response.json()["detail"]) == (403, "Администратор обеды не отмечает")
+    assert not Lunch.objects.exists()
+
+
+def test_hr_can_mark_lunch(frozen):
+    client = signed_in("hr", Role.HR)
+
+    assert client.post("/api/lunch/start", content_type=JSON).json()["today"]["status"] == "ongoing"

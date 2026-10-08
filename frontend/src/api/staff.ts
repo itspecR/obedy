@@ -13,6 +13,7 @@ export interface StaffMember {
   source: Source;
   status: StaffStatus;
   track_lunch: boolean;
+  can_track_lunch: boolean;
   last_login_at: string | null;
 }
 
