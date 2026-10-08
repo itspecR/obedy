@@ -2,7 +2,7 @@
 import type { BoardEntry } from "../../api/board";
 import { formatTime } from "../../format/dateTime";
 import { countdownText, countdownTone, formatMinutes, remainingSeconds } from "../lunch/countdown";
-import { LUNCH_STATUS, MEASURED_STATUSES } from "../lunch/lunchStatus";
+import { LUNCH_STATUS, MEASURED_STATUSES, correctionLabel } from "../lunch/lunchStatus";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 const props = defineProps<{ title: string; entries: BoardEntry[]; now: number; warningMinutes: number; empty: string }>();
@@ -46,7 +46,7 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
         </button>
         <span v-else class="board-list__more-placeholder" />
         <p v-if="entry.lunch.correction" class="board-list__correction">
-          Исправлено: {{ entry.lunch.correction.by }}. Причина: {{ entry.lunch.correction.reason }}
+          {{ correctionLabel(entry.lunch.correction) }}: {{ entry.lunch.correction.by }}. Причина: {{ entry.lunch.correction.reason }}
         </p>
       </li>
     </ul>

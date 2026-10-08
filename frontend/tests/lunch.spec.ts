@@ -197,7 +197,7 @@ describe("LunchPage", () => {
       ended_at: "2026-10-07T09:50:00Z",
       status: "overrun",
       duration_seconds: 3000,
-      correction: { by: "Кадрова Ольга", at: "2026-10-07T12:00:00Z", reason: "Забыл нажать" },
+      correction: { by: "Кадрова Ольга", at: "2026-10-07T12:00:00Z", reason: "Забыл нажать", added: false },
     });
     const unreturned = lunch({ id: 3, day: "2026-10-06", ended_at: "2026-10-06T15:00:00Z", status: "unreturned", auto_closed: true });
     const month = history({ lunches: [corrected, unreturned], summary: { count: 2, violations: 2, average_minutes: 50 } });

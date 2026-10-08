@@ -1,4 +1,4 @@
-import type { LunchStatus } from "../../api/lunch";
+import type { Correction, LunchStatus } from "../../api/lunch";
 import type { Tone } from "../ui/tone";
 
 export interface StatusView {
@@ -15,3 +15,5 @@ export const LUNCH_STATUS: Record<LunchStatus, StatusView> = {
 
 export const MEASURED_STATUSES: LunchStatus[] = ["on_time", "overrun"];
 export const VIOLATION_STATUSES: LunchStatus[] = ["overrun", "unreturned"];
+
+export const correctionLabel = (correction: Correction) => (correction.added ? "Добавлено" : "Исправлено");

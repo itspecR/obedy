@@ -30,4 +30,11 @@ export interface CorrectionForm {
 }
 
 export const fetchBoard = (day: string) => request<Board>("GET", day ? `/lunch/board?day=${encodeURIComponent(day)}` : "/lunch/board");
+export interface AddLunchForm extends CorrectionForm {
+  account_id: number;
+  day: string;
+}
+
+export const fetchBoardPeople = () => request<Person[]>("GET", "/lunch/board/people");
+export const addLunch = (form: AddLunchForm) => request<BoardEntry>("POST", "/lunch/board/lunches", form);
 export const correctLunch = (id: number, form: CorrectionForm) => request<BoardEntry>("PUT", `/lunch/board/${id}/correction`, form);

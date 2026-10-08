@@ -1,15 +1,15 @@
 from datetime import date, datetime, time
 
 from django.utils import timezone
-from ninja import Field, Router, Schema
+from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts.models import Role
+from accounts.models import Account, Role
 from accounts.names import display_name
 from accounts.permissions import require_roles
 from accounts.security import session_auth
 from lunches.clock import today
-from lunches.corrections import Correction, CorrectionRefused, correct_lunch
+from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch
 from lunches.models import REASON_LIMIT, Lunch
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.service import WARNING_MINUTES, close_overdue
@@ -17,6 +17,7 @@ from lunches.service import WARNING_MINUTES, close_overdue
 BOARD_ROLES = (Role.HR, Role.ADMIN)
 BOARD_ONLY = "Табло доступно HR и администратору"
 NOT_FOUND = "Обед не найден. Обновите страницу"
+PERSON_NOT_FOUND = "Сотрудник не найден. Обновите страницу"
 
 router = Router(tags=["Табло"])
 
@@ -52,6 +53,11 @@ class CorrectionIn(Schema):
         return Correction(self.started_at, self.ended_at, self.reason)
 
 
+class AddLunchIn(CorrectionIn):
+    account_id: int
+    day: date
+
+
 def describe_person(account):
     return PersonOut(id=account.pk, name=display_name(account), login=account.login, department=account.department, position=account.position)
 
@@ -64,9 +70,20 @@ def lunches_of_day(day):
     return Lunch.objects.filter(day=day).select_related("account", "corrected_by").order_by("started_at")
 
 
+def board_actor(request):
+    return require_roles(request, BOARD_ROLES, BOARD_ONLY).account
+
+
+def refused_as_bad_request(action):
+    try:
+        return action()
+    except CorrectionRefused as refused:
+        raise HttpError(400, refused.message) from refused
+
+
 @router.get("", auth=session_auth, response=BoardOut)
 def board(request, day: date | None = None):
-    actor = require_roles(request, BOARD_ROLES, BOARD_ONLY).account
+    actor = board_actor(request)
     now = timezone.now()
     close_overdue(now)
     shown = day or today(now)
@@ -79,14 +96,30 @@ def board(request, day: date | None = None):
     )
 
 
+@router.get("/people", auth=session_auth, response=list[PersonOut])
+def people(request):
+    actor = board_actor(request)
+    candidates = Account.objects.filter(is_active=True, track_lunch=True).exclude(pk=actor.pk).order_by("full_name", "login")
+    return [describe_person(account) for account in candidates if can_receive_lunch(account)]
+
+
+@router.post("/lunches", auth=session_auth, response={201: BoardEntryOut})
+def add(request, payload: AddLunchIn):
+    actor = board_actor(request)
+    account = Account.objects.filter(pk=payload.account_id).first()
+    if account is None:
+        raise HttpError(404, PERSON_NOT_FOUND)
+    now = timezone.now()
+    lunch = refused_as_bad_request(lambda: add_lunch(actor, account, payload.day, payload.correction(), now))
+    return Status(201, describe_entry(lunch, actor, now))
+
+
 @router.put("/{lunch_id}/correction", auth=session_auth, response=BoardEntryOut)
 def correct(request, lunch_id: int, payload: CorrectionIn):
-    actor = require_roles(request, BOARD_ROLES, BOARD_ONLY).account
+    actor = board_actor(request)
     now = timezone.now()
     try:
-        lunch = correct_lunch(actor, lunch_id, payload.correction(), now)
+        lunch = refused_as_bad_request(lambda: correct_lunch(actor, lunch_id, payload.correction(), now))
     except Lunch.DoesNotExist as missing:
         raise HttpError(404, NOT_FOUND) from missing
-    except CorrectionRefused as refused:
-        raise HttpError(400, refused.message) from refused
     return describe_entry(lunch, actor, now)

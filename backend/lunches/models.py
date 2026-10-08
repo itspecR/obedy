@@ -33,6 +33,7 @@ class Lunch(models.Model):
     corrected_by = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     corrected_at = models.DateTimeField(null=True, blank=True)
     correction_reason = models.CharField(max_length=REASON_LIMIT, blank=True)
+    added_by_hand = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
