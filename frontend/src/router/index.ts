@@ -27,6 +27,12 @@ export const routes = [
         component: () => import("../pages/AccessPage.vue"),
         meta: { roles: ADMIN, title: "Доступ" },
       },
+      {
+        path: "directory",
+        name: "directory",
+        component: () => import("../pages/DirectoryPage.vue"),
+        meta: { roles: ADMIN, title: "Домен" },
+      },
     ],
   },
   { path: "/:pathMatch(.*)*", redirect: "/" },

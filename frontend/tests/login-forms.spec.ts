@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChangePasswordForm from "../src/components/login/ChangePasswordForm.vue";
 import LoginForm from "../src/components/login/LoginForm.vue";
-import { mockFetch, sentBody } from "./helpers";
+import { bodySentTo, mockFetch, routeFetch, sentBody } from "./helpers";
 import { me } from "./people";
 
 function fill(wrapper: ReturnType<typeof mount>, values: string[]) {
@@ -11,34 +11,37 @@ function fill(wrapper: ReturnType<typeof mount>, values: string[]) {
   return Promise.all(values.map((value, index) => inputs[index].setValue(value)));
 }
 
+const DOMAIN_OFF = { "/api/directory/public": [200, { enabled: false }] } as Record<string, [number, unknown]>;
+
 describe("LoginForm", () => {
   beforeEach(() => setActivePinia(createPinia()));
   afterEach(() => vi.unstubAllGlobals());
 
   it("asks for both fields before calling the server", async () => {
-    const spy = mockFetch(200, {});
+    const spy = routeFetch(DOMAIN_OFF);
     const wrapper = mount(LoginForm);
+    await flushPromises();
 
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.get('[role="alert"]').text()).toBe("Введите логин и пароль");
-    expect(spy).not.toHaveBeenCalled();
+    expect(bodySentTo(spy, "/api/auth/login")).toBeUndefined();
   });
 
   it("sends credentials and reports success", async () => {
-    const spy = mockFetch(200, me("employee"));
+    const spy = routeFetch({ ...DOMAIN_OFF, "/api/auth/login": [200, me("employee")] });
     const wrapper = mount(LoginForm);
     await fill(wrapper, ["ivanov.ii", "secret-password"]);
 
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(sentBody(spy)).toEqual({ login: "ivanov.ii", password: "secret-password" });
+    expect(bodySentTo(spy, "/api/auth/login")).toEqual({ login: "ivanov.ii", password: "secret-password" });
     expect(wrapper.emitted("success")).toHaveLength(1);
   });
 
   it("shows the server message on failure", async () => {
-    mockFetch(401, { detail: "Неверный логин или пароль" });
+    routeFetch({ ...DOMAIN_OFF, "/api/auth/login": [401, { detail: "Неверный логин или пароль" }] });
     const wrapper = mount(LoginForm);
     await fill(wrapper, ["ivanov.ii", "wrong-password"]);
 
@@ -50,11 +53,22 @@ describe("LoginForm", () => {
   });
 
   it("reveals where to get help", async () => {
+    routeFetch(DOMAIN_OFF);
     const wrapper = mount(LoginForm);
 
     await wrapper.get("button.login-form__link").trigger("click");
 
     expect(wrapper.text()).toContain("Обратитесь к администратору системы");
+  });
+
+  it("suggests the Windows login when the domain is on", async () => {
+    routeFetch({ "/api/directory/public": [200, { enabled: true }] });
+    const wrapper = mount(LoginForm);
+    await flushPromises();
+    await wrapper.get("button.login-form__link").trigger("click");
+
+    expect(wrapper.get("input").attributes("placeholder")).toBe("Логин Windows");
+    expect(wrapper.text()).toContain("тот же логин и пароль, что и для входа в Windows");
   });
 });
 

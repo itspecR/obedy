@@ -1,9 +1,6 @@
-from datetime import timedelta
-
+from accounts.lifetimes import lifetime_for
 from accounts.models import Session
 from accounts.tokens import hash_token, new_token
-
-SESSION_LIFETIME = timedelta(hours=8)
 
 
 def create_session(account, now):
@@ -12,7 +9,7 @@ def create_session(account, now):
         token_hash=hash_token(token),
         account=account,
         account_version=account.version,
-        expires_at=now + SESSION_LIFETIME,
+        expires_at=now + lifetime_for(account),
     )
     return token
 

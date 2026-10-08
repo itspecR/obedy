@@ -6,9 +6,9 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from accounts.devices import find_known_device, remember_device
+from accounts.lifetimes import LOCAL_SESSION_LIFETIME
 from accounts.models import Account, KnownDevice, Session
 from accounts.sessions import (
-    SESSION_LIFETIME,
     create_session,
     find_active_session,
     revoke_all_sessions,
@@ -41,8 +41,8 @@ def test_only_token_hash_is_stored(account, now):
 def test_session_expires_after_its_lifetime(account, now):
     token = create_session(account, now)
 
-    assert find_active_session(token, now + SESSION_LIFETIME - timedelta(seconds=1)) is not None
-    assert find_active_session(token, now + SESSION_LIFETIME) is None
+    assert find_active_session(token, now + LOCAL_SESSION_LIFETIME - timedelta(seconds=1)) is not None
+    assert find_active_session(token, now + LOCAL_SESSION_LIFETIME) is None
 
 
 def test_unknown_token_finds_nothing(account, now):

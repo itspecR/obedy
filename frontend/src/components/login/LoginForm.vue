@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { fetchDirectoryStatus } from "../../api/directory";
 import { ApiError } from "../../api/http";
 import { useSession } from "../../stores/session";
 import AppButton from "../ui/AppButton.vue";
@@ -13,6 +14,22 @@ const password = ref("");
 const error = ref("");
 const busy = ref(false);
 const showHelp = ref(false);
+const domainLogin = ref(false);
+
+const loginPlaceholder = computed(() => (domainLogin.value ? "Логин Windows" : "Введите логин"));
+const helpText = computed(() =>
+  domainLogin.value
+    ? "Используйте тот же логин и пароль, что и для входа в Windows. Если не получается — обратитесь к администратору системы."
+    : "Обратитесь к администратору системы – он поможет восстановить доступ.",
+);
+
+onMounted(async () => {
+  try {
+    domainLogin.value = (await fetchDirectoryStatus()).enabled;
+  } catch {
+    domainLogin.value = false;
+  }
+});
 
 async function submit(): Promise<void> {
   error.value = "";
@@ -35,13 +52,13 @@ async function submit(): Promise<void> {
 
 <template>
   <form class="login-form" novalidate @submit.prevent="submit">
-    <TextField v-model="login" label="Логин" icon="user" placeholder="Введите логин" autocomplete="username" plain :disabled="busy" />
+    <TextField v-model="login" label="Логин" icon="user" :placeholder="loginPlaceholder" autocomplete="username" plain :disabled="busy" />
     <TextField v-model="password" label="Пароль" icon="lock" placeholder="Введите пароль" type="password" autocomplete="current-password" :disabled="busy" />
     <p v-if="error" class="login-form__error" role="alert">{{ error }}</p>
     <AppButton type="submit" variant="primary" block :disabled="busy">{{ busy ? "Входим…" : "Войти →" }}</AppButton>
     <div class="login-form__help-box">
       <button type="button" class="login-form__link" :aria-expanded="showHelp" @click="showHelp = !showHelp">Не получается войти?</button>
-      <p v-if="showHelp" class="login-form__help">Обратитесь к администратору системы – он поможет восстановить доступ.</p>
+      <p v-if="showHelp" class="login-form__help">{{ helpText }}</p>
     </div>
   </form>
 </template>

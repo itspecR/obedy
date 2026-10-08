@@ -8,7 +8,7 @@ from accounts.devices import find_known_device, remember_device
 from accounts.models import Account, KnownDevice
 from accounts.names import normalize_login
 from accounts.sessions import create_session
-from accounts.verification import spend_equal_time, verify_secret
+from accounts.verification import admit_newcomer, spend_equal_time, verify_secret
 
 MAX_FAILED_ATTEMPTS = 5
 LOCK_DURATION = timedelta(minutes=15)
@@ -34,8 +34,11 @@ class LoginResult:
 
 
 def authenticate(raw_login, password, device_token, now):
-    account = Account.objects.filter(login=normalize_login(raw_login), is_active=True).first()
+    login = normalize_login(raw_login)
+    account = Account.objects.filter(login=login).first()
     if account is None:
+        return _admit(login, password, now)
+    if not account.is_active:
         spend_equal_time(password)
         raise InvalidCredentials
     device = find_known_device(account, device_token, now) if device_token else None
@@ -45,6 +48,13 @@ def authenticate(raw_login, password, device_token, now):
     if not verify_secret(account, password):
         _register_failure(account, device, now)
     return _complete_login(account, device, now)
+
+
+def _admit(login, password, now):
+    account = admit_newcomer(login, password)
+    if account is None:
+        raise InvalidCredentials
+    return _complete_login(account, None, now)
 
 
 def is_locked(account, now):
