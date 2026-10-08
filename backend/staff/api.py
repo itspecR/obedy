@@ -4,12 +4,12 @@ from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
 from accounts.lunch_policy import can_have_lunch
-from accounts.models import Account, Role, Source
+from accounts.models import Role, Source
 from accounts.permissions import require_admin
 from accounts.security import session_auth
 from staff.changes import ChangeRefused, change_role, set_blocked, set_track_lunch
 from staff.local_accounts import InvalidProfile, Profile, create_local_account, reset_local_password, update_local_profile
-from staff.status import StaffStatus, status_of
+from staff.status import StaffStatus, present_accounts, status_of
 
 NOT_FOUND = "Сотрудник не найден. Обновите страницу"
 LOGIN_LIMIT = 150
@@ -76,11 +76,11 @@ def describe(account):
 @router.get("", auth=session_auth, response=list[StaffOut])
 def staff(request):
     require_admin(request)
-    return [describe(account) for account in Account.objects.order_by("full_name", "login")]
+    return [describe(account) for account in present_accounts().order_by("full_name", "login")]
 
 
 def target(account_id):
-    account = Account.objects.filter(pk=account_id).first()
+    account = present_accounts().filter(pk=account_id).first()
     if account is None:
         raise HttpError(404, NOT_FOUND)
     return account

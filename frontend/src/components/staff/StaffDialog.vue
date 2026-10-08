@@ -95,9 +95,6 @@ async function toggleBlock(): Promise<void> {
       <div class="manage__summary">
         <StatusBadge :tone="STATUS_TONES[member.status]" :label="STATUS_LABELS[member.status]" />
       </div>
-      <p v-if="member.status === 'gone'" class="manage__note">
-        Сотрудника нет в группе доступа в домене или он отключён в AD — войти он не сможет, пока его не вернут.
-      </p>
 
       <form v-if="isLocal" class="manage__profile" novalidate @submit.prevent="saveProfile">
         <ProfileFields v-model="draft" :disabled="busy" />
