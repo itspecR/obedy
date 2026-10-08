@@ -22,8 +22,6 @@ class StaffOut(Schema):
     id: int
     login: str
     full_name: str
-    department: str
-    position: str
     role: Role
     source: Source
     status: StaffStatus
@@ -46,11 +44,9 @@ class BlockedIn(Schema):
 
 class ProfileIn(Schema):
     full_name: str = Field(max_length=TEXT_LIMIT)
-    department: str = Field("", max_length=TEXT_LIMIT)
-    position: str = Field("", max_length=TEXT_LIMIT)
 
     def profile(self):
-        return Profile(self.full_name, self.department, self.position)
+        return Profile(self.full_name)
 
 
 class LocalAccountIn(ProfileIn):
@@ -68,8 +64,6 @@ def describe(account):
         id=account.pk,
         login=account.login,
         full_name=account.full_name,
-        department=account.department,
-        position=account.position,
         role=account.role,
         source=account.source,
         status=status_of(account),

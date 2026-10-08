@@ -57,14 +57,8 @@ def period_query(period):
     return Lunch.objects.filter(day__gte=period.first, day__lte=period.last)
 
 
-def lunches_in(period, department=""):
-    query = period_query(period).select_related("account", "corrected_by").order_by("day", "started_at", "account__full_name")
-    return list(query.filter(account__department=department) if department else query)
-
-
-def departments_in(period):
-    names = period_query(period).exclude(account__department="").values_list("account__department", flat=True).distinct()
-    return sorted(set(names))
+def lunches_in(period):
+    return list(period_query(period).select_related("account", "corrected_by").order_by("day", "started_at", "account__full_name"))
 
 
 def is_unreturned(lunch, now):

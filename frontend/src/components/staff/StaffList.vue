@@ -8,17 +8,12 @@ defineProps<{ members: StaffMember[]; total: number }>();
 const emit = defineEmits<{ manage: [member: StaffMember] }>();
 
 const SOURCE_LABELS = { domain: "Домен", local: "Локальная" } as const;
-
-function details(member: StaffMember): string {
-  return [member.department, member.position].filter(Boolean).join(" · ") || "Отдел и должность не указаны";
-}
 </script>
 
 <template>
   <div class="panel staff">
     <div v-if="members.length" class="staff__head" aria-hidden="true">
       <span>Сотрудник</span>
-      <span>Отдел и должность</span>
       <span>Роль</span>
       <span>Обеды</span>
       <span>Статус</span>
@@ -30,7 +25,6 @@ function details(member: StaffMember): string {
           <span class="staff__name">{{ displayName(member) }}</span>
           <span class="staff__login"><span class="code">{{ member.login }}</span> · {{ SOURCE_LABELS[member.source] }}</span>
         </div>
-        <span class="staff__details">{{ details(member) }}</span>
         <span class="staff__role">{{ ROLE_LABELS[member.role] }}</span>
         <span class="staff__lunch">{{ member.track_lunch ? "Учитываются" : "Не учитываются" }}</span>
         <StatusBadge class="staff__status" :tone="STATUS_TONES[member.status]" :label="STATUS_LABELS[member.status]" />
@@ -65,7 +59,7 @@ function details(member: StaffMember): string {
 .staff__head,
 .staff__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) var(--status-column) var(--more-column);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 0.8fr) minmax(0, 0.8fr) var(--status-column) var(--more-column);
   align-items: center;
   gap: 16px;
 }
@@ -94,19 +88,14 @@ function details(member: StaffMember): string {
   min-width: 0;
 }
 
-.staff__name,
-.staff__details {
+.staff__name {
   overflow: hidden;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.staff__name {
-  font-weight: 600;
-}
-
 .staff__login,
-.staff__details,
 .staff__lunch {
   font-size: var(--text-small);
   color: var(--muted);
@@ -172,7 +161,6 @@ function details(member: StaffMember): string {
     grid-row: 1;
   }
 
-  .staff__details,
   .staff__role,
   .staff__lunch {
     grid-column: 1 / -1;

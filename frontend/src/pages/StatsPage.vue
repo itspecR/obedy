@@ -2,12 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { errorMessage } from "../api/http";
 import { exportStats, fetchStats, type Stats, type StatsQuery } from "../api/stats";
-import { ALL_DEPARTMENTS } from "../components/board/groups";
 import { PERIOD_PRESETS, samePeriod, thisMonth, type Period, type PeriodPreset } from "../components/stats/period";
 import StatsTable from "../components/stats/StatsTable.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
-import SelectField from "../components/ui/SelectField.vue";
 import TextField from "../components/ui/TextField.vue";
 import { saveFile } from "../composables/saveFile";
 import { useToasts } from "../composables/useToasts";
@@ -16,7 +14,6 @@ import { matchesQuery } from "../format/search";
 
 const today = isoDay(new Date());
 const period = ref<Period>(thisMonth(today));
-const department = ref(ALL_DEPARTMENTS);
 const search = ref("");
 const stats = ref<Stats | null>(null);
 const loadError = ref("");
@@ -24,13 +21,9 @@ const loading = ref(false);
 const exporting = ref(false);
 const { fail } = useToasts();
 
-const query = computed<StatsQuery>(() => ({ date_from: period.value.from, date_to: period.value.to, department: department.value }));
-const departments = computed(() => [
-  { value: ALL_DEPARTMENTS, label: "Все отделы" },
-  ...(stats.value?.departments ?? []).map((name) => ({ value: name, label: name })),
-]);
+const query = computed<StatsQuery>(() => ({ date_from: period.value.from, date_to: period.value.to }));
 const people = computed(() =>
-  (stats.value?.people ?? []).filter((person) => matchesQuery(search.value, [person.name, person.login, person.department, person.position])),
+  (stats.value?.people ?? []).filter((person) => matchesQuery(search.value, [person.name, person.login])),
 );
 const overview = computed(() => stats.value?.overview);
 
@@ -91,7 +84,6 @@ onMounted(load);
       <div class="stats__fields">
         <TextField v-model="period.from" label="С" type="date" :max="today" plain />
         <TextField v-model="period.to" label="По" type="date" :max="today" plain />
-        <SelectField v-model="department" label="Отдел" :options="departments" />
         <TextField v-model="search" label="Поиск" icon="search" placeholder="например: Иванов" plain />
       </div>
       <p class="stats__note">Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат.</p>
@@ -152,7 +144,7 @@ onMounted(load);
 
 .stats__fields {
   display: grid;
-  grid-template-columns: 180px 180px minmax(0, 260px) minmax(0, 1fr);
+  grid-template-columns: 180px 180px minmax(0, 1fr);
   gap: 12px;
 }
 

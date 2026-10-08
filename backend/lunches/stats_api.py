@@ -10,7 +10,7 @@ from accounts.names import display_name
 from accounts.security import session_auth
 from lunches.excel import workbook_bytes
 from lunches.service import close_overdue
-from lunches.statistics import BadPeriod, checked_period, departments_in, lunches_in, overview_of, people_stats
+from lunches.statistics import BadPeriod, checked_period, lunches_in, overview_of, people_stats
 from lunches.supervision import require_supervisor
 
 STATS_ONLY = "Статистика доступна HR и администратору"
@@ -24,8 +24,6 @@ class PersonStatsOut(Schema):
     id: int
     name: str
     login: str
-    department: str
-    position: str
     count: int
     violations: int
     overruns: int
@@ -45,7 +43,6 @@ class OverviewOut(Schema):
 class StatsOut(Schema):
     date_from: date
     date_to: date
-    departments: list[str]
     overview: OverviewOut
     people: list[PersonStatsOut]
 
@@ -56,8 +53,6 @@ def describe_stats(stats):
         id=account.pk,
         name=display_name(account),
         login=account.login,
-        department=account.department,
-        position=account.position,
         count=stats.count,
         violations=stats.violations,
         overruns=stats.overruns,
@@ -82,25 +77,24 @@ def fresh_now():
 
 
 @router.get("", auth=session_auth, response=StatsOut)
-def stats(request, date_from: date, date_to: date, department: str = ""):
+def stats(request, date_from: date, date_to: date):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
-    lunches = lunches_in(period, department)
+    lunches = lunches_in(period)
     overview = overview_of(lunches, now)
     return StatsOut(
         date_from=period.first,
         date_to=period.last,
-        departments=departments_in(period),
         overview=OverviewOut(**asdict(overview)),
         people=[describe_stats(item) for item in people_stats(lunches, now)],
     )
 
 
 @router.get("/export", auth=session_auth)
-def export(request, date_from: date, date_to: date, department: str = ""):
+def export(request, date_from: date, date_to: date):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
-    lunches = lunches_in(period, department)
+    lunches = lunches_in(period)
     response = HttpResponse(workbook_bytes(people_stats(lunches, now), lunches, now), content_type=XLSX_TYPE)
     response["Content-Disposition"] = f'attachment; filename="{FILE_NAME.format(first=period.first, last=period.last)}"'
     return response

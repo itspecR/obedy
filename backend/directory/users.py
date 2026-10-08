@@ -7,7 +7,7 @@ from ldap3.utils.conv import escape_filter_chars
 ACCOUNT_DISABLED_FLAG = 0x2
 MAX_GROUP_DEPTH = 10
 PERSON_FILTER = "(&(objectCategory=person)(objectClass=user))"
-USER_ATTRIBUTES = ["sAMAccountName", "displayName", "cn", "department", "title", "userAccountControl", "memberOf", "objectGUID"]
+USER_ATTRIBUTES = ["sAMAccountName", "displayName", "cn", "userAccountControl", "memberOf", "objectGUID"]
 
 
 @dataclass(frozen=True)
@@ -15,8 +15,6 @@ class DirectoryUser:
     dn: str
     login: str
     full_name: str
-    department: str
-    position: str
     external_id: str
     disabled: bool
     groups: tuple
@@ -54,8 +52,6 @@ def read_user(entry):
         dn=entry["dn"],
         login=text(attributes, "sAMAccountName").lower(),
         full_name=text(attributes, "displayName") or text(attributes, "cn"),
-        department=text(attributes, "department"),
-        position=text(attributes, "title"),
         external_id=guid(entry.get("raw_attributes", {})),
         disabled=is_disabled(attributes),
         groups=tuple(str(group) for group in values(attributes, "memberOf")),

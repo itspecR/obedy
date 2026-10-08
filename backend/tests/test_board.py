@@ -42,8 +42,8 @@ def signed_in(login, role):
     return client
 
 
-def employee(login, full_name="", department=""):
-    return Account.objects.create(login=login, full_name=full_name, department=department, position="Кассир")
+def employee(login, full_name=""):
+    return Account.objects.create(login=login, full_name=full_name)
 
 
 def lunch_of(account, start, minutes=None, day=THURSDAY):
@@ -60,7 +60,7 @@ def correct(client, lunch_id, **changes):
 
 @pytest.mark.parametrize("role", [Role.HR, Role.ADMIN])
 def test_board_shows_todays_lunches_with_people(role):
-    ivanov = employee("ivanov", "Иванов Иван", "Склад")
+    ivanov = employee("ivanov", "Иванов Иван")
     lunch_of(ivanov, time(12, 0), 30)
     lunch_of(employee("petrov"), time(13, 0))
     lunch_of(employee("old"), time(12, 0), 20, day=date(2026, 10, 7))
@@ -69,7 +69,7 @@ def test_board_shows_todays_lunches_with_people(role):
 
     assert (board["day"], board["today"], board["warning_minutes"]) == ("2026-10-08", "2026-10-08", 5)
     assert [(entry["person"]["name"], entry["lunch"]["status"]) for entry in board["entries"]] == [("Иванов Иван", "on_time"), ("petrov", "ongoing")]
-    assert board["entries"][0]["person"] == {"id": ivanov.pk, "name": "Иванов Иван", "login": "ivanov", "department": "Склад", "position": "Кассир"}
+    assert board["entries"][0]["person"] == {"id": ivanov.pk, "name": "Иванов Иван", "login": "ivanov"}
     assert board["entries"][1]["lunch"]["duration_seconds"] == 3600
 
 
@@ -253,7 +253,7 @@ def test_employee_cannot_add_lunch():
 
 
 def test_people_list_offers_only_tracked_active_colleagues():
-    employee("ivanov", "Иванов Иван", "Склад")
+    employee("ivanov", "Иванов Иван")
     employee("blocked", "Блоков Борис")
     employee("untracked", "Без Учёта")
     Account.objects.filter(login="blocked").update(is_active=False)

@@ -7,8 +7,6 @@ export interface StaffMember {
   id: number;
   login: string;
   full_name: string;
-  department: string;
-  position: string;
   role: Role;
   source: Source;
   status: StaffStatus;
@@ -25,8 +23,6 @@ export const setBlocked = (id: number, blocked: boolean) => request<StaffMember>
 
 export interface Profile {
   full_name: string;
-  department: string;
-  position: string;
 }
 
 export interface LocalAccountForm extends Profile {

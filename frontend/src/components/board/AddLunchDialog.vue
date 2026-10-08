@@ -28,8 +28,8 @@ const { notify, fail } = useToasts();
 const options = computed(() => [
   { value: NOBODY, label: "Выберите сотрудника" },
   ...people.value
-    .filter((person) => String(person.id) === personId.value || matchesQuery(query.value, [person.name, person.login, person.department, person.position]))
-    .map((person) => ({ value: String(person.id), label: person.department ? `${person.name} — ${person.department}` : person.name })),
+    .filter((person) => String(person.id) === personId.value || matchesQuery(query.value, [person.name, person.login]))
+    .map((person) => ({ value: String(person.id), label: person.name })),
 ]);
 const ready = computed(() => Boolean(personId.value && startedAt.value && endedAt.value && reason.value.trim()));
 
@@ -67,7 +67,7 @@ onMounted(loadPeople);
   <AppModal title="Добавить обед" :eyebrow="formatDay(day)" @close="emit('close')">
     <form class="add-lunch" novalidate @submit.prevent="save">
       <p class="add-lunch__note">Для сотрудника, который забыл нажать «Ушёл на обед». Он увидит, кто и почему добавил обед.</p>
-      <TextField v-model="query" label="Найти сотрудника" icon="search" placeholder="например: Иванов или склад" plain :disabled="busy" />
+      <TextField v-model="query" label="Найти сотрудника" icon="search" placeholder="например: Иванов" plain :disabled="busy" />
       <SelectField v-model="personId" label="Сотрудник" :options="options" :disabled="busy" />
       <div class="add-lunch__times">
         <TextField v-model="startedAt" label="Ушёл" type="time" plain :disabled="busy" />

@@ -47,7 +47,7 @@ export function matches(member: StaffMember, filter: StaffFilter): boolean {
   return (
     (filter.role === "all" || member.role === filter.role) &&
     (filter.status === "all" || member.status === filter.status) &&
-    matchesQuery(filter.query, [member.full_name, member.login, member.department, member.position])
+    matchesQuery(filter.query, [member.full_name, member.login])
   );
 }
 

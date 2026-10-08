@@ -13,8 +13,6 @@ function person(overrides: Partial<PersonStats> = {}): PersonStats {
     id: 1,
     name: "Иванов Иван",
     login: "ivanov",
-    department: "Склад",
-    position: "Кладовщик",
     count: 3,
     violations: 2,
     overruns: 1,
@@ -29,9 +27,8 @@ function stats(overrides: Partial<Stats> = {}): Stats {
   return {
     date_from: "2026-10-01",
     date_to: "2026-10-08",
-    departments: ["Бухгалтерия", "Склад"],
     overview: { count: 5, violations: 2, average_minutes: 40, on_time_percent: 60, people: 2 },
-    people: [person(), person({ id: 2, name: "Петрова Анна", login: "petrova", department: "Бухгалтерия", violations: 0, overruns: 0, unreturned: 0, overrun_minutes: 0 })],
+    people: [person(), person({ id: 2, name: "Петрова Анна", login: "petrova", violations: 0, overruns: 0, unreturned: 0, overrun_minutes: 0 })],
     ...overrides,
   };
 }
@@ -82,15 +79,13 @@ describe("StatsPage", () => {
     wrapper.unmount();
   });
 
-  it("filters by search on the page and by department on the server", async () => {
-    const { spy, wrapper } = await mounted({ [`${OCTOBER}&department=%D0%A1%D0%BA%D0%BB%D0%B0%D0%B4`]: [200, stats({ people: [person()] })] });
+  it("filters by search on the page without a department filter", async () => {
+    const { wrapper } = await mounted();
 
     await wrapper.get('input[placeholder="например: Иванов"]').setValue("петр");
-    expect(wrapper.findAll(".stats-table__name").map((name) => name.text())).toEqual(["Петрова Анна"]);
-    await wrapper.get("select").setValue("Склад");
-    await flushPromises();
 
-    expect(wasRequested(spy, `${OCTOBER}&department=%D0%A1%D0%BA%D0%BB%D0%B0%D0%B4`, "GET")).toBe(true);
+    expect(wrapper.findAll(".stats-table__name").map((name) => name.text())).toEqual(["Петрова Анна"]);
+    expect(wrapper.find("select").exists()).toBe(false);
     wrapper.unmount();
   });
 

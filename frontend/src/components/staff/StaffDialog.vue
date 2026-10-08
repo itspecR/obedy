@@ -24,7 +24,7 @@ const busy = ref(false);
 const { ask } = useConfirm();
 const { notify, fail } = useToasts();
 
-const profileOf = (member: StaffMember): Profile => ({ full_name: member.full_name, department: member.department, position: member.position });
+const profileOf = (member: StaffMember): Profile => ({ full_name: member.full_name });
 
 const draft = ref<Profile>(profileOf(props.member));
 const issued = ref<Issued | null>(null);
@@ -94,7 +94,6 @@ async function toggleBlock(): Promise<void> {
     <div class="manage">
       <div class="manage__summary">
         <StatusBadge :tone="STATUS_TONES[member.status]" :label="STATUS_LABELS[member.status]" />
-        <span class="manage__details">{{ [member.department, member.position].filter(Boolean).join(" · ") || "Отдел и должность не указаны" }}</span>
       </div>
       <p v-if="member.status === 'gone'" class="manage__note">
         Сотрудника нет в группе доступа в домене или он отключён в AD — войти он не сможет, пока его не вернут.

@@ -11,8 +11,8 @@ from lunches.status import MEASURED, duration_of, is_violation, status_of
 
 PEOPLE_SHEET = "Сотрудники"
 LUNCHES_SHEET = "Все обеды"
-PEOPLE_HEADERS = ["Сотрудник", "Логин", "Отдел", "Должность", "Обедов", "Нарушений", "Превышений", "Без возврата", "Среднее, мин", "Перебор, мин"]
-LUNCH_HEADERS = ["Дата", "Сотрудник", "Логин", "Отдел", "Ушёл", "Вернулся", "Длительность, мин", "Лимит, мин", "Статус", "Изменение", "Кто изменил", "Причина"]
+PEOPLE_HEADERS = ["Сотрудник", "Логин", "Обедов", "Нарушений", "Превышений", "Без возврата", "Среднее, мин", "Перебор, мин"]
+LUNCH_HEADERS = ["Дата", "Сотрудник", "Логин", "Ушёл", "Вернулся", "Длительность, мин", "Лимит, мин", "Статус", "Изменение", "Кто изменил", "Причина"]
 ADDED = "Добавлено"
 CORRECTED = "Исправлено"
 FORMULA_TYPE = "f"
@@ -31,8 +31,6 @@ def person_row(stats):
     return [
         display_name(account),
         account.login,
-        account.department,
-        account.position,
         stats.count,
         stats.violations,
         stats.overruns,
@@ -56,7 +54,6 @@ def lunch_row(lunch, now):
         lunch.day,
         display_name(lunch.account),
         lunch.account.login,
-        lunch.account.department,
         clock_text(local(lunch.started_at)),
         clock_text(local(lunch.ended_at)) if lunch.ended_at else "",
         duration,

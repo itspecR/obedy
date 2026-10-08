@@ -5,10 +5,9 @@ import { errorMessage } from "../api/http";
 import AddLunchDialog from "../components/board/AddLunchDialog.vue";
 import BoardList from "../components/board/BoardList.vue";
 import CorrectionDialog from "../components/board/CorrectionDialog.vue";
-import { ALL_DEPARTMENTS, EMPTY_BOARD_FILTER, departmentsOf, filterEntries, groupEntries } from "../components/board/groups";
+import { filterEntries, groupEntries } from "../components/board/groups";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
-import SelectField from "../components/ui/SelectField.vue";
 import TextField from "../components/ui/TextField.vue";
 import { useServerClock } from "../composables/useServerClock";
 import { useToasts } from "../composables/useToasts";
@@ -18,7 +17,7 @@ const REFRESH_MS = 30_000;
 
 const board = ref<Board | null>(null);
 const day = ref("");
-const filter = ref({ ...EMPTY_BOARD_FILTER });
+const search = ref("");
 const loadError = ref("");
 const editing = ref<BoardEntry | null>(null);
 const adding = ref(false);
@@ -27,11 +26,7 @@ const { fail } = useToasts();
 let refresher: number | undefined;
 
 const isToday = computed(() => Boolean(board.value && board.value.day === board.value.today));
-const groups = computed(() => groupEntries(filterEntries(board.value?.entries ?? [], filter.value), now.value));
-const departments = computed(() => [
-  { value: ALL_DEPARTMENTS, label: "Все отделы" },
-  ...departmentsOf(board.value?.entries ?? []).map((name) => ({ value: name, label: name })),
-]);
+const groups = computed(() => groupEntries(filterEntries(board.value?.entries ?? [], search.value), now.value));
 const subtitle = computed(() => {
   if (!board.value) {
     return "Кто сейчас на обеде и кто вернулся";
@@ -108,8 +103,7 @@ onUnmounted(() => {
     <div v-else-if="!board" class="panel board__message" aria-busy="true">Загружаем…</div>
     <template v-else>
       <div class="panel board__filters">
-        <TextField v-model="filter.query" label="Поиск" icon="search" placeholder="например: Иванов или склад" plain />
-        <SelectField v-model="filter.department" label="Отдел" :options="departments" />
+        <TextField v-model="search" label="Поиск" icon="search" placeholder="например: Иванов" plain />
       </div>
       <div v-if="!board.entries.length" class="panel board__message">
         <p class="board__empty-title">{{ isToday ? "Сегодня ещё никто не уходил на обед" : "В этот день обедов не отмечено" }}</p>
@@ -163,9 +157,6 @@ onUnmounted(() => {
 }
 
 .board__filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
-  gap: 12px;
   padding: 18px 20px;
 }
 
@@ -212,7 +203,6 @@ onUnmounted(() => {
 
 @media (max-width: 650px) {
   .board__filters {
-    grid-template-columns: minmax(0, 1fr);
     padding: 16px;
   }
 }

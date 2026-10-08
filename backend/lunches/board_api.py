@@ -25,8 +25,6 @@ class PersonOut(Schema):
     id: int
     name: str
     login: str
-    department: str
-    position: str
 
 
 class BoardEntryOut(Schema):
@@ -58,7 +56,7 @@ class AddLunchIn(CorrectionIn):
 
 
 def describe_person(account):
-    return PersonOut(id=account.pk, name=display_name(account), login=account.login, department=account.department, position=account.position)
+    return PersonOut(id=account.pk, name=display_name(account), login=account.login)
 
 
 def describe_entry(lunch, actor, now):

@@ -3,15 +3,12 @@ import { download, request } from "./http";
 export interface StatsQuery {
   date_from: string;
   date_to: string;
-  department: string;
 }
 
 export interface PersonStats {
   id: number;
   name: string;
   login: string;
-  department: string;
-  position: string;
   count: number;
   violations: number;
   overruns: number;
@@ -31,7 +28,6 @@ export interface StatsOverview {
 export interface Stats {
   date_from: string;
   date_to: string;
-  departments: string[];
   overview: StatsOverview;
   people: PersonStats[];
 }
