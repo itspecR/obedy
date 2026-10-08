@@ -1,5 +1,5 @@
 <script setup lang="ts">
-export type IconName = "lunch" | "logout" | "user" | "users" | "search" | "lock" | "eye" | "eye-off" | "shield" | "server" | "clock" | "board";
+export type IconName = "lunch" | "logout" | "user" | "users" | "search" | "lock" | "eye" | "eye-off" | "shield" | "server" | "clock" | "board" | "chart";
 
 defineProps<{ name: IconName }>();
 </script>
@@ -11,6 +11,10 @@ defineProps<{ name: IconName }>();
       <circle cx="10" cy="10" r="3.75" />
       <path d="M2 3.5v4M2 5.5h1.5M3.5 3.5v4M2.75 7.5v9" />
       <path d="M18 3.5c-1.1.6-1.6 2-1.6 3.6v2.4H18M18 3.5v13" />
+    </template>
+    <template v-else-if="name === 'chart'">
+      <path d="M3.25 16.75h13.5" />
+      <path d="M5.75 13.5v-3.75M10 13.5V5.25M14.25 13.5V8.5" />
     </template>
     <template v-else-if="name === 'board'">
       <rect x="2.75" y="3.75" width="14.5" height="12.5" rx="2" />

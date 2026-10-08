@@ -4,7 +4,7 @@ from datetime import date
 
 from lunches.clock import today
 from lunches.models import Lunch
-from lunches.status import LunchStatus, duration_of, is_violation, status_of
+from lunches.status import MEASURED, duration_of, is_violation, status_of
 
 MONTH_PATTERN = re.compile(r"(\d{4})-(\d{2})")
 MONTHS_IN_YEAR = 12
@@ -41,7 +41,7 @@ def lunches_of_month(account, first):
 
 
 def summary_of(lunches, now):
-    measured = [lunch for lunch in lunches if status_of(lunch, now) in (LunchStatus.ON_TIME, LunchStatus.OVERRUN)]
+    measured = [lunch for lunch in lunches if status_of(lunch, now) in MEASURED]
     total_seconds = sum(duration_of(lunch, now).total_seconds() for lunch in measured)
     average = round(total_seconds / len(measured) / SECONDS_IN_MINUTE) if measured else None
     return Summary(len(lunches), sum(1 for lunch in lunches if is_violation(lunch, now)), average)

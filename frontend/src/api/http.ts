@@ -39,7 +39,7 @@ export async function upload<T>(path: string, form: FormData): Promise<T> {
   return send<T>("POST", path, { body: form });
 }
 
-async function send<T>(method: string, path: string, init: RequestInit): Promise<T> {
+async function respond(method: string, path: string, init: RequestInit): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(`/api${path}`, { method, credentials: "same-origin", cache: "no-store", ...init });
@@ -52,7 +52,25 @@ async function send<T>(method: string, path: string, init: RequestInit): Promise
     }
     throw new ApiError(response.status, await readDetail(response));
   }
+  return response;
+}
+
+async function send<T>(method: string, path: string, init: RequestInit): Promise<T> {
+  const response = await respond(method, path, init);
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+}
+
+export interface DownloadedFile {
+  blob: Blob;
+  filename: string;
+}
+
+const FILENAME_PATTERN = /filename="([^"]+)"/;
+
+export async function download(path: string, fallbackName: string): Promise<DownloadedFile> {
+  const response = await respond("GET", path, {});
+  const filename = FILENAME_PATTERN.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? fallbackName;
+  return { blob: await response.blob(), filename };
 }
 
 export function errorMessage(error: unknown, fallback: string): string {

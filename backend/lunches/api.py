@@ -12,6 +12,7 @@ from lunches.history import BadMonth, lunches_of_month, month_start, summary_of
 from lunches.rules import current_rules
 from lunches.rules_api import router as rules_router
 from lunches.schemas import LunchOut, describe_lunch
+from lunches.stats_api import router as stats_router
 from lunches.service import (
     UNDO_WINDOW,
     WARNING_MINUTES,
@@ -31,6 +32,7 @@ NO_LUNCH_FOR_ROLE = "Администратор обеды не отмечает
 router = Router(tags=["Обед"])
 router.add_router("/rules", rules_router)
 router.add_router("/board", board_router)
+router.add_router("/stats", stats_router)
 
 
 class StateOut(Schema):

@@ -33,3 +33,9 @@ export function formatMonth(month: string): string {
   const name = monthFormatter.format(calendarDate(`${month}-01`));
   return `${name[0].toUpperCase()}${name.slice(1)} ${month.slice(0, 4)}`;
 }
+
+const isoDayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+export function isoDay(moment: Date): string {
+  return isoDayFormatter.format(moment);
+}

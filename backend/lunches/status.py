@@ -11,6 +11,7 @@ class LunchStatus(TextChoices):
 
 
 VIOLATIONS = (LunchStatus.OVERRUN, LunchStatus.UNRETURNED)
+MEASURED = (LunchStatus.ON_TIME, LunchStatus.OVERRUN)
 
 
 def limit_of(lunch):
