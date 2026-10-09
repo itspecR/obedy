@@ -5,7 +5,9 @@ import type { LunchRules } from "../src/api/lunchRules";
 import { draftFrom, formFrom, toggleDay } from "../src/components/rules/draft";
 import { useToasts } from "../src/composables/useToasts";
 import RulesPage from "../src/pages/RulesPage.vue";
+import { useSession } from "../src/stores/session";
 import { bodySentTo, chooseTime, routeFetch, shownTime, infoText } from "./helpers";
+import { me } from "./people";
 
 function rules(overrides: Partial<LunchRules> = {}): LunchRules {
   return {
@@ -122,5 +124,63 @@ describe("RulesPage", () => {
 
     expect(wrapper.get("[role=alert]").text()).toContain("На сервере произошла ошибка");
     expect(wrapper.get("[role=alert] button").text()).toBe("Повторить");
+  });
+});
+
+describe("RulesPage rabbit switch", () => {
+  beforeEach(() => setActivePinia(createPinia()));
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
+
+  async function mountedAs(role: "admin" | "hr", saved: [number, unknown] = [200, { rabbit: true }]) {
+    useSession().me = me(role);
+    const spy = vi.fn((url: string, init?: RequestInit) => {
+      const routes: Record<string, [number, unknown]> = {
+        "/api/lunch/rules": [200, rules()],
+        "/api/appearance": [200, { rabbit: false }],
+        "/api/appearance/rabbit": saved,
+      };
+      const [status, body] = routes[url] ?? [404, { detail: "Не найдено" }];
+      return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
+    });
+    vi.stubGlobal("fetch", spy);
+    const wrapper = mount(RulesPage);
+    await flushPromises();
+    return { spy, wrapper };
+  }
+
+  const rabbitSwitch = (wrapper: Awaited<ReturnType<typeof mountedAs>>["wrapper"]) => wrapper.get(".rabbit-switch [role=switch]");
+
+  it("lets the admin switch the rabbit on", async () => {
+    const { spy, wrapper } = await mountedAs("admin");
+    const toggle = rabbitSwitch(wrapper);
+
+    expect(toggle.attributes("aria-checked")).toBe("false");
+    await toggle.trigger("click");
+    await flushPromises();
+
+    expect(bodySentTo(spy, "/api/appearance/rabbit")).toEqual({ enabled: true });
+    expect(rabbitSwitch(wrapper).attributes("aria-checked")).toBe("true");
+    expect(useToasts().items.map((toast) => toast.text)).toContain("Кролик включён");
+  });
+
+  it("keeps the switch as it was when saving fails", async () => {
+    const { wrapper } = await mountedAs("admin", [500, { detail: "На сервере произошла ошибка" }]);
+
+    await rabbitSwitch(wrapper).trigger("click");
+    await flushPromises();
+
+    expect(rabbitSwitch(wrapper).attributes("aria-checked")).toBe("false");
+    expect(useToasts().items.map((toast) => toast.text)).toContain("На сервере произошла ошибка");
+  });
+
+  it("hides the switch from HR", async () => {
+    const { spy, wrapper } = await mountedAs("hr");
+
+    expect(wrapper.text()).not.toContain("Анимация с кроликом");
+    expect(spy.mock.calls.some(([url]) => url === "/api/appearance")).toBe(false);
   });
 });
