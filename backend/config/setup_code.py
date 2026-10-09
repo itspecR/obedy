@@ -3,6 +3,8 @@ import hmac
 import os
 import secrets
 
+from config.state_files import remove_file
+
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 CODE_GROUPS = 3
 GROUP_LENGTH = 4
@@ -32,7 +34,4 @@ def code_matches(path, code):
 
 
 def forget_code(path):
-    try:
-        os.remove(path)
-    except FileNotFoundError:
-        return
+    remove_file(path)

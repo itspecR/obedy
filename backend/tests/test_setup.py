@@ -2,11 +2,13 @@ import os
 import stat
 
 import pytest
+from django.core.management import call_command
 from django.test import Client, override_settings
 
+from accounts.first_admin import create_first_admin
 from accounts.models import Account, Role
 from config import restart, setup_api
-from config.connection_store import Connection, load_connection, save_connection
+from config.connection_store import Connection, forget_connection, load_connection, save_connection
 from config.probe import ProbeResult, explain
 from config.setup_code import code_matches, forget_code, issue_code
 
@@ -167,3 +169,34 @@ def test_first_admin_waits_for_the_database(state):
     code = issue_code(str(state / "setup-code.sha256"))
 
     assert post("/api/setup/admin", {"code": code}).status_code == 409
+
+
+def test_forgetting_the_database_returns_the_site_to_setup_with_a_new_code(state, capsys):
+    save_connection(str(state / "database.bin"), SECRET, CONNECTION)
+
+    call_command("forget_database")
+
+    code = capsys.readouterr().out.strip().removeprefix("Код настройки: ")
+    assert load_connection(str(state / "database.bin"), SECRET) is None
+    assert code_matches(str(state / "setup-code.sha256"), code)
+
+
+def test_forgetting_twice_is_harmless(state):
+    forget_connection(str(state / "database.bin"))
+    forget_connection(str(state / "database.bin"))
+
+    assert not os.path.exists(state / "database.bin")
+
+
+@pytest.mark.django_db
+def test_setup_code_is_dropped_on_start_when_the_database_already_has_an_admin(state):
+    code_file = str(state / "setup-code.sha256")
+    issue_code(code_file)
+    with override_settings(DATABASE_CONFIGURED=True):
+        call_command("prepare_database", verbosity=0)
+        assert os.path.exists(code_file)
+
+        create_first_admin()
+        call_command("prepare_database", verbosity=0)
+
+    assert not os.path.exists(code_file)

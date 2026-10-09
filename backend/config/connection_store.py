@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass
 
 from cryptography.fernet import Fernet, InvalidToken
 
+from config.state_files import remove_file
+
 KEY_CONTEXT = b"obedy:database-connection:"
 FILE_MODE = 0o600
 
@@ -47,3 +49,7 @@ def load_connection(path, secret):
         return Connection(**json.loads(_fernet(secret).decrypt(token)))
     except (InvalidToken, ValueError, TypeError):
         return None
+
+
+def forget_connection(path):
+    remove_file(path)
