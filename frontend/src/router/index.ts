@@ -59,6 +59,12 @@ export const routes = [
         component: () => import("../pages/DirectoryPage.vue"),
         meta: { roles: ADMIN, title: "Домен" },
       },
+      {
+        path: "journal",
+        name: "journal",
+        component: () => import("../pages/JournalPage.vue"),
+        meta: { roles: ADMIN, title: "Журнал действий" },
+      },
     ],
   },
   { path: "/:pathMatch(.*)*", redirect: "/" },
