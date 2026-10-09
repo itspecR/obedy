@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { errorMessage } from "../../api/http";
-import { fetchLunchHistory, type Lunch, type LunchHistory } from "../../api/lunch";
+import { fetchLunchHistory, type LunchHistory } from "../../api/lunch";
 import { useToasts } from "../../composables/useToasts";
-import { formatDateTime, formatDay, formatMonth, formatTime } from "../../format/dateTime";
+import { formatDateTime, formatDay, formatMonth } from "../../format/dateTime";
 import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
-import { formatMinutes } from "./countdown";
-import { LUNCH_STATUS, MEASURED_STATUSES, correctionLabel } from "./lunchStatus";
+import { LUNCH_STATUS, correctionLabel, lunchDuration, lunchRange } from "./lunchStatus";
 import { shiftMonth } from "../../format/calendar";
 
 const props = defineProps<{ revision: number }>();
@@ -33,8 +32,6 @@ async function load(target: string): Promise<void> {
   }
 }
 
-const range = (lunch: Lunch) => (lunch.ended_at ? `${formatTime(lunch.started_at)}–${formatTime(lunch.ended_at)}` : `с ${formatTime(lunch.started_at)}`);
-const duration = (lunch: Lunch) => (MEASURED_STATUSES.includes(lunch.status) ? formatMinutes(lunch.duration_seconds) : "—");
 
 onMounted(() => load(""));
 watch(
@@ -72,8 +69,8 @@ watch(
     <ul v-if="history && history.lunches.length" class="history__list">
       <li v-for="lunch in history.lunches" :key="lunch.id" class="history__row">
         <span class="history__day">{{ formatDay(lunch.day) }}</span>
-        <span class="history__range numeric">{{ range(lunch) }}</span>
-        <span class="history__duration numeric">{{ duration(lunch) }}</span>
+        <span class="history__range numeric">{{ lunchRange(lunch) }}</span>
+        <span class="history__duration numeric">{{ lunchDuration(lunch) }}</span>
         <StatusBadge class="history__status" :tone="LUNCH_STATUS[lunch.status].tone" :label="LUNCH_STATUS[lunch.status].label" />
         <p v-if="lunch.correction" class="history__correction">
           {{ correctionLabel(lunch.correction) }}: {{ lunch.correction.by }}, {{ formatDateTime(lunch.correction.at) }}. Причина: {{ lunch.correction.reason }}

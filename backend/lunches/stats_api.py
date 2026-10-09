@@ -1,17 +1,21 @@
 from dataclasses import asdict
 from datetime import date
+from typing import Annotated
 
 from django.http import HttpResponse
 from django.utils import timezone
-from ninja import Router, Schema
+from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
 from accounts.names import display_name
 from accounts.security import session_auth
 from lunches.excel import workbook_bytes
 from lunches.service import close_overdue
-from lunches.statistics import BadPeriod, checked_period, lunches_in, overview_of, people_stats
+from lunches.schemas import LunchOut, describe_lunch
+from lunches.statistics import BadPeriod, checked_period, chosen, lunches_in, overview_of, people_stats
 from lunches.supervision import require_supervisor
+
+People = Annotated[list[int] | None, Query()]
 
 STATS_ONLY = "Статистика доступна HR и администратору"
 XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -40,11 +44,18 @@ class OverviewOut(Schema):
     people: int
 
 
+class PersonLunchOut(Schema):
+    person_id: int
+    name: str
+    lunch: LunchOut
+
+
 class StatsOut(Schema):
     date_from: date
     date_to: date
     overview: OverviewOut
     people: list[PersonStatsOut]
+    lunches: list[PersonLunchOut]
 
 
 def describe_stats(stats):
@@ -62,6 +73,10 @@ def describe_stats(stats):
     )
 
 
+def describe_person_lunch(lunch, now):
+    return PersonLunchOut(person_id=lunch.account_id, name=display_name(lunch.account), lunch=describe_lunch(lunch, now))
+
+
 def period_for(request, date_from, date_to):
     require_supervisor(request, STATS_ONLY)
     try:
@@ -77,24 +92,25 @@ def fresh_now():
 
 
 @router.get("", auth=session_auth, response=StatsOut)
-def stats(request, date_from: date, date_to: date):
+def stats(request, date_from: date, date_to: date, person: People = None):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
     lunches = lunches_in(period)
-    overview = overview_of(lunches, now)
+    selected = chosen(lunches, person or ())
     return StatsOut(
         date_from=period.first,
         date_to=period.last,
-        overview=OverviewOut(**asdict(overview)),
+        overview=OverviewOut(**asdict(overview_of(selected, now))),
         people=[describe_stats(item) for item in people_stats(lunches, now)],
+        lunches=[describe_person_lunch(lunch, now) for lunch in selected] if person else [],
     )
 
 
 @router.get("/export", auth=session_auth)
-def export(request, date_from: date, date_to: date):
+def export(request, date_from: date, date_to: date, person: People = None):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
-    lunches = lunches_in(period)
+    lunches = chosen(lunches_in(period), person or ())
     response = HttpResponse(workbook_bytes(people_stats(lunches, now), lunches, now), content_type=XLSX_TYPE)
     response["Content-Disposition"] = f'attachment; filename="{FILE_NAME.format(first=period.first, last=period.last)}"'
     return response

@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { errorMessage } from "../api/http";
 import { exportStats, fetchStats, type Stats, type StatsQuery } from "../api/stats";
 import { PERIOD_PRESETS, samePeriod, thisMonth, type Period, type PeriodPreset } from "../components/stats/period";
+import StatsLunches from "../components/stats/StatsLunches.vue";
 import StatsTable from "../components/stats/StatsTable.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import DateField from "../components/ui/DateField.vue";
@@ -16,17 +17,24 @@ import { matchesQuery } from "../format/search";
 const today = isoDay(new Date());
 const period = ref<Period>(thisMonth(today));
 const search = ref("");
+const selected = ref<number[]>([]);
 const stats = ref<Stats | null>(null);
 const loadError = ref("");
 const loading = ref(false);
 const exporting = ref(false);
 const { fail } = useToasts();
 
-const query = computed<StatsQuery>(() => ({ date_from: period.value.from, date_to: period.value.to }));
+const query = computed<StatsQuery>(() => ({ date_from: period.value.from, date_to: period.value.to, person: selected.value }));
 const people = computed(() =>
   (stats.value?.people ?? []).filter((person) => matchesQuery(search.value, [person.name, person.login])),
 );
 const overview = computed(() => stats.value?.overview);
+const exportLabel = computed(() => {
+  if (exporting.value) {
+    return "Готовим файл…";
+  }
+  return selected.value.length ? `Скачать Excel · выбрано ${selected.value.length}` : "Скачать Excel";
+});
 
 const minutes = (value: number | null) => (value === null ? "—" : `${value} мин`);
 const percent = (value: number | null) => (value === null ? "—" : `${value}%`);
@@ -62,6 +70,18 @@ async function download(): Promise<void> {
   }
 }
 
+function toggle(id: number, checked: boolean): void {
+  selected.value = checked ? [...selected.value, id] : selected.value.filter((item) => item !== id);
+}
+
+function only(id: number): void {
+  selected.value = [id];
+}
+
+function everyone(): void {
+  selected.value = [];
+}
+
 function choose(preset: PeriodPreset): void {
   period.value = preset.period(today);
 }
@@ -73,7 +93,7 @@ onMounted(load);
 <template>
   <section class="stats">
     <PageHeader title="Статистика" subtitle="Обеды и нарушения за период">
-      <AppButton variant="primary" :disabled="exporting || !stats" @click="download">{{ exporting ? "Готовим файл…" : "Скачать Excel" }}</AppButton>
+      <AppButton variant="primary" :disabled="exporting || !stats" @click="download">{{ exportLabel }}</AppButton>
     </PageHeader>
 
     <div class="panel stats__filters">
@@ -88,6 +108,10 @@ onMounted(load);
         <TextField v-model="search" label="Поиск" icon="search" placeholder="например: Иванов" plain />
       </div>
       <p class="stats__note">Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат.</p>
+      <div v-if="selected.length" class="stats__selection" role="status">
+        <span>Выбрано сотрудников: {{ selected.length }} — итоги и Excel только по ним</span>
+        <AppButton size="small" @click="everyone">Все сотрудники</AppButton>
+      </div>
     </div>
 
     <div v-if="loadError" class="panel stats__message" role="alert">
@@ -118,7 +142,8 @@ onMounted(load);
           <dd class="numeric">{{ overview.people }}</dd>
         </div>
       </dl>
-      <StatsTable :people="people" />
+      <StatsLunches v-if="selected.length" :lunches="stats.lunches" />
+      <StatsTable :people="people" :selected="selected" @toggle="toggle" @only="only" />
     </template>
   </section>
 </template>
@@ -153,6 +178,18 @@ onMounted(load);
   margin: 0;
   font-size: var(--text-small);
   color: var(--muted);
+}
+
+.stats__selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-field);
+  background: var(--blue-tint);
 }
 
 .stats__overview {

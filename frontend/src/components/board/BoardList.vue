@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import type { BoardEntry } from "../../api/board";
-import { formatTime } from "../../format/dateTime";
-import { countdownText, countdownTone, formatMinutes, remainingSeconds } from "../lunch/countdown";
-import { LUNCH_STATUS, MEASURED_STATUSES, correctionLabel } from "../lunch/lunchStatus";
+import { countdownText, countdownTone, remainingSeconds } from "../lunch/countdown";
+import { LUNCH_STATUS, correctionLabel, lunchDuration, lunchRange } from "../lunch/lunchStatus";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 const props = defineProps<{ title: string; entries: BoardEntry[]; now: number; warningMinutes: number; empty: string }>();
 const emit = defineEmits<{ correct: [entry: BoardEntry] }>();
 
 const remaining = (entry: BoardEntry) => remainingSeconds(entry.lunch.started_at, entry.lunch.limit_minutes, props.now);
-const range = ({ lunch }: BoardEntry) => (lunch.ended_at ? `${formatTime(lunch.started_at)}–${formatTime(lunch.ended_at)}` : `с ${formatTime(lunch.started_at)}`);
-const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.status) ? formatMinutes(lunch.duration_seconds) : "—");
 </script>
 
 <template>
@@ -24,7 +21,7 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
           <span class="board-list__name">{{ entry.person.name }}</span>
           <span class="board-list__details">{{ entry.person.login }}</span>
         </div>
-        <span class="board-list__range numeric">{{ range(entry) }}</span>
+        <span class="board-list__range numeric">{{ lunchRange(entry.lunch) }}</span>
         <span
           v-if="entry.lunch.status === 'ongoing'"
           class="board-list__timer numeric"
@@ -32,7 +29,7 @@ const duration = ({ lunch }: BoardEntry) => (MEASURED_STATUSES.includes(lunch.st
         >
           {{ countdownText(remaining(entry)) }}
         </span>
-        <span v-else class="board-list__duration numeric">{{ duration(entry) }}</span>
+        <span v-else class="board-list__duration numeric">{{ lunchDuration(entry.lunch) }}</span>
         <StatusBadge class="board-list__status" :tone="LUNCH_STATUS[entry.lunch.status].tone" :label="LUNCH_STATUS[entry.lunch.status].label" />
         <button
           v-if="entry.can_correct"

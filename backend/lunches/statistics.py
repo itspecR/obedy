@@ -62,6 +62,11 @@ def lunches_in(period):
     return list(period_query(period).select_related("account", "corrected_by").order_by("day", "started_at", "account__full_name"))
 
 
+def chosen(lunches, people):
+    wanted = set(people)
+    return [lunch for lunch in lunches if lunch.account_id in wanted] if wanted else lunches
+
+
 def is_unreturned(lunch, now):
     return status_of(lunch, now) == LunchStatus.UNRETURNED
 
