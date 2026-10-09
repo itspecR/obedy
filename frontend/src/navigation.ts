@@ -19,7 +19,7 @@ const JOURNAL: Section = { name: "journal", path: "/journal", label: "Журна
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
-  hr: [LUNCH, BOARD, STATS],
+  hr: [LUNCH, BOARD, STATS, RULES],
   admin: [BOARD, STATS, STAFF, RULES, ACCESS, DIRECTORY, JOURNAL],
 };
 

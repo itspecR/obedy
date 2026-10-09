@@ -3,13 +3,15 @@ from datetime import datetime, time
 from ninja import Field, Router, Schema
 from ninja.errors import HttpError
 
-from accounts.permissions import require_admin
 from accounts.security import session_auth
 from journal.entries import record_changes
 from journal.models import Action
 from journal.snapshots import rules_snapshot
 from lunches.rule_changes import MAX_LIMIT_MINUTES, MIN_LIMIT_MINUTES, WEEKDAYS, InvalidRules, RulesDraft, save_rules
 from lunches.rules import current_rules
+from lunches.supervision import require_supervisor
+
+RULES_ONLY = "Правила обеда доступны HR и администратору"
 
 router = Router(tags=["Правила обеда"])
 
@@ -54,13 +56,13 @@ def describe_rules(rules):
 
 @router.get("", auth=session_auth, response=RulesOut)
 def rules(request):
-    require_admin(request)
+    require_supervisor(request, RULES_ONLY)
     return describe_rules(current_rules())
 
 
 @router.put("", auth=session_auth, response=RulesOut)
 def update_rules(request, payload: RulesIn):
-    require_admin(request)
+    require_supervisor(request, RULES_ONLY)
     before = rules_snapshot(current_rules())
     try:
         saved = save_rules(payload.draft())

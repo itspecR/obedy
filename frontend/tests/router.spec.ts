@@ -36,7 +36,7 @@ describe("decideRoute", () => {
     expect(decideRoute(lunch, as("admin"))).toBe(true);
   });
 
-  it.each(["staff", "rules", "journal"])("opens the %s section to the admin only", (name) => {
+  it.each(["staff", "journal"])("opens the %s section to the admin only", (name) => {
     const section = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === name);
 
     expect(section?.meta).toMatchObject({ roles: ["admin"] });
@@ -54,8 +54,8 @@ describe("decideRoute", () => {
     expect(lunchRoute?.meta).toMatchObject({ roles: ["employee", "hr"] });
   });
 
-  it("opens the board and statistics to HR and the admin only", () => {
-    for (const name of ["board", "stats"]) {
+  it("opens the board, statistics and rules to HR and the admin only", () => {
+    for (const name of ["board", "stats", "rules"]) {
       const section = routes.flatMap((route) => ("children" in route ? route.children : [])).find((route) => route?.name === name);
 
       expect(section?.meta).toMatchObject({ roles: ["hr", "admin"] });

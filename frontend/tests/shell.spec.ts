@@ -18,7 +18,7 @@ function navLabels(role: Role): string[] {
 describe("SideNav", () => {
   it("shows the lunch section to everyone and access settings to the admin", () => {
     expect(navLabels("employee")).toEqual(["Обед"]);
-    expect(navLabels("hr")).toEqual(["Обед", "Табло", "Статистика"]);
+    expect(navLabels("hr")).toEqual(["Обед", "Табло", "Статистика", "Правила"]);
     expect(navLabels("admin")).toEqual(["Табло", "Статистика", "Сотрудники", "Правила", "Доступ", "Домен", "Журнал"]);
   });
 
