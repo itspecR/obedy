@@ -354,12 +354,19 @@ def test_admin_reads_default_rules():
     assert (rules["min_limit_minutes"], rules["max_limit_minutes"]) == (5, 240)
 
 
-@pytest.mark.parametrize("role", [Role.EMPLOYEE, Role.HR])
-def test_only_admin_manages_rules(role):
-    client = signed_in("worker", role)
+def test_employee_cannot_manage_rules():
+    client = signed_in("worker", Role.EMPLOYEE)
 
-    assert client.get("/api/lunch/rules").status_code == 403
+    assert client.get("/api/lunch/rules").json()["detail"] == "Правила обеда доступны HR и администратору"
     assert put_rules(client).status_code == 403
+
+
+def test_hr_changes_rules():
+    client = signed_in("kadry", Role.HR)
+
+    response = put_rules(client, limit_minutes=50)
+
+    assert (response.status_code, response.json()["limit_minutes"]) == (200, 50)
 
 
 def test_admin_saves_rules_with_sorted_workdays():

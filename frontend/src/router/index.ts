@@ -45,7 +45,7 @@ export const routes = [
         path: "rules",
         name: "rules",
         component: () => import("../pages/RulesPage.vue"),
-        meta: { roles: ADMIN, title: "Правила обеда" },
+        meta: { roles: BOARD, title: "Правила обеда" },
       },
       {
         path: "access",
