@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { FRAMES_PER_SECOND, SCENES, sceneLength } from "../../rabbit/scenes";
+import RabbitHole from "../rabbit/RabbitHole.vue";
 import RabbitSprite from "../rabbit/RabbitSprite.vue";
 import { FILL_MS, PHASE_SCENE, nextPhase, type Outcome, type Phase } from "./rabbitPlot";
 
@@ -23,7 +24,7 @@ const props = defineProps<{ outcome: Outcome }>();
 const emit = defineEmits<{ fill: [center: Point]; done: [] }>();
 
 const root = ref<HTMLElement | null>(null);
-const hole = ref<HTMLElement | null>(null);
+const hole = ref<InstanceType<typeof RabbitHole> | null>(null);
 const phase = ref<Phase>("appear");
 const holeOffset = ref(HOLE_DISTANCE);
 let timer = 0;
@@ -56,7 +57,7 @@ function advance(): void {
   }
   phase.value = next;
   if (next === "fill" && hole.value) {
-    emit("fill", centerOf(hole.value));
+    emit("fill", centerOf(hole.value.$el as HTMLElement));
   }
   schedule();
 }
@@ -78,7 +79,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
 <template>
   <div ref="root" class="login-rabbit" aria-hidden="true" :style="sizes">
-    <span ref="hole" class="login-rabbit__hole" :class="{ 'login-rabbit__hole--open': holeOpen }" :style="holeStyle" />
+    <RabbitHole ref="hole" class="login-rabbit__hole" :open="holeOpen" :style="holeStyle" />
     <div class="login-rabbit__box">
       <div class="login-rabbit__body" :class="{ 'login-rabbit__body--appear': phase === 'appear' }" :style="body">
         <RabbitSprite v-if="scene" :scene="scene" :speed="SPEED" :repeat="phase === 'tap' && outcome === 'pending'" @ended="advance" />
@@ -112,19 +113,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 }
 
 .login-rabbit__hole {
-  position: absolute;
   top: 0;
-  width: 120px;
-  height: 30px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, #000 62%, #0a1222 78%, rgba(110, 168, 255, 0.85) 94%, rgba(110, 168, 255, 0) 100%);
-  box-shadow: 0 0 22px rgba(110, 168, 255, 0.45);
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.login-rabbit__hole--open {
-  transform: translate(-50%, -50%) scale(1);
 }
 
 @keyframes rabbit-appear {

@@ -136,7 +136,7 @@ describe("LoginRabbit", () => {
 
     await end(wrapper);
     expect(shown(wrapper)).toBe("start");
-    expect(wrapper.get(".login-rabbit__hole").classes()).toContain("login-rabbit__hole--open");
+    expect(wrapper.get(".login-rabbit__hole").classes()).toContain("rabbit-hole--open");
     await end(wrapper);
     expect(shown(wrapper)).toBe("run");
     await vi.advanceTimersByTimeAsync(450);

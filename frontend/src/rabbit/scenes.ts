@@ -1,4 +1,4 @@
-export type SceneName = "tap" | "start" | "run" | "dive" | "no";
+export type SceneName = "tap" | "start" | "run" | "dive" | "no" | "ontime";
 
 export interface Scene {
   holds: number[];
@@ -13,6 +13,7 @@ export const SCENES: Record<SceneName, Scene> = {
   run: { holds: [3, 3, 2, 3, 3, 2], loop: true },
   dive: { holds: [3, 3, 3, 3, 3, 3], loop: false },
   no: { holds: [3, 3, 3, 6, 6, 9], loop: false },
+  ontime: { holds: [3, 5, 6, 4, 4, 14], loop: false },
 };
 
 export function sceneLength(scene: Scene): number {
