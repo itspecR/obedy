@@ -29,6 +29,7 @@ class Action(models.TextChoices):
     DIRECTORY_CHANGED = "directory_changed", "Изменены настройки домена"
     DIRECTORY_CHECKED = "directory_checked", "Проверка связи с доменом"
     DIRECTORY_SYNCED = "directory_synced", "Синхронизация с доменом"
+    BACKUP_DONE = "backup_done", "Резервная копия базы"
 
 
 class Category(models.TextChoices):
@@ -58,6 +59,7 @@ CATEGORY_ACTIONS = {
         Action.DIRECTORY_CHANGED,
         Action.DIRECTORY_CHECKED,
         Action.DIRECTORY_SYNCED,
+        Action.BACKUP_DONE,
     ),
 }
 

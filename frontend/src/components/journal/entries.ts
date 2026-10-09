@@ -38,6 +38,7 @@ export const ACTIONS: Record<JournalAction, ActionInfo> = {
   directory_changed: { label: "Изменены настройки домена", tone: "neutral" },
   directory_checked: { label: "Проверка связи с доменом", tone: "neutral" },
   directory_synced: { label: "Синхронизация с доменом", tone: "neutral" },
+  backup_done: { label: "Резервная копия базы", tone: "ok" },
 };
 
 export const CATEGORY_OPTIONS: { value: CategoryChoice; label: string }[] = [

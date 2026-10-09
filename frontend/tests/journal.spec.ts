@@ -8,6 +8,19 @@ import { choosePerson, routeFetch } from "./helpers";
 
 const WEEK = "/api/journal?date_from=2026-10-02&date_to=2026-10-08";
 const PEOPLE = "/api/journal/people";
+const SYSTEM = "/api/journal/system";
+const SERVER = {
+  release: "release-0.10.08 · abc1234 · 09.10.2026 12:00",
+  site_started_at: "2026-10-09T06:00:00Z",
+  db_started_at: "2026-10-08T21:00:00Z",
+  last_backup_at: null,
+  os_name: "Ubuntu 24.04.1 LTS",
+  os_source: "server" as const,
+  memory_total: 8 * 1024 ** 3,
+  memory_used: 2 * 1024 ** 3,
+  app_memory_used: 300 * 1024 ** 2,
+  app_memory_limit: 1024 ** 3,
+};
 const ADMIN = { id: 1, name: "Администратор", login: "admin" };
 const PETROVA = { id: 2, name: "Петрова Анна", login: "petrova" };
 
@@ -58,7 +71,7 @@ describe("JournalPage", () => {
   });
 
   async function mounted(routes: Record<string, [number, unknown]> = {}) {
-    const spy = routeFetch({ [WEEK]: [200, { entries: [entry(), FAILED], has_more: false }], [PEOPLE]: [200, [ADMIN, PETROVA]], ...routes });
+    const spy = routeFetch({ [WEEK]: [200, { entries: [entry(), FAILED], has_more: false }], [PEOPLE]: [200, [ADMIN, PETROVA]], [SYSTEM]: [200, SERVER], ...routes });
     const wrapper = mount(JournalPage, { attachTo: document.body });
     await flushPromises();
     return { spy, wrapper };
@@ -110,6 +123,18 @@ describe("JournalPage", () => {
     expect(requested(spy)).toContain(`${WEEK}&before=10`);
     expect(wrapper.findAll(".journal-list__row")).toHaveLength(2);
     expect(wrapper.text()).not.toContain("Показать ещё");
+    wrapper.unmount();
+  });
+
+  it("shows the server panel with the release", async () => {
+    const { wrapper } = await mounted();
+    const panel = wrapper.get(".system").text();
+
+    expect(panel).toContain("release-0.10.08 · abc1234 · 09.10.2026 12:00");
+    expect(panel).toContain("Ubuntu 24.04.1 LTS");
+    expect(panel).toContain("занято 2,0 ГБ из 8,0 ГБ (25%)");
+    expect(panel).toContain("Свободно6,0 ГБ");
+    expect(panel).toContain("Резервная копия базынет данных");
     wrapper.unmount();
   });
 

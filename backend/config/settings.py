@@ -17,6 +17,7 @@ def env_list(name, default=""):
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env("DJANGO_DEBUG", "0") == "1"
+APP_RELEASE = env("APP_RELEASE", "")
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 INSTALLED_APPS = [

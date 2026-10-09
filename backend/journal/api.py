@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from datetime import date, datetime, time, timedelta
 
 from django.db.models import Q
@@ -7,6 +8,7 @@ from ninja.errors import HttpError
 from accounts.permissions import require_admin
 from accounts.security import session_auth
 from journal.models import CATEGORY_ACTIONS, Action, Category, JournalEntry
+from journal.system import system_info
 from lunches.board_api import PersonOut, describe_person
 from lunches.clock import moment_of
 from lunches.statistics import BAD_ORDER
@@ -31,6 +33,19 @@ class EntryOut(Schema):
     target: PersonOut | None
     address: str
     details: list[RowOut]
+
+
+class SystemOut(Schema):
+    release: str
+    site_started_at: datetime | None
+    db_started_at: datetime | None
+    last_backup_at: datetime | None
+    os_name: str
+    os_source: str
+    memory_total: int | None
+    memory_used: int | None
+    app_memory_used: int | None
+    app_memory_limit: int | None
 
 
 class JournalOut(Schema):
@@ -86,3 +101,9 @@ def journal(request, date_from: date, date_to: date, person: int | None = None, 
 def people(request):
     require_admin(request)
     return [describe_person(account) for account in present_accounts().order_by("full_name", "login")]
+
+
+@router.get("/system", auth=session_auth, response=SystemOut)
+def system(request):
+    require_admin(request)
+    return SystemOut(**asdict(system_info()))

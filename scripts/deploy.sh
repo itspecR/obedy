@@ -22,6 +22,8 @@ main() {
         trap 'archive_failed' ERR
     fi
     step "2/7" "Собираем контейнеры"
+    export APP_RELEASE
+    APP_RELEASE="$(release_label "$root")"
     docker compose build
     step "3/7" "Резервная копия базы перед миграциями"
     "$root/scripts/backup.sh"

@@ -49,3 +49,12 @@ fail() {
     echo "$1" >&2
     exit 1
 }
+
+release_label() {
+    local commit
+    if commit="$(git -C "$1" rev-parse --short HEAD 2>/dev/null)"; then
+        echo "$(git -C "$1" rev-parse --abbrev-ref HEAD) · $commit · $(TZ=Europe/Moscow date '+%d.%m.%Y %H:%M')"
+    else
+        echo "из архива · $(TZ=Europe/Moscow date '+%d.%m.%Y %H:%M')"
+    fi
+}

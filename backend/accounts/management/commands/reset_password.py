@@ -4,6 +4,8 @@ from accounts.credentials import set_temporary_password
 from accounts.models import Account, Source
 from accounts.names import normalize_login
 from accounts.temporary import temporary_password
+from journal.entries import record_server
+from journal.models import Action
 
 
 class Command(BaseCommand):
@@ -20,4 +22,5 @@ class Command(BaseCommand):
             raise CommandError("Это доменная учётная запись: её пароль меняется в Active Directory")
         password = temporary_password()
         set_temporary_password(account, password)
+        record_server(Action.PASSWORD_ISSUED, target=account)
         self.stdout.write(f"Логин: {account.login}\nВременный пароль: {password}\nПри входе система попросит задать новый пароль.")

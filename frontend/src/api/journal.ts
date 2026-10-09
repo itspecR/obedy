@@ -23,7 +23,8 @@ export type JournalAction =
   | "private_networks_changed"
   | "directory_changed"
   | "directory_checked"
-  | "directory_synced";
+  | "directory_synced"
+  | "backup_done";
 
 export type JournalCategory = "logins" | "staff" | "lunches" | "settings";
 
@@ -62,4 +63,18 @@ function queryOf(query: JournalQuery): string {
 }
 
 export const fetchJournal = (query: JournalQuery) => request<Journal>("GET", `/journal?${queryOf(query)}`);
+export interface SystemInfo {
+  release: string;
+  site_started_at: string | null;
+  db_started_at: string | null;
+  last_backup_at: string | null;
+  os_name: string;
+  os_source: "server" | "container" | "";
+  memory_total: number | null;
+  memory_used: number | null;
+  app_memory_used: number | null;
+  app_memory_limit: number | null;
+}
+
+export const fetchSystem = () => request<SystemInfo>("GET", "/journal/system");
 export const fetchJournalPeople = () => request<Person[]>("GET", "/journal/people");

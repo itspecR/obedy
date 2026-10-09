@@ -6,6 +6,9 @@ from accounts.models import Account, Role, Source
 from accounts.names import normalize_login
 from accounts.passwords import hash_password
 from accounts.temporary import temporary_password
+from journal.entries import differences, record_server
+from journal.models import Action
+from journal.snapshots import created_account_snapshot
 
 ADMIN_NAME = "Администратор"
 DEFAULT_LOGIN = "admin"
@@ -26,7 +29,7 @@ class Command(BaseCommand):
         if Account.objects.filter(login=login).exists():
             raise CommandError(f"Логин {login} уже занят. Укажите другой: --login <логин>")
         password = temporary_password()
-        Account.objects.create(
+        account = Account.objects.create(
             login=login,
             full_name=ADMIN_NAME,
             source=Source.LOCAL,
@@ -35,4 +38,5 @@ class Command(BaseCommand):
             must_change_password=True,
             track_lunch=tracks_lunch_by_default(Role.ADMIN),
         )
+        record_server(Action.ACCOUNT_CREATED, account, differences({}, created_account_snapshot(account)))
         self.stdout.write(f"Логин: {login}\nВременный пароль: {password}\nПри первом входе система попросит задать новый пароль.")

@@ -15,7 +15,7 @@ const STATS: Section = { name: "stats", path: "/stats", label: "Статисти
 const STAFF: Section = { name: "staff", path: "/staff", label: "Сотрудники", icon: "users" };
 const ACCESS: Section = { name: "access", path: "/access", label: "Доступ", icon: "shield" };
 const DIRECTORY: Section = { name: "directory", path: "/directory", label: "Домен", icon: "server" };
-const JOURNAL: Section = { name: "journal", path: "/journal", label: "Журнал", icon: "journal" };
+const JOURNAL: Section = { name: "log", path: "/log", label: "Log", icon: "journal" };
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],

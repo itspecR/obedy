@@ -10,16 +10,13 @@ from accounts.permissions import require_admin
 from accounts.security import session_auth
 from journal.entries import differences, record, record_changes, removed
 from journal.models import Action
-from journal.snapshots import switch
+from journal.snapshots import network_snapshot, private_snapshot
 
 NOTE_MAX_LENGTH = 120
 
 INVALID_NETWORK = "Неверный адрес. Пример: 192.168.1.10 или 192.168.1.0/24"
 DUPLICATE_NETWORK = "Этот адрес уже есть в списке"
 NETWORK_NOT_FOUND = "Адрес не найден. Обновите страницу"
-ADDRESS_LABEL = "Адрес"
-NOTE_LABEL = "Заметка"
-PRIVATE_LABEL = "Вся локальная сеть"
 
 router = Router(tags=["Доступ"])
 
@@ -48,11 +45,6 @@ class PrivateIn(Schema):
 
 def lockout_message(address):
     return f"Нельзя: ваш адрес {address} потеряет доступ. Сначала добавьте его в список"
-
-
-def network_snapshot(network):
-    snapshot = {ADDRESS_LABEL: network.network}
-    return {**snapshot, NOTE_LABEL: network.note} if network.note else snapshot
 
 
 def overview(request):
@@ -109,5 +101,5 @@ def private(request, payload: PrivateIn):
         was_enabled = set_private_networks(payload.enabled, client_address(request))
     except LockoutRisk as error:
         raise HttpError(400, lockout_message(error.address)) from error
-    record_changes(request, Action.PRIVATE_NETWORKS_CHANGED, {PRIVATE_LABEL: switch(was_enabled)}, {PRIVATE_LABEL: switch(payload.enabled)})
+    record_changes(request, Action.PRIVATE_NETWORKS_CHANGED, private_snapshot(was_enabled), private_snapshot(payload.enabled))
     return overview(request)

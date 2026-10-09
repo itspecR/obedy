@@ -75,3 +75,12 @@ def directory_snapshot(stored):
         "Группа сотрудников": text(stored.group_dn),
         "Срок входа": f"{stored.session_days} дн.",
     }
+
+
+def network_snapshot(network):
+    snapshot = {"Адрес": network.network}
+    return {**snapshot, "Заметка": network.note} if network.note else snapshot
+
+
+def private_snapshot(enabled):
+    return {"Вся локальная сеть": switch(enabled)}
