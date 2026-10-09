@@ -18,7 +18,8 @@ COPY backend/ .
 ARG APP_RELEASE=""
 ENV APP_RELEASE=$APP_RELEASE
 
-RUN useradd --system --no-create-home obedy
+RUN useradd --system --uid 10001 --no-create-home obedy \
+    && install -d -o obedy -g obedy -m 700 /app/state
 USER obedy
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "127.0.0.1:8000", "--workers", "3", "--worker-class", "gthread", "--threads", "4", "--timeout", "120", "--access-logfile", "-"]
+CMD ["sh", "-c", "python manage.py prepare_database; exec gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --worker-class gthread --threads 4 --timeout 120 --access-logfile -"]

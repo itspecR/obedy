@@ -9,6 +9,7 @@ from ninja.errors import AuthenticationError
 from access.api import router as access_router
 from accounts.api import router as auth_router
 from directory.api import router as directory_router
+from config.setup_api import router as setup_router
 from journal.api import router as journal_router
 from lunches.api import router as lunch_router
 from staff.api import router as staff_router
@@ -38,6 +39,8 @@ def database_is_available():
 
 @api.get("/health", response={200: HealthOut, 503: HealthOut})
 def health(request):
+    if not settings.DATABASE_CONFIGURED:
+        return Status(200, HealthOut(status="setup", database="not_configured"))
     if database_is_available():
         return Status(200, HealthOut(status="ok", database="ok"))
     return Status(503, HealthOut(status="error", database="unavailable"))
@@ -65,3 +68,4 @@ api.add_router("/directory", directory_router)
 api.add_router("/staff", staff_router)
 api.add_router("/lunch", lunch_router)
 api.add_router("/journal", journal_router)
+api.add_router("/setup", setup_router)

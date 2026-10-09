@@ -58,3 +58,10 @@ release_label() {
         echo "из архива · $(TZ=Europe/Moscow date '+%d.%m.%Y %H:%M')"
     fi
 }
+
+STATE_DIR=/var/lib/obedy
+APP_UID=10001
+
+prepare_state_dir() {
+    install -d -o "$APP_UID" -g "$APP_UID" -m 700 "$STATE_DIR"
+}
