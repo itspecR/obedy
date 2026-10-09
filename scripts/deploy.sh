@@ -22,6 +22,7 @@ main() {
         trap 'archive_failed' ERR
     fi
     step "2/7" "Собираем контейнеры"
+    prepare_state_dir
     export APP_RELEASE
     APP_RELEASE="$(release_label "$root")"
     docker compose build

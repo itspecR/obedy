@@ -1,4 +1,5 @@
 MSSQL_ENGINE = "mssql"
+NO_DATABASE = {"ENGINE": "django.db.backends.dummy"}
 DEFAULT_PORT = "1433"
 LOCK_ACQUIRED = 0
 
@@ -7,15 +8,15 @@ def connection_string_extras(trust_certificate):
     return f"Encrypt=yes;TrustServerCertificate={'yes' if trust_certificate else 'no'}"
 
 
-def mssql_database(host, port, name, user, password, trust_certificate, test_name):
+def mssql_database(connection, test_name):
     return {
         "ENGINE": MSSQL_ENGINE,
-        "HOST": host,
-        "PORT": port,
-        "NAME": name,
-        "USER": user,
-        "PASSWORD": password,
-        "OPTIONS": {"python_driver": "mssql_python", "extra_params": connection_string_extras(trust_certificate)},
+        "HOST": connection.host,
+        "PORT": connection.port,
+        "NAME": connection.name,
+        "USER": connection.user,
+        "PASSWORD": connection.password,
+        "OPTIONS": {"python_driver": "mssql_python", "extra_params": connection_string_extras(connection.trust_certificate)},
         "TEST": {"NAME": test_name},
     }
 

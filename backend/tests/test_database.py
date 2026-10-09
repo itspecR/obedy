@@ -1,13 +1,14 @@
 import pytest
 from django.db import connection, connections
 
+from config.connection_store import Connection
 from config.database import mssql_database, release_lock, seconds_since_start, try_lock
 
 LOCK = "obedy-test-lock"
 
 
 def settings_for(trust):
-    return mssql_database("sql.local\\SQLEXPRESS", "", "obedy", "obedy", "secret", trust, "test_obedy")
+    return mssql_database(Connection("sql.local\\SQLEXPRESS", "", "obedy", "obedy", "secret", trust), "test_obedy")
 
 
 def test_connection_uses_the_bundled_driver_and_encryption():

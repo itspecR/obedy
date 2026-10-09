@@ -18,6 +18,7 @@ main() {
     step "2/7" "Готовим базу данных и файл .env"
     prepare_env "$root"
     step "3/7" "Собираем и запускаем систему"
+    prepare_state_dir
     export APP_RELEASE
     APP_RELEASE="$(release_label "$root")"
     (cd "$root" && docker compose up -d --build --remove-orphans && wait_for_app "$root" && docker compose exec -T app python manage.py migrate --noinput)
