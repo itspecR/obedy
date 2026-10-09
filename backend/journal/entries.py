@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass
 from access.client import client_address
 from journal.models import ADDRESS_LIMIT, JournalEntry
 
+SERVER_ADDRESS = "сервер"
+
 
 @dataclass(frozen=True)
 class Row:
@@ -31,6 +33,10 @@ def write(action, actor, address, target=None, rows=()):
 
 def record(request, action, target=None, rows=()):
     return write(action, request.auth.account, client_address(request), target, rows)
+
+
+def record_server(action, target=None, rows=()):
+    return write(action, None, SERVER_ADDRESS, target, rows)
 
 
 def record_changes(request, action, before, after, target=None, extra=()):

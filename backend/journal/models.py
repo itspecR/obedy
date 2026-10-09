@@ -21,6 +21,7 @@ class Action(models.TextChoices):
     LUNCH_CORRECTED = "lunch_corrected", "Исправлен обед"
     LUNCH_ADDED = "lunch_added", "Добавлен обед"
     LUNCH_DELETED = "lunch_deleted", "Удалён обед"
+    LUNCHES_RESET = "lunches_reset", "Обеды сброшены"
     RULES_CHANGED = "rules_changed", "Изменены правила обеда"
     NETWORK_ADDED = "network_added", "Добавлен адрес доступа"
     NETWORK_REMOVED = "network_removed", "Удалён адрес доступа"
@@ -48,7 +49,7 @@ CATEGORY_ACTIONS = {
         Action.PROFILE_CHANGED,
         Action.PASSWORD_ISSUED,
     ),
-    Category.LUNCHES: (Action.LUNCH_CORRECTED, Action.LUNCH_ADDED, Action.LUNCH_DELETED),
+    Category.LUNCHES: (Action.LUNCH_CORRECTED, Action.LUNCH_ADDED, Action.LUNCH_DELETED, Action.LUNCHES_RESET),
     Category.SETTINGS: (
         Action.RULES_CHANGED,
         Action.NETWORK_ADDED,

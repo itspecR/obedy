@@ -2,7 +2,7 @@ import json
 from datetime import date, time, timedelta
 
 import pytest
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import Client
 from django.utils import timezone
 
@@ -305,3 +305,30 @@ def test_empty_period_returns_nothing():
     guest, _ = signed_in()
 
     assert guest.get(f"/api/journal?date_from={date(2020, 1, 1)}&date_to={date(2020, 1, 1)}").json() == {"entries": [], "has_more": False}
+
+
+def test_reset_needs_confirmation_and_keeps_everything_else():
+    account = make_account(login="ivanov")
+    Lunch.objects.create(account=account, day=TODAY, started_at=moment_of(TODAY, time(12, 0)), limit_minutes=45)
+
+    with pytest.raises(CommandError):
+        call_command("reset_lunches")
+
+    assert Lunch.objects.count() == 1
+    assert not entries(Action.LUNCHES_RESET)
+
+
+def test_reset_deletes_all_lunches_and_is_recorded_as_server():
+    account = make_account(login="ivanov")
+    for offset in range(3):
+        day = TODAY - timedelta(days=offset)
+        Lunch.objects.create(account=account, day=day, started_at=moment_of(day, time(12, 0)), limit_minutes=45)
+    JournalEntry.objects.create(action=Action.LOGIN, actor=account)
+
+    call_command("reset_lunches", "--yes")
+
+    reset = entries(Action.LUNCHES_RESET)[0]
+    assert Lunch.objects.count() == 0
+    assert Account.objects.filter(login="ivanov").exists()
+    assert entries(Action.LOGIN)
+    assert (reset.actor, reset.address, rows(reset)) == (None, "сервер", [("Удалено обедов", None, "3")])
