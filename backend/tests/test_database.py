@@ -14,7 +14,7 @@ def settings_for(trust):
 def test_connection_uses_the_bundled_driver_and_encryption():
     database = settings_for(True)
 
-    assert database["ENGINE"] == "mssql"
+    assert database["ENGINE"] == "sqlserver"
     assert database["OPTIONS"]["python_driver"] == "mssql_python"
     assert database["OPTIONS"]["extra_params"] == "Encrypt=yes;TrustServerCertificate=yes"
     assert settings_for(False)["OPTIONS"]["extra_params"] == "Encrypt=yes;TrustServerCertificate=no"

@@ -1,4 +1,4 @@
-MSSQL_ENGINE = "mssql"
+MSSQL_ENGINE = "sqlserver"
 NO_DATABASE = {"ENGINE": "django.db.backends.dummy"}
 DEFAULT_PORT = "1433"
 LOCK_ACQUIRED = 0
