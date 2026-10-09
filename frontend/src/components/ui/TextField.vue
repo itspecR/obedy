@@ -107,8 +107,13 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
   box-shadow: 0 0 0 3px var(--blue-tint);
 }
 
-.field__box--invalid {
+.field__box--invalid,
+.field__box--invalid:focus-within {
   border-color: var(--red);
+}
+
+.field__box--invalid:focus-within {
+  box-shadow: 0 0 0 3px var(--red-bg);
 }
 
 .field__box--disabled {

@@ -38,6 +38,7 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
 
 .auth__stage {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: min(440px, 100%);
 }
 
@@ -123,10 +124,12 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
 
 @keyframes auth-collapse {
   60% {
+    border-radius: 160px;
     opacity: 0.7;
     transform: scale(0.4);
   }
   to {
+    border-radius: 240px;
     opacity: 0;
     transform: scale(0.2);
   }
