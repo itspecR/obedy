@@ -13,9 +13,12 @@ main() {
     protect_env_file "$root"
     drop_legacy_env "$root"
     if [[ -d .git ]]; then
-        previous="$(git rev-parse HEAD)"
-        step "1/7" "Получаем ветку ${branch}"
-        sync_branch "$branch"
+        previous="${DEPLOY_PREVIOUS_COMMIT:-$(git rev-parse HEAD)}"
+        if [[ -z "${DEPLOY_PREVIOUS_COMMIT:-}" ]]; then
+            step "1/7" "Получаем ветку ${branch}"
+            sync_branch "$branch"
+            continue_with_fetched_script "$root" "$previous" "$branch"
+        fi
         trap 'roll_back "$previous"' ERR
     else
         step "1/7" "Установка из архива: берём файлы из $root как есть"
@@ -59,6 +62,11 @@ sync_branch() {
     git fetch origin "$1"
     git checkout -B "$1" "origin/$1"
     git reset --hard "origin/$1"
+}
+
+continue_with_fetched_script() {
+    export DEPLOY_PREVIOUS_COMMIT="$2"
+    exec bash "$1/scripts/deploy.sh" "$3"
 }
 
 enable_directory_sync() {
