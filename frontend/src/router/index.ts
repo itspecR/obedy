@@ -62,6 +62,12 @@ export const routes = [
         meta: { roles: ADMIN, title: "Домен" },
       },
       {
+        path: "database",
+        name: "database",
+        component: () => import("../pages/DatabasePage.vue"),
+        meta: { roles: ADMIN, title: "База данных" },
+      },
+      {
         path: "log",
         name: "log",
         component: () => import("../pages/JournalPage.vue"),

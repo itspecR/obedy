@@ -6,12 +6,11 @@ from pydantic import Field
 
 from accounts.first_admin import AdminExists, create_first_admin, existing_admin
 from config import restart
-from config.connection_store import Connection, save_connection
+from config.connection_form import FIELD_LIMIT, ConnectionFields, ProbeOut, connection_of, probe_out
+from config.connection_store import save_connection
 from config.probe import probe
 from config.setup_code import code_matches, forget_code
 
-FIELD_LIMIT = 200
-PORT_PATTERN = r"^\d{0,5}$"
 ALREADY_CONFIGURED = "База уже подключена"
 WRONG_CODE = "Неверный код настройки. Его показывает install.sh, новый: sudo ./scripts/setup-code.sh"
 
@@ -32,31 +31,8 @@ class AdminOut(Schema):
     password: str
 
 
-class ConnectionIn(Schema):
+class ConnectionIn(ConnectionFields):
     code: str = Field(max_length=FIELD_LIMIT)
-    host: str = Field(min_length=1, max_length=FIELD_LIMIT)
-    port: str = Field("", pattern=PORT_PATTERN)
-    name: str = Field(min_length=1, max_length=FIELD_LIMIT)
-    user: str = Field(min_length=1, max_length=FIELD_LIMIT)
-    password: str = Field(min_length=1, max_length=FIELD_LIMIT)
-    trust_certificate: bool = True
-
-
-class ProbeOut(Schema):
-    ok: bool
-    message: str
-    has_data: bool
-
-
-def connection_of(payload):
-    return Connection(
-        host=payload.host.strip(),
-        port=payload.port,
-        name=payload.name.strip(),
-        user=payload.user.strip(),
-        password=payload.password,
-        trust_certificate=payload.trust_certificate,
-    )
 
 
 def require_code(code):
@@ -87,8 +63,7 @@ def status(request):
 @router.post("/check", auth=None, response=ProbeOut)
 def check(request, payload: ConnectionIn):
     require_setup_code(payload)
-    result = probe(connection_of(payload))
-    return ProbeOut(ok=result.ok, message=result.message, has_data=result.has_data)
+    return probe_out(probe(connection_of(payload)))
 
 
 @router.post("/database", auth=None, response=ProbeOut)
