@@ -201,8 +201,18 @@ const glass = useGlassNav(nav, {
     flex: none;
   }
 
-  .side__user,
   :deep(.brand__text) {
+    display: none;
+  }
+
+  .side__user {
+    width: auto;
+    padding: 4px;
+    border: 0;
+    background: none;
+  }
+
+  .side__user :deep(.user__name) {
     display: none;
   }
 }
@@ -234,6 +244,15 @@ const glass = useGlassNav(nav, {
 
   .side__logout {
     justify-content: center;
+  }
+
+  .side__bottom {
+    gap: 4px;
+  }
+
+  .side__user :deep(.user__avatar) {
+    width: 32px;
+    height: 32px;
   }
 }
 </style>
