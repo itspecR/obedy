@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { rabbitWanted } from "../api/appearance";
 import { errorMessage } from "../api/http";
 import { fetchLunchState, finishLunch, startLunch, undoLunch, type LunchState } from "../api/lunch";
-import LunchControl from "../components/lunch/LunchControl.vue";
+import LunchControl, { type RabbitView } from "../components/lunch/LunchControl.vue";
 import LunchHistory from "../components/lunch/LunchHistory.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import { useServerClock } from "../composables/useServerClock";
 import { useToasts } from "../composables/useToasts";
+import { stillMotion } from "../device/motion";
 import { shortName } from "../navigation";
+import { preloadScenes } from "../rabbit/frames";
 import { useSession } from "../stores/session";
 
 const REFRESH_MS = 60_000;
@@ -20,6 +23,7 @@ const state = ref<LunchState | null>(null);
 const failed = ref(false);
 const busy = ref(false);
 const revision = ref(0);
+const rabbit = ref<RabbitView | null>(null);
 const { now, sync } = useServerClock();
 const { fail, notify } = useToasts();
 let refresher: number | undefined;
@@ -41,10 +45,12 @@ async function load(): Promise<void> {
   }
 }
 
-async function act(action: () => Promise<LunchState>, done: string): Promise<void> {
+async function act(action: () => Promise<LunchState>, done: string, then: (next: LunchState) => void = () => {}): Promise<void> {
   busy.value = true;
   try {
-    apply(await action());
+    const next = await action();
+    apply(next);
+    then(next);
     revision.value += 1;
     notify(done);
   } catch (error) {
@@ -52,6 +58,36 @@ async function act(action: () => Promise<LunchState>, done: string): Promise<voi
     await load();
   } finally {
     busy.value = false;
+  }
+}
+
+function start(): void {
+  void act(startLunch, "Приятного аппетита! Время пошло", () => {
+    if (rabbit.value) {
+      rabbit.value.fresh = true;
+    }
+  });
+}
+
+function finish(): void {
+  void act(finishLunch, "С возвращением! Обед отмечен", (next) => {
+    if (rabbit.value && next.today?.status === "on_time") {
+      rabbit.value.parting = true;
+    }
+  });
+}
+
+function parted(): void {
+  if (rabbit.value) {
+    rabbit.value.parting = false;
+    rabbit.value.fresh = false;
+  }
+}
+
+async function wakeRabbit(): Promise<void> {
+  if (await rabbitWanted()) {
+    rabbit.value = { fresh: false, still: stillMotion(), parting: false };
+    preloadScenes(["start", "run", "ontime"]);
   }
 }
 
@@ -63,6 +99,7 @@ function refreshWhenVisible(): void {
 
 onMounted(() => {
   void load();
+  void wakeRabbit();
   refresher = window.setInterval(refreshWhenVisible, REFRESH_MS);
   document.addEventListener("visibilitychange", refreshWhenVisible);
 });
@@ -81,9 +118,11 @@ onUnmounted(() => {
       :state="state"
       :now="now"
       :busy="busy"
-      @start="act(startLunch, 'Приятного аппетита! Время пошло')"
-      @finish="act(finishLunch, 'С возвращением! Обед отмечен')"
+      :rabbit="rabbit"
+      @start="start"
+      @finish="finish"
       @undo="act(undoLunch, 'Отметка отменена')"
+      @parted="parted"
     />
     <div v-else-if="failed" class="panel lunch__problem" role="alert">
       <p class="lunch__problem-title">Не удалось загрузить обед</p>

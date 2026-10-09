@@ -14,6 +14,11 @@ export function remainingSeconds(startedAt: string, limitMinutes: number, nowMs:
   return limitMinutes * SECONDS_IN_MINUTE - elapsedSeconds(startedAt, nowMs);
 }
 
+export function lunchProgress(startedAt: string, limitMinutes: number, nowMs: number): number {
+  const share = elapsedSeconds(startedAt, nowMs) / (limitMinutes * SECONDS_IN_MINUTE);
+  return Math.min(Math.max(share, 0), 1);
+}
+
 export function secondsUntil(iso: string, nowMs: number): number {
   return Math.max(0, Math.ceil((Date.parse(iso) - nowMs) / MS_IN_SECOND));
 }

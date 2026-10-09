@@ -6,7 +6,7 @@ import { FRAMES_PER_SECOND, SCENES, frameAt, sceneEnded, type SceneName } from "
 const MS_PER_SECOND = 1000;
 const LONGEST_STEP_MS = 100;
 
-const props = withDefaults(defineProps<{ scene: SceneName; speed?: number; repeat?: boolean }>(), { speed: 1, repeat: false });
+const props = withDefaults(defineProps<{ scene: SceneName; speed?: number; repeat?: boolean; still?: boolean }>(), { speed: 1, repeat: false, still: false });
 const emit = defineEmits<{ ended: [scene: SceneName] }>();
 
 const tick = ref(0);
@@ -39,7 +39,9 @@ function play(): void {
   tick.value = 0;
   last = 0;
   carried = 0;
-  frame = requestAnimationFrame(step);
+  if (!props.still) {
+    frame = requestAnimationFrame(step);
+  }
 }
 
 watch(() => props.scene, play);

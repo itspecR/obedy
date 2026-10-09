@@ -4,14 +4,25 @@ import type { LunchState } from "../../api/lunch";
 import { formatTime } from "../../format/dateTime";
 import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
-import { countdownText, countdownTone, formatClock, formatMinutes, remainingSeconds, returnBy, secondsUntil } from "./countdown";
+import { countdownText, countdownTone, formatClock, formatMinutes, lunchProgress, remainingSeconds, returnBy, secondsUntil } from "./countdown";
+import LunchRabbit from "./LunchRabbit.vue";
 import { LUNCH_STATUS, MEASURED_STATUSES } from "./lunchStatus";
 
-const props = defineProps<{ state: LunchState; now: number; busy: boolean }>();
-const emit = defineEmits<{ start: []; finish: []; undo: [] }>();
+export interface RabbitView {
+  fresh: boolean;
+  still: boolean;
+  parting: boolean;
+}
+
+const props = defineProps<{ state: LunchState; now: number; busy: boolean; rabbit?: RabbitView | null }>();
+const emit = defineEmits<{ start: []; finish: []; undo: []; parted: [] }>();
 
 const today = computed(() => props.state.today);
 const ongoing = computed(() => today.value?.status === "ongoing");
+const progress = computed(() => {
+  const lunch = today.value;
+  return lunch ? lunchProgress(lunch.started_at, lunch.limit_minutes, lunch.ended_at ? Date.parse(lunch.ended_at) : props.now) : 0;
+});
 const remaining = computed(() => (today.value ? remainingSeconds(today.value.started_at, today.value.limit_minutes, props.now) : 0));
 const tone = computed(() => countdownTone(remaining.value, props.state.warning_minutes));
 const undoLeft = computed(() => (props.state.undo_until ? secondsUntil(props.state.undo_until, props.now) : 0));
@@ -27,9 +38,15 @@ const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includ
       <p class="control__note">Если это ошибка — обратитесь к администратору.</p>
     </template>
 
+    <template v-else-if="today && rabbit?.parting">
+      <p class="control__title">Вы вернулись вовремя</p>
+      <LunchRabbit :progress="progress" :fresh="false" :still="rabbit.still" parting @parted="emit('parted')" />
+    </template>
+
     <template v-else-if="today && ongoing">
       <p class="control__label">{{ remaining < 0 ? "Время обеда вышло" : "До конца обеда" }}</p>
       <p class="control__clock numeric" :class="`control__clock--${tone}`" role="timer">{{ countdownText(remaining) }}</p>
+      <LunchRabbit v-if="rabbit" :progress="progress" :fresh="rabbit.fresh" :still="rabbit.still" :parting="false" />
       <p class="control__note">Ушли в {{ formatTime(today.started_at) }} · вернуться до {{ deadline }}</p>
       <AppButton class="control__main" variant="primary" block :disabled="busy" @click="emit('finish')">Вернулся</AppButton>
       <AppButton v-if="undoLeft > 0" variant="ghost" size="small" :disabled="busy" @click="emit('undo')">
