@@ -2,7 +2,7 @@ import pytest
 from django.db import connection, connections
 
 from config.connection_store import Connection
-from config.database import mssql_database, release_lock, seconds_since_start, try_lock
+from config.database import mssql_database, release_lock, seconds_since_backup, seconds_since_start, try_lock
 
 LOCK = "obedy-test-lock"
 
@@ -36,3 +36,8 @@ def test_lock_is_exclusive_between_connections_until_released():
 @pytest.mark.django_db
 def test_database_uptime_is_known():
     assert seconds_since_start(connection) >= 0
+
+
+@pytest.mark.django_db
+def test_backup_age_is_empty_for_a_database_never_backed_up():
+    assert seconds_since_backup(connection) is None

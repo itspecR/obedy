@@ -4,11 +4,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.utils import timezone
 
-from config.database import seconds_since_start
-from journal.models import Action, JournalEntry
+from config.database import seconds_since_backup, seconds_since_start
 
 OS_RELEASES = ((Path("/host/os-release"), "server"), (Path("/etc/os-release"), "container"))
 MEMINFO = Path("/proc/meminfo")
@@ -109,13 +108,18 @@ def site_started_at():
 
 
 def db_started_at():
-    seconds = seconds_since_start(connection)
+    return moment_ago(seconds_since_start(connection))
+
+
+def moment_ago(seconds):
     return timezone.now() - timedelta(seconds=seconds) if seconds is not None else None
 
 
 def last_backup_at():
-    latest = JournalEntry.objects.filter(action=Action.BACKUP_DONE).order_by("-pk").first()
-    return latest.created_at if latest else None
+    try:
+        return moment_ago(seconds_since_backup(connection))
+    except DatabaseError:
+        return None
 
 
 def system_info():

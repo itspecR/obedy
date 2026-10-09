@@ -4,14 +4,14 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 main() {
     local branch="${1:-main}"
-    local root previous
+    local root previous status
     root="$(project_root)"
     cd "$root"
 
     require_root "./scripts/deploy.sh ${branch}"
     require_env_file
     protect_env_file "$root"
-    load_env "$root"
+    drop_legacy_env "$root"
     if [[ -d .git ]]; then
         previous="$(git rev-parse HEAD)"
         step "1/7" "Получаем ветку ${branch}"
@@ -26,18 +26,20 @@ main() {
     export APP_RELEASE
     APP_RELEASE="$(release_label "$root")"
     docker compose build
-    step "3/7" "Резервная копия базы перед миграциями"
-    "$root/scripts/backup.sh"
-    step "4/7" "Применяем миграции базы"
-    docker compose run --rm --no-deps app python manage.py migrate --noinput
-    step "5/7" "Запускаем новую версию"
+    step "3/7" "Применяем миграции базы (если база подключена)"
+    docker compose run --rm --no-deps app python manage.py prepare_database
+    step "4/7" "Запускаем новую версию"
     docker compose up -d --remove-orphans
-    step "6/7" "Проверяем, что сайт отвечает"
-    wait_for_health
+    step "5/7" "Проверяем, что сайт отвечает"
+    status="$(wait_for_health)"
+    echo "$status"
     trap - ERR
-    step "7/7" "Включаем синхронизацию с доменом раз в час и ежедневную очистку журнала"
+    step "6/7" "Включаем синхронизацию с доменом раз в час и ежедневную очистку журнала и сессий"
     enable_directory_sync "$root"
     enable_journal_clean "$root"
+    disable_old_backups
+    step "7/7" "Убираем MariaDB: база теперь на SQL Server"
+    retire_mariadb "$status"
     echo "Готово: новая версия развёрнута. Обновите страницу в браузере."
 }
 
@@ -62,6 +64,14 @@ sync_branch() {
 enable_directory_sync() {
     "$1/scripts/directory-sync-timer.sh" install \
         || echo "Не удалось включить таймер синхронизации. Повторите: sudo ./scripts/directory-sync-timer.sh install" >&2
+}
+
+disable_old_backups() {
+    [[ -f /etc/systemd/system/obedy-backup.timer ]] || return 0
+    systemctl disable --now obedy-backup.timer 2>/dev/null || true
+    rm -f /etc/systemd/system/obedy-backup.service /etc/systemd/system/obedy-backup.timer
+    systemctl daemon-reload
+    echo "Старый таймер копий через mysqldump отключён: копии теперь делает SQL Server."
 }
 
 enable_journal_clean() {
@@ -92,7 +102,7 @@ roll_back() {
     git reset --hard "$1"
     docker compose up -d --build --remove-orphans || true
     echo "Прошлая версия запущена. Если миграции успели примениться и сайт работает с ошибками," >&2
-    echo "восстановите базу из копии, сделанной перед миграциями: sudo ./scripts/restore.sh $(latest_backup)" >&2
+    echo "восстановите базу из последней копии на SQL Server." >&2
     exit 1
 }
 
@@ -100,7 +110,7 @@ archive_failed() {
     trap - ERR
     echo >&2
     echo "Ошибка развёртывания. Верните прошлую папку системы (из которой скопирован .env) и запустите deploy.sh в ней." >&2
-    echo "Если миграции успели примениться, восстановите базу: sudo ./scripts/restore.sh $(latest_backup)" >&2
+    echo "Если миграции успели примениться, восстановите базу из последней копии на SQL Server." >&2
     exit 1
 }
 

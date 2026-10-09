@@ -3,10 +3,12 @@ from datetime import date, time, timedelta
 
 import pytest
 from django.core.management import CommandError, call_command
+from django.db import DatabaseError
 from django.test import Client, override_settings
 from django.utils import timezone
 
 import directory.api
+import journal.system
 from accounts.models import Account, Role, Source
 from journal.models import Action, JournalEntry
 from journal.retention import RETENTION_DAYS
@@ -368,16 +370,24 @@ def test_system_text_parsers():
 
 
 @override_settings(APP_RELEASE="release-0.10.08 · abc1234 · 09.10.2026 12:00")
-def test_admin_sees_server_panel_with_release_and_last_backup():
+def test_admin_sees_server_panel_with_release_and_last_backup(monkeypatch):
     guest, _ = signed_in()
-    call_command("mark_backup", "obedy-20261009-000000.sql.gz")
+    monkeypatch.setattr(journal.system, "seconds_since_backup", lambda database: 3600)
 
     body = guest.get("/api/journal/system").json()
 
     assert body["release"] == "release-0.10.08 · abc1234 · 09.10.2026 12:00"
     assert body["last_backup_at"] is not None
     assert body["db_started_at"] is not None
-    assert rows(server_entries(Action.BACKUP_DONE)[0]) == [("Файл", None, "obedy-20261009-000000.sql.gz")]
+
+
+def test_backup_time_is_unknown_when_sql_server_hides_it(monkeypatch):
+    def denied(database):
+        raise DatabaseError("The SELECT permission was denied on the object 'backupset'")
+
+    monkeypatch.setattr(journal.system, "seconds_since_backup", denied)
+
+    assert journal.system.last_backup_at() is None
 
 
 def test_only_admin_sees_server_panel():
