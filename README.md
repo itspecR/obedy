@@ -259,6 +259,10 @@ sudo ./scripts/deploy.sh <ветка>      # обычно main
 > базу восстанавливают из копии на SQL Server. `./scripts/update.sh` — то же самое. Установка из архива без `.git` обновляется так же:
 > новые файлы в папку, `.env` из старой, затем `sudo ./scripts/deploy.sh`.
 
+После получения ветки `deploy.sh` продолжает работу **уже новой версией себя**, поэтому изменения в самом скрипте
+действуют с того же запуска. Это работает при обновлении с 0.11.09 и новее. С более ранней версии первый раз
+обновитесь так: `sudo git fetch origin <ветка> && sudo git checkout -B <ветка> origin/<ветка>`, затем `deploy.sh`.
+
 ## HTTPS
 
 ```bash
@@ -603,6 +607,7 @@ npm run build
 ```
 
 ```bash
-# скрипты: переход с MariaDB на SQL Server
+# скрипты: переход с MariaDB на SQL Server и продолжение обновления новой версией deploy.sh
 bash scripts/tests/sqlserver-switch.test.sh
+sudo bash scripts/tests/deploy-handoff.test.sh
 ```
