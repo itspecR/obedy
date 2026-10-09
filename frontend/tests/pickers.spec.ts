@@ -194,6 +194,21 @@ describe("InfoTip", () => {
     expect(wrapper.find("[role=note]").exists()).toBe(false);
     wrapper.unmount();
   });
+
+  it("keeps the hint inside a dialog that clips its content", async () => {
+    const box = document.createElement("div");
+    box.style.overflowX = "auto";
+    document.body.append(box);
+    vi.spyOn(box, "getBoundingClientRect").mockReturnValue(new DOMRect(500, 0, 460, 400));
+    const wrapper = mount(InfoTip, { props: { text: "Пояснение", label: "Режим" }, attachTo: box });
+    vi.spyOn(wrapper.element as HTMLElement, "getBoundingClientRect").mockReturnValue(new DOMRect(610, 100, 18, 18));
+
+    await wrapper.get("button").trigger("click");
+
+    expect(wrapper.get("[role=note]").attributes("style")).toContain("left: -94px");
+    wrapper.unmount();
+    box.remove();
+  });
 });
 
 describe("TimeWheel drag", () => {

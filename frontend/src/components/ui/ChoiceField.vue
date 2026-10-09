@@ -1,14 +1,18 @@
 <script setup lang="ts" generic="T extends string">
 import { useId } from "vue";
+import InfoTip from "./InfoTip.vue";
 
-defineProps<{ label: string; options: { value: T; label: string }[]; disabled?: boolean }>();
+defineProps<{ label: string; options: { value: T; label: string }[]; disabled?: boolean; hint?: string }>();
 const model = defineModel<T>({ required: true });
 const id = useId();
 </script>
 
 <template>
   <div class="choice">
-    <span :id="`${id}-label`" class="choice__label">{{ label }}</span>
+    <div class="choice__head">
+      <span :id="`${id}-label`" class="choice__label">{{ label }}</span>
+      <InfoTip v-if="hint" :text="hint" :label="label" />
+    </div>
     <div class="choice__options" role="radiogroup" :aria-labelledby="`${id}-label`">
       <button
         v-for="option in options"
@@ -31,6 +35,12 @@ const id = useId();
 .choice {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+
+.choice__head {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 

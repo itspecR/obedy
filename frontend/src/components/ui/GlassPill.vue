@@ -234,24 +234,31 @@ watchEffect(() => {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .glass--active .glass__warp {
-    background: var(--pill-active-solid);
-  }
+:root.light-mode .glass__warp {
+  backdrop-filter: none;
+}
 
-  .glass--raised .glass__warp {
-    background: var(--pill-active-solid);
-  }
+:root.light-mode .glass--active .glass__warp,
+:root.light-mode .glass--raised .glass__warp {
+  background: var(--pill-active-solid);
+}
 
-  .glass--hover .glass__warp {
-    background: var(--pill-hover-solid);
-  }
+:root.light-mode .glass--hover .glass__warp {
+  background: var(--pill-hover-solid);
+}
 
-  .glass__rim,
-  .glass__warp::before,
-  .glass__warp::after {
-    display: none;
-  }
+:root.light-mode .glass__view {
+  text-shadow: none;
+}
+
+:root.light-mode .glass__view :deep(svg) {
+  filter: none;
+}
+
+:root.light-mode .glass__rim,
+:root.light-mode .glass__warp::before,
+:root.light-mode .glass__warp::after {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

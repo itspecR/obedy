@@ -4,6 +4,7 @@ import { usePopover } from "../../composables/usePopover";
 
 const PANEL_WIDTH = 280;
 const SCREEN_MARGIN = 16;
+const CLIPPING_OVERFLOW = ["auto", "scroll", "hidden", "clip"];
 
 const props = defineProps<{ text: string; label?: string }>();
 
@@ -12,14 +13,29 @@ const { open, close, show, closeOnEscape } = usePopover(root);
 const id = useId();
 const place = ref({ left: "0px", width: `${PANEL_WIDTH}px` });
 
+function clipsContent(element: HTMLElement): boolean {
+  return CLIPPING_OVERFLOW.includes(getComputedStyle(element).overflowX);
+}
+
+function boundsOf(element: HTMLElement): { left: number; right: number } {
+  let parent = element.parentElement;
+  while (parent && parent !== document.body && !clipsContent(parent)) {
+    parent = parent.parentElement;
+  }
+  const box = parent && parent !== document.body ? parent.getBoundingClientRect() : null;
+  return { left: Math.max(box?.left ?? 0, 0), right: Math.min(box?.right ?? window.innerWidth, window.innerWidth) };
+}
+
 function measure(): void {
-  const rect = root.value?.getBoundingClientRect();
-  if (!rect) {
+  const element = root.value;
+  if (!element) {
     return;
   }
-  const width = Math.min(PANEL_WIDTH, window.innerWidth - SCREEN_MARGIN * 2);
+  const rect = element.getBoundingClientRect();
+  const bounds = boundsOf(element);
+  const width = Math.min(PANEL_WIDTH, bounds.right - bounds.left - SCREEN_MARGIN * 2);
   const centered = rect.left + rect.width / 2 - width / 2;
-  const left = Math.min(Math.max(centered, SCREEN_MARGIN), window.innerWidth - SCREEN_MARGIN - width);
+  const left = Math.min(Math.max(centered, bounds.left + SCREEN_MARGIN), bounds.right - SCREEN_MARGIN - width);
   place.value = { left: `${left - rect.left}px`, width: `${width}px` };
 }
 

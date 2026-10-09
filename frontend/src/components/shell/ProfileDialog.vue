@@ -7,6 +7,7 @@ import { ROLE_LABELS } from "../../roles";
 import ChangePasswordForm from "../login/ChangePasswordForm.vue";
 import AppButton from "../ui/AppButton.vue";
 import AppModal from "../ui/AppModal.vue";
+import LightModeChoice from "./LightModeChoice.vue";
 
 const props = defineProps<{ me: Me }>();
 const emit = defineEmits<{ close: [] }>();
@@ -41,6 +42,7 @@ function passwordChanged(): void {
         <span class="profile__label">Логин</span>
         <span class="code profile__value">{{ me.login }}</span>
       </div>
+      <LightModeChoice />
       <AppButton v-if="isLocal" variant="primary" block @click="mode = 'password'">Сменить пароль</AppButton>
       <p v-else class="profile__note">Вы входите под учётной записью Windows. Пароль меняется в Windows.</p>
     </div>
