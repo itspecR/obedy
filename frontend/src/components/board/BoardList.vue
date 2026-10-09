@@ -2,10 +2,24 @@
 import type { BoardEntry } from "../../api/board";
 import { countdownText, countdownTone, remainingSeconds } from "../lunch/countdown";
 import { LUNCH_STATUS, correctionLabel, lunchDuration, lunchRange } from "../lunch/lunchStatus";
+import MoreMenu, { type MenuItem } from "../ui/MoreMenu.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 const props = defineProps<{ title: string; entries: BoardEntry[]; now: number; warningMinutes: number; empty: string }>();
-const emit = defineEmits<{ correct: [entry: BoardEntry] }>();
+const emit = defineEmits<{ correct: [entry: BoardEntry]; delete: [entry: BoardEntry] }>();
+
+const LUNCH_ACTIONS: MenuItem[] = [
+  { key: "correct", label: "Исправить время" },
+  { key: "delete", label: "Удалить", danger: true },
+];
+
+function choose(entry: BoardEntry, key: string): void {
+  if (key === "delete") {
+    emit("delete", entry);
+  } else {
+    emit("correct", entry);
+  }
+}
 
 const remaining = (entry: BoardEntry) => remainingSeconds(entry.lunch.started_at, entry.lunch.limit_minutes, props.now);
 </script>
@@ -31,16 +45,7 @@ const remaining = (entry: BoardEntry) => remainingSeconds(entry.lunch.started_at
         </span>
         <span v-else class="board-list__duration numeric">{{ lunchDuration(entry.lunch) }}</span>
         <StatusBadge class="board-list__status" :tone="LUNCH_STATUS[entry.lunch.status].tone" :label="LUNCH_STATUS[entry.lunch.status].label" />
-        <button
-          v-if="entry.can_correct"
-          type="button"
-          class="board-list__more"
-          :aria-label="`Исправить время: ${entry.person.name}`"
-          @click="emit('correct', entry)"
-        >
-          ⋯
-        </button>
-        <span v-else class="board-list__more-placeholder" />
+        <MoreMenu class="board-list__more" :label="`Действия: ${entry.person.name}`" :items="LUNCH_ACTIONS" @select="choose(entry, $event)" />
         <p v-if="entry.lunch.correction" class="board-list__correction">
           {{ correctionLabel(entry.lunch.correction) }}: {{ entry.lunch.correction.by }}. Причина: {{ entry.lunch.correction.reason }}
         </p>
@@ -140,27 +145,9 @@ const remaining = (entry: BoardEntry) => remainingSeconds(entry.lunch.started_at
   justify-self: end;
 }
 
-.board-list__more,
-.board-list__more-placeholder {
+.board-list__more {
   grid-row: 1 / 3;
   grid-column: 3 / 4;
-}
-
-.board-list__more {
-  width: 36px;
-  height: 32px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-button);
-  background: transparent;
-  color: var(--muted);
-  font-size: 18px;
-  cursor: pointer;
-  transition: background var(--motion), color var(--motion);
-}
-
-.board-list__more:hover {
-  background: var(--hover);
-  color: var(--ink);
 }
 
 .board-list__correction {

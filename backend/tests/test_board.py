@@ -125,21 +125,20 @@ def test_correction_closes_ongoing_lunch():
     assert entry["lunch"]["ended_at"] is not None
 
 
-def test_nobody_corrects_own_lunch():
+def test_hr_corrects_own_lunch():
     hr = signed_in("hr", Role.HR)
     own = lunch_of(Account.objects.get(login="hr"), time(12, 0), 30)
 
-    response = correct(hr, own.pk)
-    board = hr.get("/api/lunch/board").json()
+    response = correct(hr, own.pk, started_at="12:00", ended_at="12:40")
 
-    assert (response.status_code, response.json()["detail"]) == (400, "Свой обед исправить нельзя — попросите коллегу")
-    assert board["entries"][0]["can_correct"] is False
+    assert response.status_code == 200
+    assert "can_correct" not in response.json()
 
 
 @pytest.mark.parametrize(
     ("changes", "message"),
     [
-        ({"reason": "   "}, "Укажите причину исправления"),
+        ({"reason": "   "}, "Укажите причину"),
         ({"started_at": "13:00", "ended_at": "12:00"}, "Время возврата должно быть позже времени ухода"),
         ({"started_at": "13:00", "ended_at": "13:00"}, "Время возврата должно быть позже времени ухода"),
         ({"ended_at": "14:30"}, "Время возврата ещё не наступило"),
@@ -204,7 +203,7 @@ def test_added_lunch_can_be_in_the_past():
         ({"day": "2026-10-09"}, "Нельзя добавить обед на будущий день"),
         ({"ended_at": "14:30"}, "Время возврата ещё не наступило"),
         ({"started_at": "13:00", "ended_at": "12:00"}, "Время возврата должно быть позже времени ухода"),
-        ({"reason": " "}, "Укажите причину исправления"),
+        ({"reason": " "}, "Укажите причину"),
     ],
 )
 def test_bad_added_lunch_is_explained(changes, message):
@@ -223,13 +222,13 @@ def test_only_one_lunch_per_day_when_adding():
     assert (response.status_code, response.json()["detail"]) == (400, "У сотрудника уже есть обед в этот день — исправьте его время через «⋯»")
 
 
-def test_nobody_adds_own_lunch():
+def test_hr_adds_own_lunch():
     hr = signed_in("hr", Role.HR)
     Account.objects.filter(login="hr").update(track_lunch=True)
 
     response = add(hr, Account.objects.get(login="hr").pk)
 
-    assert (response.status_code, response.json()["detail"]) == (400, "Себе обед добавить нельзя — попросите коллегу")
+    assert response.status_code == 201
 
 
 @pytest.mark.parametrize("fields", [{"track_lunch": False}, {"is_active": False}, {"role": Role.ADMIN}])
@@ -252,7 +251,7 @@ def test_employee_cannot_add_lunch():
     assert add(signed_in("worker", Role.EMPLOYEE), employee("ivanov").pk).status_code == 403
 
 
-def test_people_list_offers_only_tracked_active_colleagues():
+def test_people_list_offers_only_tracked_active_people():
     employee("ivanov", "Иванов Иван")
     employee("blocked", "Блоков Борис")
     employee("untracked", "Без Учёта")
@@ -263,4 +262,47 @@ def test_people_list_offers_only_tracked_active_colleagues():
 
     people = hr.get("/api/lunch/board/people").json()
 
-    assert [person["login"] for person in people] == ["ivanov"]
+    assert [person["login"] for person in people] == ["hr", "ivanov"]
+
+
+def remove(client, lunch_id, reason="Добавлен по ошибке"):
+    return client.delete(f"/api/lunch/board/{lunch_id}", json.dumps({"reason": reason}), content_type=JSON)
+
+
+@pytest.mark.parametrize("role", [Role.HR, Role.ADMIN])
+def test_supervisor_deletes_any_lunch_with_reason(role):
+    lunch = lunch_of(employee("ivanov"), time(12, 0), 30)
+    client = signed_in("boss", role)
+
+    response = remove(client, lunch.pk)
+
+    assert response.status_code == 204
+    assert not Lunch.objects.filter(pk=lunch.pk).exists()
+    assert client.get("/api/lunch/board").json()["entries"] == []
+
+
+def test_hr_deletes_own_lunch():
+    hr = signed_in("hr", Role.HR)
+    own = lunch_of(Account.objects.get(login="hr"), time(12, 0), 30)
+
+    assert remove(hr, own.pk).status_code == 204
+
+
+def test_deleting_needs_a_reason():
+    lunch = lunch_of(employee("ivanov"), time(12, 0), 30)
+
+    response = remove(signed_in("hr", Role.HR), lunch.pk, reason="   ")
+
+    assert (response.status_code, response.json()["detail"]) == (400, "Укажите причину")
+    assert Lunch.objects.filter(pk=lunch.pk).exists()
+
+
+def test_employee_cannot_delete_lunch():
+    lunch = lunch_of(employee("ivanov"), time(12, 0), 30)
+
+    assert remove(signed_in("petrov", Role.EMPLOYEE), lunch.pk).status_code == 403
+    assert Lunch.objects.filter(pk=lunch.pk).exists()
+
+
+def test_deleting_missing_lunch_is_not_found():
+    assert remove(signed_in("hr", Role.HR), 999999).status_code == 404

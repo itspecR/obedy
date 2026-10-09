@@ -159,6 +159,25 @@ def test_lunch_correction_and_addition_keep_times_and_reason():
     assert ("Причина", None, "был на обеде") in rows(added)
 
 
+def test_lunch_deletion_keeps_what_was_deleted_and_why():
+    guest, hr = signed_in("kadry", Role.HR)
+    member = make_account(login="petrova", must_change_password=False)
+    yesterday = TODAY - timedelta(days=1)
+    started, ended = moment_of(yesterday, time(12, 0)), moment_of(yesterday, time(12, 40))
+    lunch = Lunch.objects.create(account=member, day=yesterday, started_at=started, ended_at=ended, limit_minutes=45)
+
+    guest.delete(f"/api/lunch/board/{lunch.pk}", json.dumps({"reason": "добавлен по ошибке"}), content_type=JSON)
+
+    entry = entries(Action.LUNCH_DELETED)[0]
+    assert (entry.actor, entry.target) == (hr, member)
+    assert rows(entry) == [
+        ("День", None, yesterday.strftime("%d.%m.%Y")),
+        ("Ушёл", "12:00", None),
+        ("Вернулся", "12:40", None),
+        ("Причина", None, "добавлен по ошибке"),
+    ]
+
+
 def test_rules_change_lists_only_changed_fields():
     guest, _ = signed_in()
     rules = guest.get("/api/lunch/rules").json()

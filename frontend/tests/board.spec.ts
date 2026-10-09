@@ -6,6 +6,7 @@ import type { Lunch } from "../src/api/lunch";
 import AddLunchDialog from "../src/components/board/AddLunchDialog.vue";
 import BoardList from "../src/components/board/BoardList.vue";
 import CorrectionDialog from "../src/components/board/CorrectionDialog.vue";
+import DeleteLunchDialog from "../src/components/board/DeleteLunchDialog.vue";
 import { filterEntries, groupEntries } from "../src/components/board/groups";
 import { useToasts } from "../src/composables/useToasts";
 import BoardPage from "../src/pages/BoardPage.vue";
@@ -30,7 +31,6 @@ function entry(id: number, name: string, lunch: Partial<Lunch> = {}): BoardEntry
       correction: null,
       ...lunch,
     },
-    can_correct: true,
   };
 }
 
@@ -75,22 +75,53 @@ describe("BoardList", () => {
     expect(rows[1].get(".board-list__timer").text()).toBe("35:00");
   });
 
-  it("shows duration, status, correction and the menu only when allowed", async () => {
+  it("shows duration, status, correction and a menu to correct or delete", async () => {
     const corrected = { ...RETURNED, lunch: { ...RETURNED.lunch, correction: { by: "Кадрова Ольга", at: NOON, reason: "Забыл нажать", added: false } } };
-    const own = { ...OVERRUN, can_correct: false };
-    const wrapper = list([corrected, own]);
+    const wrapper = list([corrected, OVERRUN]);
     const rows = wrapper.findAll(".board-list__row");
+    const menuItem = async (row: (typeof rows)[number], label: string) => {
+      await row.get('[aria-haspopup="menu"]').trigger("click");
+      await row.findAll("[role=menuitem]").find((item) => item.text() === label)?.trigger("click");
+    };
 
     expect(rows[0].text()).toContain("30 мин");
     expect(rows[0].text()).toContain("Исправлено: Кадрова Ольга. Причина: Забыл нажать");
     expect(rows[1].text()).toContain("Превышение");
-    expect(rows[1].find("button").exists()).toBe(false);
-    await rows[0].get("button").trigger("click");
+    expect(rows[1].get('[aria-haspopup="menu"]').attributes("aria-label")).toBe(`Действия: ${OVERRUN.person.name}`);
+    await menuItem(rows[0], "Исправить время");
+    await menuItem(rows[1], "Удалить");
+
     expect(wrapper.emitted("correct")?.[0]).toEqual([corrected]);
+    expect(wrapper.emitted("delete")?.[0]).toEqual([OVERRUN]);
   });
 
   it("explains an empty block", () => {
     expect(list([]).text()).toContain("Сейчас никто не обедает");
+  });
+});
+
+describe("DeleteLunchDialog", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
+
+  it("deletes only with a reason and reports success", async () => {
+    const spy = routeFetch({ [`/api/lunch/board/${OVERRUN.lunch.id}`]: [204, null] });
+    const wrapper = mount(DeleteLunchDialog, { props: { entry: OVERRUN }, attachTo: document.body });
+    const submit = () => wrapper.findAll("button").find((button) => button.text() === "Удалить");
+
+    expect(submit()?.attributes("disabled")).toBeDefined();
+    await wrapper.get("textarea").setValue("Добавлен по ошибке");
+    await submit()?.trigger("submit");
+    await flushPromises();
+
+    expect(wasRequested(spy, `/api/lunch/board/${OVERRUN.lunch.id}`, "DELETE")).toBe(true);
+    expect(bodySentTo(spy, `/api/lunch/board/${OVERRUN.lunch.id}`)).toEqual({ reason: "Добавлен по ошибке" });
+    expect(wrapper.emitted("deleted")?.[0]).toEqual([OVERRUN.lunch.id]);
+    expect(useToasts().items.map((toast) => toast.text)).toContain("Обед удалён");
+    wrapper.unmount();
   });
 });
 
