@@ -9,7 +9,8 @@ import { isAutofilled } from "./autofill";
 
 const AUTOFILL_CHECKS_MS = [100, 500, 1500];
 
-const emit = defineEmits<{ success: []; failure: [] }>();
+const props = defineProps<{ melted?: boolean }>();
+const emit = defineEmits<{ attempt: []; success: []; failure: [] }>();
 const session = useSession();
 
 const form = ref<HTMLFormElement | null>(null);
@@ -23,7 +24,7 @@ const showHelp = ref(false);
 const domainLogin = ref(false);
 const timers: number[] = [];
 
-const ready = computed(() => password.value.length > 0 || autofilled.value || busy.value);
+const ready = computed(() => password.value.length > 0 || autofilled.value || busy.value || props.melted);
 const loginPlaceholder = computed(() => (domainLogin.value ? "Логин Windows" : "Введите логин"));
 const helpText = computed(() =>
   domainLogin.value
@@ -81,6 +82,7 @@ async function submit(): Promise<void> {
     return;
   }
   busy.value = true;
+  emit("attempt");
   try {
     await session.signIn({ login: login.value, password: password.value });
     password.value = "";
@@ -114,9 +116,10 @@ async function submit(): Promise<void> {
       <p v-if="error" class="login-form__error" role="alert">{{ error }}</p>
     </Transition>
     <div class="login-form__submit" :class="{ 'login-form__submit--shown': ready }" :inert="!ready">
-      <div class="login-form__submit-inner">
+      <div class="login-form__submit-inner" :class="{ 'login-form__submit-inner--melted': melted }">
         <AppButton type="submit" variant="primary" block :disabled="busy">{{ busy ? "Входим…" : "Войти →" }}</AppButton>
       </div>
+      <div class="login-form__launch"><slot name="launch" /></div>
     </div>
     <div class="login-form__help-box">
       <button type="button" class="login-form__link" :aria-expanded="showHelp" @click="showHelp = !showHelp">Не получается войти?</button>
@@ -143,6 +146,7 @@ async function submit(): Promise<void> {
 }
 
 .login-form__submit {
+  position: relative;
   display: grid;
   grid-template-rows: 0fr;
   margin-top: -16px;
@@ -165,6 +169,22 @@ async function submit(): Promise<void> {
 .login-form__submit-inner {
   min-height: 0;
   overflow: hidden;
+  transition:
+    opacity var(--reveal) ease,
+    transform var(--reveal) ease,
+    filter var(--reveal) ease;
+}
+
+.login-form__submit-inner--melted {
+  opacity: 0;
+  transform: scale(0.6);
+  filter: blur(6px);
+}
+
+.login-form__launch {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
 }
 
 .login-alert-enter-active,

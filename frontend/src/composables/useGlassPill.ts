@@ -14,7 +14,7 @@ import {
   type Scale,
   type SpringState,
 } from "../components/ui/glass";
-import { lightModeOn } from "./useLightMode";
+import { stillMotion } from "../device/motion";
 
 const SHIMMER_MS = 700;
 const MAX_FRAME_S = 1 / 30;
@@ -159,8 +159,4 @@ function motionOf(edges: Edges, goal: Edges): GlassMotion {
     { near: goal.near.value, far: goal.far.value },
   );
   return edges.axis === "x" ? { dx: shift, dy: 0, sx: stretch, sy: neck } : { dx: 0, dy: shift, sx: neck, sy: stretch };
-}
-
-function stillMotion(): boolean {
-  return lightModeOn() || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
