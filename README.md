@@ -144,8 +144,7 @@ frontend/           интерфейс (Vue 3 + TypeScript)
   src/api/          запросы к API
   tests/            тесты Vitest
 deploy/             Dockerfile-ы и настройки nginx
-scripts/            установка, обновление, HTTPS, центр сертификации, копии, восстановление, сброс пароля, доступ по IP, проверка Docker Hub
-  tests/            тесты скриптов
+scripts/            установка, обновление, HTTPS, центр сертификации, копии, восстановление, сброс пароля, доступ по IP
 docker-compose.yml  два контейнера: app (Gunicorn + Django) и web (nginx)
 .env.example        образец файла настроек
 ```
@@ -211,15 +210,6 @@ sudo ./scripts/deploy.sh <ветка>      # обычно main
 > Если шаг не удался, `deploy.sh` **сам возвращает прошлую версию кода** и подсказывает, из какой копии
 > восстановить базу. `./scripts/update.sh` — то же самое. Установка из архива без `.git` обновляется так же:
 > новые файлы в папку, `.env` из старой, затем `sudo ./scripts/deploy.sh`.
-
-**Базовые образы** (`python`, `node`, `nginx`) скачиваются один раз и дальше берутся с сервера — сборка не ходит
-в Docker Hub при каждом обновлении. Если Docker Hub не отвечает, скачивание прерывается через 5 минут
-(до 3 попыток), а вся сборка — через 30 минут, с понятной ошибкой вместо бесконечного ожидания.
-Что не так с сетью до Docker Hub, покажет:
-
-```bash
-sudo ./scripts/registry-check.sh   # версия Docker, прокси, DNS, IPv4/IPv6, скачивание образов
-```
 
 ## HTTPS
 
@@ -564,9 +554,4 @@ npm ci
 npm run typecheck
 npm test
 npm run build
-```
-
-```bash
-# скрипты установки и обновления
-bash scripts/tests/build-images.test.sh
 ```
