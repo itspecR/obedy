@@ -2,8 +2,9 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from "vue";
 import { enterModal, isTopModal, leaveModal } from "../../composables/modalStack";
 import { keepFocusInside } from "../../composables/useFocusTrap";
+import InfoTip from "./InfoTip.vue";
 
-withDefaults(defineProps<{ title: string; wide?: boolean; huge?: boolean; eyebrow?: string }>(), { wide: false, huge: false, eyebrow: "" });
+withDefaults(defineProps<{ title: string; wide?: boolean; huge?: boolean; eyebrow?: string; info?: string }>(), { wide: false, huge: false, eyebrow: "", info: "" });
 const emit = defineEmits<{ close: [] }>();
 
 const box = ref<HTMLElement | null>(null);
@@ -53,7 +54,10 @@ defineExpose({ focusFirst });
       <div class="modal__head">
         <div>
           <p v-if="eyebrow" class="eyebrow modal__eyebrow">{{ eyebrow }}</p>
-          <h2 :id="titleId" class="modal__title">{{ title }}</h2>
+          <div class="modal__title-row">
+            <h2 :id="titleId" class="modal__title">{{ title }}</h2>
+            <InfoTip v-if="info" :text="info" :label="title" />
+          </div>
         </div>
         <div class="modal__tools">
           <slot name="actions" />
@@ -110,6 +114,12 @@ defineExpose({ focusFirst });
 
 .modal__title {
   font-size: 18px;
+}
+
+.modal__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modal__tools {

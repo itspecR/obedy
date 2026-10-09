@@ -5,6 +5,7 @@ import { errorMessage } from "../api/http";
 import { DEFAULT_PORTS, MODE_OPTIONS, draftFrom, formFrom, sameDraft, type DirectoryDraft } from "../components/directory/draft";
 import SyncPanel from "../components/directory/SyncPanel.vue";
 import AppButton from "../components/ui/AppButton.vue";
+import BlockTitle from "../components/ui/BlockTitle.vue";
 import ChoiceField from "../components/ui/ChoiceField.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import SwitchField from "../components/ui/SwitchField.vue";
@@ -112,8 +113,7 @@ onMounted(load);
         </div>
 
         <div class="panel directory__card">
-          <h2 class="directory__title">Сервисная учётная запись</h2>
-          <p class="directory__note">Учётная запись только на чтение: через неё сайт ищет сотрудников в домене.</p>
+          <BlockTitle title="Сервисная учётная запись" info="Учётная запись только на чтение: через неё сайт ищет сотрудников в домене." />
           <div class="directory__row directory__row--even">
             <TextField v-model="draft.bind_user" label="Логин" placeholder="например: svc-obedy@company.local" plain :disabled="busy" />
             <TextField v-model="draft.bind_password" label="Пароль" type="password" autocomplete="new-password" :hint="passwordHint" :disabled="busy" />

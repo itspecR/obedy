@@ -1,11 +1,16 @@
 <script setup lang="ts">
-defineProps<{ title: string; subtitle?: string }>();
+import InfoTip from "./InfoTip.vue";
+
+defineProps<{ title: string; subtitle?: string; info?: string }>();
 </script>
 
 <template>
   <header class="page-head">
     <div class="page-head__text">
-      <h1>{{ title }}</h1>
+      <div class="page-head__title">
+        <h1>{{ title }}</h1>
+        <InfoTip v-if="info" :text="info" :label="title" />
+      </div>
       <p v-if="subtitle" class="page-head__subtitle">{{ subtitle }}</p>
     </div>
     <div v-if="$slots.default" class="page-head__actions"><slot /></div>
@@ -24,6 +29,12 @@ defineProps<{ title: string; subtitle?: string }>();
 
 .page-head__text {
   min-width: 0;
+}
+
+.page-head__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .page-head__subtitle {

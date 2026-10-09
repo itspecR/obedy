@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AccessState } from "../src/api/access";
 import AccessPage from "../src/pages/AccessPage.vue";
 import { useConfirm } from "../src/composables/useConfirm";
+import { infoText } from "./helpers";
 import { useToasts } from "../src/composables/useToasts";
 
 function access(overrides: Partial<AccessState> = {}): AccessState {
@@ -50,7 +51,7 @@ describe("AccessPage", () => {
 
     expect(wrapper.get('[role="switch"]').attributes("aria-checked")).toBe("true");
     expect(wrapper.text()).toContain("192.168.5.20");
-    expect(wrapper.text()).toContain("10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16");
+    expect(await infoText(wrapper, "Вся локальная сеть")).toContain("10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16");
     expect(wrapper.text()).toContain("Список пуст");
   });
 

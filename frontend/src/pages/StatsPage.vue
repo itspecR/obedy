@@ -14,6 +14,7 @@ import { useToasts } from "../composables/useToasts";
 import { isoDay } from "../format/dateTime";
 import { matchesQuery } from "../format/search";
 
+const STATS_INFO = "Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат. Клик по ФИО — только этот сотрудник, галочки — несколько.";
 const today = isoDay(new Date());
 const period = ref<Period>(thisMonth(today));
 const search = ref("");
@@ -92,7 +93,7 @@ onMounted(load);
 
 <template>
   <section class="stats">
-    <PageHeader title="Статистика" subtitle="Обеды и нарушения за период">
+    <PageHeader title="Статистика" subtitle="Обеды и нарушения за период" :info="STATS_INFO">
       <AppButton variant="primary" :disabled="exporting || !stats" @click="download">{{ exportLabel }}</AppButton>
     </PageHeader>
 
@@ -107,7 +108,6 @@ onMounted(load);
         <DateField v-model="period.to" label="По" :max="today" />
         <TextField v-model="search" label="Поиск" icon="search" placeholder="например: Иванов" plain />
       </div>
-      <p class="stats__note">Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат.</p>
       <div v-if="selected.length" class="stats__selection" role="status">
         <span>Выбрано сотрудников: {{ selected.length }} — итоги и Excel только по ним</span>
         <AppButton size="small" @click="everyone">Все сотрудники</AppButton>
@@ -172,12 +172,6 @@ onMounted(load);
   display: grid;
   grid-template-columns: 180px 180px minmax(0, 1fr);
   gap: 12px;
-}
-
-.stats__note {
-  margin: 0;
-  font-size: var(--text-small);
-  color: var(--muted);
 }
 
 .stats__selection {

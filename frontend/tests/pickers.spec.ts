@@ -1,6 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DateField from "../src/components/ui/DateField.vue";
+import InfoTip from "../src/components/ui/InfoTip.vue";
 import PersonPicker from "../src/components/ui/PersonPicker.vue";
 import TimeField from "../src/components/ui/TimeField.vue";
 import { indexAt, parseClock } from "../src/components/ui/timeWheel";
@@ -175,6 +176,21 @@ describe("PersonPicker", () => {
     await input.setValue("Петров");
 
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([null]);
+    wrapper.unmount();
+  });
+});
+
+describe("InfoTip", () => {
+  it("opens the hint on click and closes it on Escape", async () => {
+    const wrapper = mount(InfoTip, { props: { text: "Пояснение к блоку", label: "Лимит" }, attachTo: document.body });
+    const button = wrapper.get('[aria-label="Подсказка: Лимит"]');
+
+    expect(wrapper.text()).not.toContain("Пояснение к блоку");
+    await button.trigger("click");
+    expect(button.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.get("[role=note]").text()).toBe("Пояснение к блоку");
+    await wrapper.trigger("keydown", { key: "Escape" });
+    expect(wrapper.find("[role=note]").exists()).toBe(false);
     wrapper.unmount();
   });
 });

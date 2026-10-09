@@ -80,7 +80,7 @@ onMounted(load);
 
 <template>
   <section class="access">
-    <PageHeader title="Доступ" subtitle="С каких компьютеров открывается сайт" />
+    <PageHeader title="Доступ" subtitle="С каких компьютеров открывается сайт" info="Сам сервер открыт всегда. Изменения вступают в силу в течение 5 секунд." />
     <div v-if="loadError" class="panel access__card access__error" role="alert">
       <p>{{ loadError }}</p>
       <AppButton @click="load">Повторить</AppButton>
@@ -89,7 +89,7 @@ onMounted(load);
       <div class="panel access__card">
         <SwitchField label="Вся локальная сеть" :hint="lanHint" :checked="state.allow_private" :disabled="busy" @change="toggleLan" />
         <p class="access__note">
-          Ваш адрес: <span class="code">{{ state.your_address }}</span>. Сам сервер открыт всегда. Изменения вступают в силу в течение 5 секунд.
+          Ваш адрес: <span class="code">{{ state.your_address }}</span>
         </p>
       </div>
       <div class="panel access__card">

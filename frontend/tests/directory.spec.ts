@@ -4,7 +4,7 @@ import type { DirectorySettings, SyncReport } from "../src/api/directory";
 import { NEVER_RAN, describeSync } from "../src/components/directory/syncReport";
 import DirectoryPage from "../src/pages/DirectoryPage.vue";
 import { useToasts } from "../src/composables/useToasts";
-import { bodySentTo, routeFetch, wasRequested } from "./helpers";
+import { bodySentTo, routeFetch, wasRequested, infoText } from "./helpers";
 
 function settings(overrides: Partial<DirectorySettings> = {}): DirectorySettings {
   return {
@@ -62,9 +62,9 @@ describe("DirectoryPage", () => {
   it("shows stored settings without the password and keeps saving disabled until something changes", async () => {
     const { wrapper } = await mounted({});
 
-    expect(wrapper.text()).toContain("Пароль сохранён. Оставьте поле пустым, чтобы не менять его");
-    expect(wrapper.text()).toContain("Пусто — стандартный порт 636");
-    expect(wrapper.text()).toContain("Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP)");
+    expect(await infoText(wrapper, "Пароль")).toBe("Пароль сохранён. Оставьте поле пустым, чтобы не менять его");
+    expect(await infoText(wrapper, "Порт")).toContain("Пусто — стандартный порт 636");
+    expect(await infoText(wrapper, "Контроллеры домена")).toContain("Полные имена через пробел, как в сертификатах контроллеров (для LDAPS не IP)");
     expect(button(wrapper, "Сохранить").attributes("disabled")).toBeDefined();
     expect(button(wrapper, "Проверить подключение").attributes("disabled")).toBeUndefined();
   });

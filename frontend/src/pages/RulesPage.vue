@@ -7,6 +7,7 @@ import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import SwitchField from "../components/ui/SwitchField.vue";
 import TextField from "../components/ui/TextField.vue";
+import InfoTip from "../components/ui/InfoTip.vue";
 import TimeField from "../components/ui/TimeField.vue";
 import { useToasts } from "../composables/useToasts";
 import { formatDateTime } from "../format/dateTime";
@@ -76,7 +77,10 @@ onMounted(load);
       <div class="panel rules__card">
         <h2 class="rules__title">Рабочий день</h2>
         <div class="rules__field">
-          <span id="workdays-label" class="rules__label">Рабочие дни</span>
+          <span class="rules__head">
+            <span id="workdays-label" class="rules__label">Рабочие дни</span>
+            <InfoTip text="В нерабочие дни кнопки обеда нет" label="Рабочие дни" />
+          </span>
           <div class="rules__days" role="group" aria-labelledby="workdays-label">
             <AppButton
               v-for="day in WEEKDAYS"
@@ -90,7 +94,6 @@ onMounted(load);
               {{ day.short }}
             </AppButton>
           </div>
-          <span class="rules__note">В нерабочие дни кнопки обеда нет</span>
         </div>
         <TimeField
           v-model="draft.day_end"
@@ -153,6 +156,12 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.rules__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .rules__label {

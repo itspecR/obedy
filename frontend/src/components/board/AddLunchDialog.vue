@@ -54,9 +54,8 @@ onMounted(loadPeople);
 </script>
 
 <template>
-  <AppModal title="Добавить обед" :eyebrow="formatDay(day)" @close="emit('close')">
+  <AppModal title="Добавить обед" :eyebrow="formatDay(day)" info="Для сотрудника, который забыл нажать «Ушёл на обед». Он увидит, кто и почему добавил обед." @close="emit('close')">
     <form class="add-lunch" novalidate @submit.prevent="save">
-      <p class="add-lunch__note">Для сотрудника, который забыл нажать «Ушёл на обед». Он увидит, кто и почему добавил обед.</p>
       <PersonPicker v-model="personId" label="Сотрудник" :people="people" :disabled="busy" />
       <div class="add-lunch__times">
         <TimeField v-model="startedAt" label="Ушёл" :disabled="busy" />
@@ -83,11 +82,6 @@ onMounted(loadPeople);
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.add-lunch__note {
-  margin: 0;
-  color: var(--muted);
 }
 
 .add-lunch__times {

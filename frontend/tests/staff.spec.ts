@@ -295,7 +295,7 @@ describe("StaffPage local accounts", () => {
     const { wrapper } = await page(PEOPLE);
     await wrapper.get('[aria-label="Действия: Иванов Иван"]').trigger("click");
 
-    expect(dialog().textContent).toContain("ФИО, отдел и должность берутся из Active Directory");
+    expect(dialog().textContent).toContain("ФИО берётся из Active Directory");
     expect(buttonIn("Сбросить пароль")).toBeUndefined();
     wrapper.unmount();
   });

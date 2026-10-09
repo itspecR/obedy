@@ -5,7 +5,7 @@ import type { LunchRules } from "../src/api/lunchRules";
 import { draftFrom, formFrom, toggleDay } from "../src/components/rules/draft";
 import { useToasts } from "../src/composables/useToasts";
 import RulesPage from "../src/pages/RulesPage.vue";
-import { bodySentTo, chooseTime, routeFetch, shownTime } from "./helpers";
+import { bodySentTo, chooseTime, routeFetch, shownTime, infoText } from "./helpers";
 
 function rules(overrides: Partial<LunchRules> = {}): LunchRules {
   return {
@@ -61,7 +61,7 @@ describe("RulesPage", () => {
   it("shows current rules with the allowed limit range", async () => {
     const { wrapper } = await mounted();
 
-    expect(wrapper.text()).toContain("От 5 до 240 мин");
+    expect(await infoText(wrapper, "Лимит обеда, минут")).toContain("От 5 до 240 мин");
     expect(day(wrapper, "Пятница").attributes("aria-pressed")).toBe("true");
     expect(day(wrapper, "Суббота").attributes("aria-pressed")).toBe("false");
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();

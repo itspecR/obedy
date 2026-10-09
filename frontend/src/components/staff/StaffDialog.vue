@@ -102,7 +102,7 @@ async function toggleBlock(): Promise<void> {
           <AppButton type="submit" size="small" :disabled="busy || !profileChanged">Сохранить данные</AppButton>
         </div>
       </form>
-      <p v-else class="manage__note">ФИО, отдел и должность берутся из Active Directory.</p>
+      <p v-else class="manage__note">ФИО берётся из Active Directory.</p>
 
       <ChoiceField v-model="role" label="Роль" :options="ROLE_CHOICES" :disabled="busy || isSelf" />
       <p v-if="isSelf" class="manage__note">Свою роль изменить нельзя — попросите другого администратора.</p>
