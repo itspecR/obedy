@@ -2,6 +2,7 @@ MSSQL_ENGINE = "sqlserver"
 NO_DATABASE = {"ENGINE": "django.db.backends.dummy"}
 DEFAULT_PORT = "1433"
 LOCK_ACQUIRED = 0
+CONNECTION_REUSE_S = 60
 
 
 def connection_string_extras(trust_certificate):
@@ -16,6 +17,8 @@ def mssql_database(connection, test_name):
         "NAME": connection.name,
         "USER": connection.user,
         "PASSWORD": connection.password,
+        "CONN_MAX_AGE": CONNECTION_REUSE_S,
+        "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {"python_driver": "mssql_python", "extra_params": connection_string_extras(connection.trust_certificate)},
         "TEST": {"NAME": test_name},
     }
