@@ -1,3 +1,4 @@
+import { SETUP_ROUTE, decideSetup, setupStatus } from "../components/setup/setupRoute";
 import { createRouter, createWebHistory, type RouteLocationRaw, type RouteMeta } from "vue-router";
 import type { Role } from "../api/auth";
 import { onUnauthorized } from "../api/http";
@@ -10,6 +11,7 @@ const BOARD: Role[] = ["hr", "admin"];
 const RESOLVED_BY_GUARD = { render: () => null };
 
 export const routes = [
+  { path: "/setup", name: "setup", component: () => import("../pages/SetupPage.vue"), meta: { title: "Подключение базы" } },
   { path: "/login", name: "login", component: () => import("../pages/LoginPage.vue"), meta: { guest: true, title: "Вход" } },
   { path: "/change-password", name: "change-password", component: () => import("../pages/ChangePasswordPage.vue"), meta: { title: "Смена пароля" } },
   {
@@ -97,6 +99,10 @@ export function decideRoute(target: { name?: unknown; meta: RouteMeta }, state: 
 export const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach(async (to) => {
+  const setupRedirect = decideSetup(to.name, await setupStatus());
+  if (setupRedirect || to.name === SETUP_ROUTE) {
+    return setupRedirect ?? true;
+  }
   const session = useSession();
   if (!session.loaded) {
     await session.load();

@@ -4,6 +4,7 @@ import stat
 import pytest
 from django.test import Client, override_settings
 
+from accounts.models import Account, Role
 from config import restart, setup_api
 from config.connection_store import Connection, load_connection, save_connection
 from config.probe import ProbeResult, explain
@@ -75,7 +76,7 @@ def test_only_setup_and_health_work_until_the_database_is_connected(state):
     assert client.get("/api/staff").status_code == 503
     assert client.get("/api/staff").json()["setup"] is True
     assert client.get("/api/access/check").status_code == 204
-    assert client.get("/api/setup/status").json() == {"configured": False}
+    assert client.get("/api/setup/status").json() == {"configured": False, "needs_admin": False}
     assert client.get("/api/health").json() == {"status": "setup", "database": "not_configured"}
 
 
@@ -142,3 +143,27 @@ def test_restart_only_stops_the_container_process(monkeypatch):
     monkeypatch.setattr(restart.os, "getppid", lambda: restart.CONTAINER_MAIN_PROCESS)
     restart.schedule_restart()
     assert timers == [restart.stop_main_process]
+
+
+@pytest.mark.django_db
+def test_first_admin_is_created_once_with_the_setup_code(state):
+    code = issue_code(str(state / "setup-code.sha256"))
+    with override_settings(DATABASE_CONFIGURED=True):
+        assert Client().get("/api/setup/status").json() == {"configured": True, "needs_admin": True}
+        assert post("/api/setup/admin", {"code": "AAAA-BBBB-CCCC"}).status_code == 403
+
+        response = post("/api/setup/admin", {"code": code})
+
+        assert response.status_code == 200
+        assert response.json()["login"] == "admin"
+        admin = Account.objects.get(login="admin")
+        assert admin.role == Role.ADMIN and admin.must_change_password
+        assert Client().get("/api/setup/status").json() == {"configured": True, "needs_admin": False}
+        assert post("/api/setup/admin", {"code": code}).status_code == 403
+
+
+@pytest.mark.django_db
+def test_first_admin_waits_for_the_database(state):
+    code = issue_code(str(state / "setup-code.sha256"))
+
+    assert post("/api/setup/admin", {"code": code}).status_code == 409
