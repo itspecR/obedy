@@ -73,6 +73,12 @@ export async function chooseDay(root: Root, label: string, day: string): Promise
   await field.get(`[aria-label="${formatFullDay(day)}"]`).trigger("click");
 }
 
+export async function infoText(root: Root, label: string): Promise<string> {
+  const button = root.get(`[aria-label="Подсказка: ${label}"]`);
+  await button.trigger("click");
+  return root.get(`#${button.attributes("aria-controls")}`).text();
+}
+
 export async function choosePerson(root: Root, query: string, name: string): Promise<void> {
   await root.get("input[role=combobox]").setValue(query);
   await root

@@ -4,7 +4,10 @@ import { fetchSyncReport, runSync, type SyncReport } from "../../api/directory";
 import { errorMessage } from "../../api/http";
 import { useToasts } from "../../composables/useToasts";
 import AppButton from "../ui/AppButton.vue";
+import BlockTitle from "../ui/BlockTitle.vue";
 import { describeSync } from "./syncReport";
+
+const SYNC_INFO = "Раз в час сайт сверяется с доменом: добавляет сотрудников из группы, обновляет ФИО, а уволенных и убранных из группы скрывает и сразу завершает их входы.";
 
 const props = defineProps<{ blockedReason: string }>();
 
@@ -38,11 +41,7 @@ onMounted(load);
 
 <template>
   <section class="panel sync" aria-labelledby="sync-title">
-    <h2 id="sync-title" class="sync__title">Синхронизация</h2>
-    <p class="sync__note">
-      Раз в час сайт сверяется с доменом: добавляет сотрудников из группы, обновляет ФИО, отдел и должность, а уволенных и
-      убранных из группы отключает и сразу завершает их входы.
-    </p>
+    <BlockTitle title="Синхронизация" title-id="sync-title" :info="SYNC_INFO" />
     <p class="sync__result" :class="`sync__result--${view.tone}`" role="status">{{ view.text }}</p>
     <div class="sync__actions">
       <AppButton :disabled="busy || Boolean(props.blockedReason)" @click="run">
@@ -59,10 +58,6 @@ onMounted(load);
   flex-direction: column;
   gap: 14px;
   padding: 22px 24px;
-}
-
-.sync__title {
-  font-size: var(--text-h3);
 }
 
 .sync__note {

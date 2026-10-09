@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useId } from "vue";
+import InfoTip from "./InfoTip.vue";
 
 defineProps<{ label: string; hint?: string; checked: boolean; disabled?: boolean }>();
 const emit = defineEmits<{ change: [value: boolean] }>();
@@ -10,7 +11,7 @@ const id = useId();
   <div class="switch-field">
     <div class="switch-field__text">
       <span :id="`${id}-label`" class="switch-field__label">{{ label }}</span>
-      <span v-if="hint" :id="`${id}-hint`" class="switch-field__hint">{{ hint }}</span>
+      <InfoTip v-if="hint" :text="hint" :label="label" />
     </div>
     <button
       type="button"
@@ -19,7 +20,6 @@ const id = useId();
       :class="{ 'switch--on': checked }"
       :aria-checked="checked"
       :aria-labelledby="`${id}-label`"
-      :aria-describedby="hint ? `${id}-hint` : undefined"
       :disabled="disabled"
       @click="emit('change', !checked)"
     >
@@ -38,18 +38,13 @@ const id = useId();
 
 .switch-field__text {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 
 .switch-field__label {
   font-weight: 600;
-}
-
-.switch-field__hint {
-  font-size: var(--text-small);
-  color: var(--muted);
 }
 
 .switch {

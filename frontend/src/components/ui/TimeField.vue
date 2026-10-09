@@ -3,6 +3,7 @@ import { ref, useId } from "vue";
 import { usePopover } from "../../composables/usePopover";
 import { clockNow } from "../../format/dateTime";
 import AppIcon from "./AppIcon.vue";
+import InfoTip from "./InfoTip.vue";
 import TimeWheel from "./TimeWheel.vue";
 import { HOURS, MINUTES, WHEEL_ITEM_HEIGHT, clockText, parseClock } from "./timeWheel";
 
@@ -38,13 +39,15 @@ function done(): void {
 
 <template>
   <div ref="root" class="time-field" @keydown="closeOnEscape">
-    <span :id="`${id}-label`" class="field-label">{{ label }}</span>
+    <span class="time-field__head">
+      <span :id="`${id}-label`" class="field-label">{{ label }}</span>
+      <InfoTip v-if="hint" :text="hint" :label="label" />
+    </span>
     <button
       type="button"
       class="field-control"
       :class="{ 'field-control--open': open }"
       :aria-labelledby="`${id}-label ${id}-value`"
-      :aria-describedby="hint ? `${id}-hint` : undefined"
       aria-haspopup="dialog"
       :aria-expanded="open"
       :disabled="disabled"
@@ -53,7 +56,6 @@ function done(): void {
       <span :id="`${id}-value`" class="numeric" :class="{ 'field-placeholder': !model }">{{ model || "--:--" }}</span>
       <AppIcon name="clock" class="time-field__icon" />
     </button>
-    <span v-if="hint" :id="`${id}-hint`" class="time-field__hint">{{ hint }}</span>
     <div v-if="open" class="popover time-field__panel" :class="{ 'popover--end': alignEnd }" role="dialog" :aria-label="label">
       <div class="time-field__wheels" :style="{ '--wheel-item': `${WHEEL_ITEM_HEIGHT}px` }">
         <span class="time-field__band" aria-hidden="true" />
@@ -79,9 +81,10 @@ function done(): void {
   color: var(--muted);
 }
 
-.time-field__hint {
-  font-size: var(--text-small);
-  color: var(--muted);
+.time-field__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .time-field__panel {

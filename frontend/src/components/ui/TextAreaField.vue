@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useId } from "vue";
+import InfoTip from "./InfoTip.vue";
 
 withDefaults(defineProps<{ label: string; hint?: string; placeholder?: string; rows?: number; disabled?: boolean; code?: boolean }>(), {
   hint: "",
@@ -14,7 +15,10 @@ const id = useId();
 
 <template>
   <div class="area">
-    <label class="area__label" :for="id">{{ label }}</label>
+    <div class="area__head">
+      <label class="area__label" :for="id">{{ label }}</label>
+      <InfoTip v-if="hint" :text="hint" :label="label" />
+    </div>
     <textarea
       :id="id"
       v-model="model"
@@ -23,10 +27,8 @@ const id = useId();
       :rows="rows"
       :placeholder="placeholder"
       :disabled="disabled"
-      :aria-describedby="hint ? `${id}-hint` : undefined"
       spellcheck="false"
     />
-    <p v-if="hint" :id="`${id}-hint`" class="area__hint">{{ hint }}</p>
   </div>
 </template>
 
@@ -70,9 +72,9 @@ const id = useId();
   box-shadow: 0 0 0 3px var(--blue-tint);
 }
 
-.area__hint {
-  margin: 0;
-  font-size: var(--text-small);
-  color: var(--muted);
+.area__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>

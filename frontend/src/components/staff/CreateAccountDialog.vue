@@ -32,7 +32,7 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <AppModal :title="issued ? 'Учётная запись создана' : 'Новый сотрудник'" eyebrow="Локальная учётная запись" @close="emit('close')">
+  <AppModal :title="issued ? 'Учётная запись создана' : 'Новый сотрудник'" eyebrow="Локальная учётная запись" info="Для тех, кого нет в Active Directory. Сотрудники домена появляются на сайте сами." @close="emit('close')">
     <div v-if="issued" class="create">
       <TemporaryPassword :login="issued.member.login" :password="issued.temporary_password" />
       <div class="create__actions">
@@ -40,7 +40,6 @@ async function submit(): Promise<void> {
       </div>
     </div>
     <form v-else class="create" novalidate @submit.prevent="submit">
-      <p class="create__note">Для тех, кого нет в Active Directory. Сотрудники домена появляются на сайте сами.</p>
       <TextField v-model="form.login" label="Логин" placeholder="например: kassa1" hint="Латинские буквы, цифры, точка, дефис или подчёркивание" plain :disabled="busy" />
       <ProfileFields v-model="form" :disabled="busy" />
       <ChoiceField v-model="form.role" label="Роль" :options="ROLE_CHOICES" :disabled="busy" />
@@ -60,11 +59,6 @@ async function submit(): Promise<void> {
   gap: 16px;
 }
 
-.create__note {
-  margin: 0;
-  font-size: var(--text-small);
-  color: var(--muted);
-}
 
 .create__error {
   margin: 0;

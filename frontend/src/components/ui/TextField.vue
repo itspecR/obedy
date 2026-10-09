@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId } from "vue";
 import AppIcon, { type IconName } from "./AppIcon.vue";
+import InfoTip from "./InfoTip.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -29,7 +30,10 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
 
 <template>
   <div class="field">
-    <label class="field__label" :class="{ 'visually-hidden': hideLabel }" :for="id">{{ label }}</label>
+    <div class="field__head" :class="{ 'visually-hidden': hideLabel }">
+      <label class="field__label" :for="id">{{ label }}</label>
+      <InfoTip v-if="hint" :text="hint" :label="label" />
+    </div>
     <div class="field__box" :class="{ 'field__box--invalid': error, 'field__box--disabled': disabled }">
       <AppIcon v-if="icon" :name="icon" class="field__icon" />
       <input
@@ -42,7 +46,7 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
         :disabled="disabled"
         :required="required"
         :aria-invalid="error ? 'true' : undefined"
-        :aria-describedby="error || hint ? `${id}-note` : undefined"
+        :aria-describedby="error ? `${id}-note` : undefined"
         :autocapitalize="plain || isPassword ? 'none' : undefined"
         :autocorrect="plain || isPassword ? 'off' : undefined"
         :spellcheck="plain || isPassword ? false : undefined"
@@ -61,7 +65,6 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
       </button>
     </div>
     <p v-if="error" :id="`${id}-note`" class="field__note field__note--error">{{ error }}</p>
-    <p v-else-if="hint" :id="`${id}-note`" class="field__note">{{ hint }}</p>
   </div>
 </template>
 
@@ -69,6 +72,12 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
 .field {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+
+.field__head {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
