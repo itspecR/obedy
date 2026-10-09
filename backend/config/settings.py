@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from config.database import DEFAULT_PORT, mssql_database
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -40,23 +42,15 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "HOST": env("DB_HOST", "127.0.0.1"),
-        "PORT": env("DB_PORT", "3306"),
-        "NAME": env("DB_NAME", "obedy"),
-        "USER": env("DB_USER", "obedy"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-        "TEST": {
-            "NAME": env("DB_TEST_NAME", "test_obedy"),
-            "CHARSET": "utf8mb4",
-            "COLLATION": "utf8mb4_unicode_ci",
-        },
-    }
+    "default": mssql_database(
+        host=env("DB_HOST", "127.0.0.1"),
+        port=env("DB_PORT", DEFAULT_PORT),
+        name=env("DB_NAME", "obedy"),
+        user=env("DB_USER", "obedy"),
+        password=env("DB_PASSWORD"),
+        trust_certificate=env("DB_TRUST_CERTIFICATE", "1") == "1",
+        test_name=env("DB_TEST_NAME", "test_obedy"),
+    )
 }
 
 LANGUAGE_CODE = "ru"

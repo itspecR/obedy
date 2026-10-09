@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
+from config.database import seconds_since_start
 from journal.models import Action, JournalEntry
 
 OS_RELEASES = ((Path("/host/os-release"), "server"), (Path("/etc/os-release"), "container"))
@@ -108,10 +109,8 @@ def site_started_at():
 
 
 def db_started_at():
-    with connection.cursor() as cursor:
-        cursor.execute("SHOW GLOBAL STATUS LIKE 'Uptime'")
-        row = cursor.fetchone()
-    return timezone.now() - timedelta(seconds=int(row[1])) if row else None
+    seconds = seconds_since_start(connection)
+    return timezone.now() - timedelta(seconds=seconds) if seconds is not None else None
 
 
 def last_backup_at():

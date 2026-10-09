@@ -544,9 +544,10 @@ sudo ./scripts/journal-clean-timer.sh remove   # отключить очистк
 ## Тесты
 
 ```bash
-# сервер (нужна MariaDB и пользователь с правом создавать тестовую базу)
+# сервер (нужен Microsoft SQL Server и логин с правом создавать тестовую базу)
+docker run -d --name mssql-test -e ACCEPT_EULA=Y -e MSSQL_PID=Express -e MSSQL_SA_PASSWORD=<пароль> -p 1433:1433 mcr.microsoft.com/mssql/server:2019-latest
 cd backend
-DJANGO_SECRET_KEY=dev DB_PASSWORD=<пароль> python -m pytest
+DJANGO_SECRET_KEY=dev DB_USER=sa DB_PASSWORD=<пароль> python -m pytest
 
 # интерфейс
 cd frontend

@@ -9,6 +9,7 @@ from ldap3 import MODIFY_REPLACE
 
 import directory.authentication as authentication_module
 from accounts.models import Account, Role, Session, Source
+from config.database import release_lock, try_lock
 from directory.connection import DirectoryUnavailable
 from directory.models import SyncStatus
 from directory.settings_store import save_settings
@@ -40,11 +41,9 @@ def unreachable(monkeypatch):
 @pytest.fixture
 def held_lock():
     other = connections.create_connection("default")
-    with other.cursor() as cursor:
-        cursor.execute("SELECT GET_LOCK(%s, 0)", [LOCK_NAME])
+    try_lock(other, LOCK_NAME)
     yield
-    with other.cursor() as cursor:
-        cursor.execute("SELECT RELEASE_LOCK(%s)", [LOCK_NAME])
+    release_lock(other, LOCK_NAME)
     other.close()
 
 
