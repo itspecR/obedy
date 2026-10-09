@@ -13,6 +13,7 @@ from config.database_api import router as database_router
 from config.setup_api import router as setup_router
 from journal.api import router as journal_router
 from lunches.api import router as lunch_router
+from lunches.appearance_api import router as appearance_router
 from staff.api import router as staff_router
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ api.add_router("/access", access_router)
 api.add_router("/directory", directory_router)
 api.add_router("/staff", staff_router)
 api.add_router("/lunch", lunch_router)
+api.add_router("/appearance", appearance_router)
 api.add_router("/journal", journal_router)
 api.add_router("/setup", setup_router)
 api.add_router("/database", database_router)

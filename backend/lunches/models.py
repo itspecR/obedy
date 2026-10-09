@@ -20,6 +20,7 @@ class LunchRules(models.Model):
     window_enabled = models.BooleanField(default=False)
     window_start = models.TimeField(default=DEFAULT_WINDOW_START)
     window_end = models.TimeField(default=DEFAULT_WINDOW_END)
+    rabbit_enabled = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
 

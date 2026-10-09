@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { errorMessage } from "../api/http";
 import { fetchLunchRules, saveLunchRules, type LunchRules } from "../api/lunchRules";
 import { WEEKDAYS, draftFrom, formFrom, sameDraft, toggleDay, type RulesDraft } from "../components/rules/draft";
+import RabbitSwitch from "../components/rules/RabbitSwitch.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
 import SwitchField from "../components/ui/SwitchField.vue";
@@ -11,12 +12,15 @@ import InfoTip from "../components/ui/InfoTip.vue";
 import TimeField from "../components/ui/TimeField.vue";
 import { useToasts } from "../composables/useToasts";
 import { formatDateTime } from "../format/dateTime";
+import { useSession } from "../stores/session";
 
 const rules = ref<LunchRules | null>(null);
 const draft = ref<RulesDraft | null>(null);
 const loadError = ref("");
 const busy = ref(false);
 const { notify, fail } = useToasts();
+const session = useSession();
+const isAdmin = computed(() => session.me?.role === "admin");
 
 const dirty = computed(() => Boolean(rules.value && draft.value && !sameDraft(draftFrom(rules.value), draft.value)));
 const limitHint = computed(() =>
@@ -125,6 +129,7 @@ onMounted(load);
       </div>
     </form>
     <div v-else class="panel rules__card rules__loading" aria-busy="true">Загружаем…</div>
+    <RabbitSwitch v-if="isAdmin" />
   </section>
 </template>
 

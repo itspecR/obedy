@@ -65,3 +65,10 @@ def save_rules(draft):
     rules.window_end = draft.window_end
     rules.save()
     return rules
+
+
+def switch_rabbit(enabled):
+    rules = current_rules()
+    rules.rabbit_enabled = enabled
+    rules.save(update_fields=["rabbit_enabled"])
+    return rules
