@@ -6,3 +6,11 @@ export interface Appearance {
 
 export const fetchAppearance = () => request<Appearance>("GET", "/appearance");
 export const switchRabbit = (enabled: boolean) => request<Appearance>("PUT", "/appearance/rabbit", { enabled });
+
+export async function rabbitWanted(): Promise<boolean> {
+  try {
+    return (await fetchAppearance()).rabbit;
+  } catch {
+    return false;
+  }
+}
