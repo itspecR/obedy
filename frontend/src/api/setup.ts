@@ -5,14 +5,17 @@ export interface SetupStatus {
   needs_admin: boolean;
 }
 
-export interface DatabaseForm {
-  code: string;
+export interface ConnectionForm {
   host: string;
   port: string;
   name: string;
   user: string;
   password: string;
   trust_certificate: boolean;
+}
+
+export interface DatabaseForm extends ConnectionForm {
+  code: string;
 }
 
 export interface ProbeResult {

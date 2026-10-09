@@ -24,6 +24,7 @@ export type JournalAction =
   | "directory_changed"
   | "directory_checked"
   | "directory_synced"
+  | "database_changed"
   | "backup_done";
 
 export type JournalCategory = "logins" | "staff" | "lunches" | "settings";

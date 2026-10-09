@@ -84,3 +84,13 @@ def network_snapshot(network):
 
 def private_snapshot(enabled):
     return {"Вся локальная сеть": switch(enabled)}
+
+
+def database_snapshot(connection):
+    return {
+        "Сервер": text(connection.host),
+        "Порт": connection.port or DEFAULT_PORT,
+        "База": text(connection.name),
+        "Логин SQL Server": text(connection.user),
+        "Доверять сертификату": switch(connection.trust_certificate),
+    }

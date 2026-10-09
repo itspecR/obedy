@@ -15,12 +15,13 @@ const STATS: Section = { name: "stats", path: "/stats", label: "Статисти
 const STAFF: Section = { name: "staff", path: "/staff", label: "Сотрудники", icon: "users" };
 const ACCESS: Section = { name: "access", path: "/access", label: "Доступ", icon: "shield" };
 const DIRECTORY: Section = { name: "directory", path: "/directory", label: "Домен", icon: "server" };
+const DATABASE: Section = { name: "database", path: "/database", label: "База", icon: "database" };
 const JOURNAL: Section = { name: "log", path: "/log", label: "Log", icon: "journal" };
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
   hr: [LUNCH, BOARD, STATS, RULES],
-  admin: [BOARD, STATS, STAFF, RULES, ACCESS, DIRECTORY, JOURNAL],
+  admin: [BOARD, STATS, STAFF, RULES, ACCESS, DIRECTORY, DATABASE, JOURNAL],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {
