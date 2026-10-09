@@ -203,11 +203,6 @@ input:-webkit-autofill:focus {
   animation: popover-in var(--motion) ease-out;
 }
 
-.popover--end {
-  right: 0;
-  left: auto;
-}
-
 @keyframes popover-in {
   from {
     opacity: 0;
