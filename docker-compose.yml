@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: deploy/app.Dockerfile
+      args:
+        APP_RELEASE: "${APP_RELEASE:-}"
     env_file: .env
     network_mode: host
     restart: unless-stopped

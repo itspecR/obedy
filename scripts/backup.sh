@@ -17,7 +17,12 @@ main() {
     chmod 600 "$file"
     trap - ERR
     prune
+    mark_backup "$root" "$file"
     echo "Готово: $file"
+}
+
+mark_backup() {
+    (cd "$1" && docker compose exec -T app python manage.py mark_backup "$(basename "$2")" >/dev/null 2>&1) || true
 }
 
 dump() {

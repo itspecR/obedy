@@ -4,6 +4,9 @@ from access.models import AllowedNetwork
 from access.networks import PRIVATE_RANGES, InvalidNetwork, parse_network
 from access.policy import load_policy
 from access.service import DuplicateNetwork, add_network, remove_network, set_private_networks
+from journal.entries import differences, record_server, record_server_changes, removed
+from journal.models import Action
+from journal.snapshots import network_snapshot, private_snapshot
 
 SWITCH_VALUES = {"on": True, "off": False}
 
@@ -34,11 +37,12 @@ class Command(BaseCommand):
 
     def add(self, value, note):
         try:
-            add_network(self.required(value), note)
+            created = add_network(self.required(value), note)
         except InvalidNetwork as error:
             raise CommandError("Неверный адрес. Пример: 192.168.1.10 или 192.168.1.0/24") from error
         except DuplicateNetwork as error:
             raise CommandError("Этот адрес уже есть в списке") from error
+        record_server(Action.NETWORK_ADDED, rows=differences({}, network_snapshot(created)))
 
     def remove(self, value, note):
         try:
@@ -48,12 +52,15 @@ class Command(BaseCommand):
         row = AllowedNetwork.objects.filter(network=network).first()
         if row is None:
             raise CommandError("Такого адреса нет в списке")
-        remove_network(row.pk, None)
+        gone = remove_network(row.pk, None)
+        record_server(Action.NETWORK_REMOVED, rows=removed(network_snapshot(gone)))
 
     def lan(self, value, note):
         if value not in SWITCH_VALUES:
             raise CommandError("Укажите on или off")
-        set_private_networks(SWITCH_VALUES[value], None)
+        enabled = SWITCH_VALUES[value]
+        was_enabled = set_private_networks(enabled, None)
+        record_server_changes(Action.PRIVATE_NETWORKS_CHANGED, private_snapshot(was_enabled), private_snapshot(enabled))
 
     @staticmethod
     def required(value):

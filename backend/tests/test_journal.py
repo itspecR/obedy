@@ -3,13 +3,14 @@ from datetime import date, time, timedelta
 
 import pytest
 from django.core.management import CommandError, call_command
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 
 import directory.api
 from accounts.models import Account, Role, Source
 from journal.models import Action, JournalEntry
 from journal.retention import RETENTION_DAYS
+from journal.system import meminfo, pretty_name, process_started_at
 from lunches.clock import moment_of
 from lunches.models import Lunch
 from tests.factories import DEFAULT_PASSWORD, make_account
@@ -332,3 +333,54 @@ def test_reset_deletes_all_lunches_and_is_recorded_as_server():
     assert Account.objects.filter(login="ivanov").exists()
     assert entries(Action.LOGIN)
     assert (reset.actor, reset.address, rows(reset)) == (None, "сервер", [("Удалено обедов", None, "3")])
+
+
+def server_entries(action):
+    return [entry for entry in entries(action) if entry.actor is None and entry.address == "сервер"]
+
+
+def test_server_access_commands_are_recorded():
+    call_command("access", "add", "10.9.9.0/24", "офис")
+    call_command("access", "lan", "off")
+    call_command("access", "remove", "10.9.9.0/24")
+
+    assert rows(server_entries(Action.NETWORK_ADDED)[0]) == [("Адрес", None, "10.9.9.0/24"), ("Заметка", None, "офис")]
+    assert rows(server_entries(Action.PRIVATE_NETWORKS_CHANGED)[0]) == [("Вся локальная сеть", "включено", "выключено")]
+    assert rows(server_entries(Action.NETWORK_REMOVED)[0]) == [("Адрес", "10.9.9.0/24", None), ("Заметка", "офис", None)]
+
+
+def test_server_password_and_admin_commands_are_recorded_without_passwords(capsys):
+    call_command("create_admin")
+    call_command("reset_password", "admin")
+    output = capsys.readouterr().out
+    admin = Account.objects.get(login="admin")
+
+    assert server_entries(Action.ACCOUNT_CREATED)[0].target == admin
+    assert server_entries(Action.PASSWORD_ISSUED)[0].target == admin
+    stored = json.dumps(list(JournalEntry.objects.values()), default=str)
+    assert all(line.split(": ", 1)[1] not in stored for line in output.splitlines() if line.startswith("Временный пароль"))
+
+
+def test_system_text_parsers():
+    assert pretty_name('NAME="Ubuntu"\nPRETTY_NAME="Ubuntu 24.04.1 LTS"\n') == "Ubuntu 24.04.1 LTS"
+    assert meminfo("MemTotal:       2048 kB\nMemAvailable:   1024 kB\n") == {"MemTotal": 2097152, "MemAvailable": 1048576}
+    assert process_started_at("1 (python) S" + " 0" * 25, None, 100) is None
+
+
+@override_settings(APP_RELEASE="release-0.10.08 · abc1234 · 09.10.2026 12:00")
+def test_admin_sees_server_panel_with_release_and_last_backup():
+    guest, _ = signed_in()
+    call_command("mark_backup", "obedy-20261009-000000.sql.gz")
+
+    body = guest.get("/api/journal/system").json()
+
+    assert body["release"] == "release-0.10.08 · abc1234 · 09.10.2026 12:00"
+    assert body["last_backup_at"] is not None
+    assert body["db_started_at"] is not None
+    assert rows(server_entries(Action.BACKUP_DONE)[0]) == [("Файл", None, "obedy-20261009-000000.sql.gz")]
+
+
+def test_only_admin_sees_server_panel():
+    guest, _ = signed_in("kadry", Role.HR)
+
+    assert guest.get("/api/journal/system").status_code == 403

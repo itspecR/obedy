@@ -39,6 +39,13 @@ def record_server(action, target=None, rows=()):
     return write(action, None, SERVER_ADDRESS, target, rows)
 
 
+def record_server_changes(action, before, after, target=None):
+    rows = differences(before, after)
+    if rows:
+        record_server(action, target, rows)
+    return rows
+
+
 def record_changes(request, action, before, after, target=None, extra=()):
     rows = [*differences(before, after), *extra]
     if rows:

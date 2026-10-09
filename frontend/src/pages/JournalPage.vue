@@ -2,9 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue";
 import type { Person } from "../api/board";
 import { errorMessage } from "../api/http";
-import { fetchJournal, fetchJournalPeople, type JournalEntry, type JournalQuery } from "../api/journal";
+import { fetchJournal, fetchJournalPeople, fetchSystem, type JournalEntry, type JournalQuery, type SystemInfo } from "../api/journal";
 import { ALL_CATEGORIES, CATEGORY_OPTIONS, categoryOf, recentPeriod, type CategoryChoice } from "../components/journal/entries";
 import JournalList from "../components/journal/JournalList.vue";
+import SystemPanel from "../components/journal/SystemPanel.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import ChoiceField from "../components/ui/ChoiceField.vue";
 import DateField from "../components/ui/DateField.vue";
@@ -18,6 +19,7 @@ const period = ref(recentPeriod(today));
 const person = ref<number | null>(null);
 const category = ref<CategoryChoice>(ALL_CATEGORIES);
 const people = ref<Person[]>([]);
+const system = ref<SystemInfo | null>(null);
 const entries = ref<JournalEntry[]>([]);
 const hasMore = ref(false);
 const loaded = ref(false);
@@ -83,32 +85,48 @@ async function loadPeople(): Promise<void> {
   }
 }
 
+async function loadSystem(): Promise<void> {
+  try {
+    system.value = await fetchSystem();
+  } catch (error) {
+    fail(errorMessage(error, "Не удалось загрузить сведения о сервере"));
+  }
+}
+
 watch(query, reload);
 onMounted(() => {
   reload();
   void loadPeople();
+  void loadSystem();
 });
 </script>
 
 <template>
   <section class="journal">
-    <PageHeader title="Журнал действий" subtitle="Кто, когда и что изменил. Записи хранятся 3 года" />
+    <PageHeader title="Log" subtitle="Кто, когда и что изменил. Записи хранятся 3 года" />
 
-    <div class="panel journal__filters">
-      <div class="journal__fields">
-        <DateField v-model="period.from" label="С" :max="today" />
-        <DateField v-model="period.to" label="По" :max="today" />
-        <PersonPicker v-model="person" label="Сотрудник" :people="people" placeholder="Все сотрудники" />
+    <div class="journal__layout">
+      <div class="journal__main">
+        <div class="panel journal__filters">
+          <div class="journal__fields">
+            <DateField v-model="period.from" label="С" :max="today" />
+            <DateField v-model="period.to" label="По" :max="today" />
+            <PersonPicker v-model="person" label="Сотрудник" :people="people" placeholder="Все сотрудники" />
+          </div>
+          <ChoiceField v-model="category" label="Вид действия" :options="CATEGORY_OPTIONS" />
+        </div>
+
+        <div v-if="loadError" class="panel journal__message" role="alert">
+          <p class="journal__error">{{ loadError }}</p>
+          <AppButton @click="reload">Повторить</AppButton>
+        </div>
+        <div v-else-if="!loaded" class="panel journal__message" aria-busy="true">Загружаем…</div>
+        <JournalList v-else :entries="entries" :has-more="hasMore" :loading="loading" @more="loadMore" />
       </div>
-      <ChoiceField v-model="category" label="Вид действия" :options="CATEGORY_OPTIONS" />
+      <aside class="journal__side">
+        <SystemPanel v-if="system" :info="system" />
+      </aside>
     </div>
-
-    <div v-if="loadError" class="panel journal__message" role="alert">
-      <p class="journal__error">{{ loadError }}</p>
-      <AppButton @click="reload">Повторить</AppButton>
-    </div>
-    <div v-else-if="!loaded" class="panel journal__message" aria-busy="true">Загружаем…</div>
-    <JournalList v-else :entries="entries" :has-more="hasMore" :loading="loading" @more="loadMore" />
   </section>
 </template>
 
@@ -117,6 +135,31 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.journal__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.journal__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .journal__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  }
+
+  .journal__side {
+    position: sticky;
+    top: 24px;
+  }
 }
 
 .journal__filters {

@@ -14,6 +14,9 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 COPY backend/ .
 
+ARG APP_RELEASE=""
+ENV APP_RELEASE=$APP_RELEASE
+
 RUN useradd --system --no-create-home obedy
 USER obedy
 
