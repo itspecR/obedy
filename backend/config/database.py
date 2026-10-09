@@ -42,3 +42,12 @@ def seconds_since_start(database):
         cursor.execute("SELECT DATEDIFF(SECOND, create_date, GETDATE()) FROM sys.databases WHERE name = 'tempdb'")
         row = cursor.fetchone()
     return row[0] if row else None
+
+
+def seconds_since_backup(database):
+    with database.cursor() as cursor:
+        cursor.execute(
+            "SELECT DATEDIFF(SECOND, MAX(backup_finish_date), GETDATE()) FROM msdb.dbo.backupset WHERE database_name = DB_NAME()"
+        )
+        row = cursor.fetchone()
+    return row[0] if row else None

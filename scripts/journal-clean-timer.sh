@@ -22,19 +22,20 @@ install_timer() {
     docker="$(command -v docker)" || fail "Не найден docker. Сначала установите систему: sudo ./scripts/install.sh"
     cat > "/etc/systemd/system/$UNIT.service" <<UNIT_FILE
 [Unit]
-Description=Удаление записей журнала действий «Обеды» старше трёх лет
+Description=Очистка «Обеды»: записи журнала старше трёх лет и истёкшие сессии
 
 [Service]
 Type=oneshot
 WorkingDirectory=$1
 ExecStart=$docker compose exec -T app python manage.py clean_journal
+ExecStart=-$1/scripts/clean-sessions.sh
 PrivateTmp=true
 ProtectHome=read-only
 NoNewPrivileges=true
 UNIT_FILE
     cat > "/etc/systemd/system/$UNIT.timer" <<UNIT_FILE
 [Unit]
-Description=Ежедневная очистка журнала действий «Обеды» в 00:30 по Москве
+Description=Ежедневная очистка журнала и сессий «Обеды» в 00:30 по Москве
 
 [Timer]
 OnCalendar=*-*-* 00:30:00 Europe/Moscow

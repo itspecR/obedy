@@ -8,7 +8,7 @@ defineProps<{ info: SystemInfo }>();
 
 <template>
   <section class="panel system" aria-labelledby="system-title">
-    <BlockTitle title="Сервер" title-id="system-title" info="Релиз — ветка, коммит и время развёртывания. Резервная копия — время последней успешной копии базы." />
+    <BlockTitle title="Сервер" title-id="system-title" info="Релиз — ветка, коммит и время развёртывания. Резервная копия — время последней копии базы на SQL Server; «нет данных», если копий нет или логину сайта не разрешено их видеть." />
     <dl class="system__rows">
       <dt>Релиз</dt>
       <dd class="system__release">{{ info.release || NO_DATA }}</dd>
