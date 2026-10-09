@@ -10,7 +10,6 @@ export interface Person {
 export interface BoardEntry {
   person: Person;
   lunch: Lunch;
-  can_correct: boolean;
 }
 
 export interface Board {
@@ -36,3 +35,4 @@ export interface AddLunchForm extends CorrectionForm {
 export const fetchBoardPeople = () => request<Person[]>("GET", "/lunch/board/people");
 export const addLunch = (form: AddLunchForm) => request<BoardEntry>("POST", "/lunch/board/lunches", form);
 export const correctLunch = (id: number, form: CorrectionForm) => request<BoardEntry>("PUT", `/lunch/board/${id}/correction`, form);
+export const deleteLunch = (id: number, reason: string) => request<void>("DELETE", `/lunch/board/${id}`, { reason });

@@ -28,6 +28,7 @@ export const ACTIONS: Record<JournalAction, ActionInfo> = {
   password_issued: { label: "Выдан временный пароль", tone: "neutral" },
   lunch_corrected: { label: "Исправлен обед", tone: "neutral" },
   lunch_added: { label: "Добавлен обед", tone: "neutral" },
+  lunch_deleted: { label: "Удалён обед", tone: "alarm" },
   rules_changed: { label: "Изменены правила обеда", tone: "neutral" },
   network_added: { label: "Добавлен адрес доступа", tone: "neutral" },
   network_removed: { label: "Удалён адрес доступа", tone: "alarm" },

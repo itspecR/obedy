@@ -5,6 +5,7 @@ import { errorMessage } from "../api/http";
 import AddLunchDialog from "../components/board/AddLunchDialog.vue";
 import BoardList from "../components/board/BoardList.vue";
 import CorrectionDialog from "../components/board/CorrectionDialog.vue";
+import DeleteLunchDialog from "../components/board/DeleteLunchDialog.vue";
 import { filterEntries, groupEntries } from "../components/board/groups";
 import AppButton from "../components/ui/AppButton.vue";
 import DateField from "../components/ui/DateField.vue";
@@ -21,6 +22,7 @@ const day = ref("");
 const search = ref("");
 const loadError = ref("");
 const editing = ref<BoardEntry | null>(null);
+const deleting = ref<BoardEntry | null>(null);
 const adding = ref(false);
 const { now, sync } = useServerClock();
 const { fail } = useToasts();
@@ -64,13 +66,20 @@ function replace(entry: BoardEntry): void {
   editing.value = null;
 }
 
+function forget(lunchId: number): void {
+  if (board.value) {
+    board.value.entries = board.value.entries.filter((item) => item.lunch.id !== lunchId);
+  }
+  deleting.value = null;
+}
+
 function added(): void {
   adding.value = false;
   void load();
 }
 
 function refreshToday(): void {
-  if (document.visibilityState === "visible" && isToday.value && !editing.value && !adding.value) {
+  if (document.visibilityState === "visible" && isToday.value && !editing.value && !deleting.value && !adding.value) {
     void load();
   }
 }
@@ -119,6 +128,7 @@ onUnmounted(() => {
           :warning-minutes="board.warning_minutes"
           empty="Сейчас никто не обедает"
           @correct="editing = $event"
+          @delete="deleting = $event"
         />
         <BoardList
           title="С нарушениями"
@@ -127,6 +137,7 @@ onUnmounted(() => {
           :warning-minutes="board.warning_minutes"
           empty="Нарушений нет"
           @correct="editing = $event"
+          @delete="deleting = $event"
         />
         <BoardList
           title="Вернулись вовремя"
@@ -135,10 +146,12 @@ onUnmounted(() => {
           :warning-minutes="board.warning_minutes"
           empty="Пока никто не вернулся"
           @correct="editing = $event"
+          @delete="deleting = $event"
         />
       </div>
     </template>
     <CorrectionDialog v-if="editing" :entry="editing" @close="editing = null" @saved="replace" />
+    <DeleteLunchDialog v-if="deleting" :entry="deleting" @close="deleting = null" @deleted="forget" />
     <AddLunchDialog v-if="adding && board" :day="board.day" @close="adding = false" @saved="added" />
   </section>
 </template>

@@ -6,11 +6,11 @@ from ninja.errors import HttpError
 
 from accounts.names import display_name
 from accounts.security import session_auth
-from journal.entries import Row, differences, record
+from journal.entries import Row, differences, record, removed
 from journal.models import Action
 from journal.snapshots import day_text, lunch_snapshot
 from lunches.clock import today
-from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch
+from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch, delete_lunch
 from lunches.models import REASON_LIMIT, Lunch
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.service import WARNING_MINUTES, close_overdue
@@ -33,7 +33,6 @@ class PersonOut(Schema):
 class BoardEntryOut(Schema):
     person: PersonOut
     lunch: LunchOut
-    can_correct: bool
 
 
 class BoardOut(Schema):
@@ -53,6 +52,10 @@ class CorrectionIn(Schema):
         return Correction(self.started_at, self.ended_at, self.reason)
 
 
+class DeleteIn(Schema):
+    reason: str = Field(max_length=REASON_LIMIT)
+
+
 class AddLunchIn(CorrectionIn):
     account_id: int
     day: date
@@ -62,8 +65,8 @@ def describe_person(account):
     return PersonOut(id=account.pk, name=display_name(account), login=account.login)
 
 
-def describe_entry(lunch, actor, now):
-    return BoardEntryOut(person=describe_person(lunch.account), lunch=describe_lunch(lunch, now), can_correct=lunch.account_id != actor.pk)
+def describe_entry(lunch, now):
+    return BoardEntryOut(person=describe_person(lunch.account), lunch=describe_lunch(lunch, now))
 
 
 def lunches_of_day(day):
@@ -74,8 +77,20 @@ def board_actor(request):
     return require_supervisor(request, BOARD_ONLY)
 
 
+def day_row(lunch):
+    return Row("День", after=day_text(lunch.day))
+
+
+def reason_row(reason):
+    return Row("Причина", after=reason)
+
+
 def lunch_rows(before, lunch):
-    return [Row("День", after=day_text(lunch.day)), *differences(before, lunch_snapshot(lunch)), Row("Причина", after=lunch.correction_reason)]
+    return [day_row(lunch), *differences(before, lunch_snapshot(lunch)), reason_row(lunch.correction_reason)]
+
+
+def deleted_rows(lunch, reason):
+    return [day_row(lunch), *removed(lunch_snapshot(lunch)), reason_row(reason)]
 
 
 def refused_as_bad_request(action):
@@ -87,7 +102,7 @@ def refused_as_bad_request(action):
 
 @router.get("", auth=session_auth, response=BoardOut)
 def board(request, day: date | None = None):
-    actor = board_actor(request)
+    board_actor(request)
     now = timezone.now()
     close_overdue(now)
     shown = day or today(now)
@@ -96,14 +111,14 @@ def board(request, day: date | None = None):
         day=shown,
         today=today(now),
         warning_minutes=WARNING_MINUTES,
-        entries=[describe_entry(lunch, actor, now) for lunch in lunches_of_day(shown)],
+        entries=[describe_entry(lunch, now) for lunch in lunches_of_day(shown)],
     )
 
 
 @router.get("/people", auth=session_auth, response=list[PersonOut])
 def people(request):
-    actor = board_actor(request)
-    candidates = present_accounts().filter(is_active=True, track_lunch=True).exclude(pk=actor.pk).order_by("full_name", "login")
+    board_actor(request)
+    candidates = present_accounts().filter(is_active=True, track_lunch=True).order_by("full_name", "login")
     return [describe_person(account) for account in candidates if can_receive_lunch(account)]
 
 
@@ -116,7 +131,7 @@ def add(request, payload: AddLunchIn):
     now = timezone.now()
     lunch = refused_as_bad_request(lambda: add_lunch(actor, account, payload.day, payload.correction(), now))
     record(request, Action.LUNCH_ADDED, account, lunch_rows({}, lunch))
-    return Status(201, describe_entry(lunch, actor, now))
+    return Status(201, describe_entry(lunch, now))
 
 
 @router.put("/{lunch_id}/correction", auth=session_auth, response=BoardEntryOut)
@@ -129,4 +144,15 @@ def correct(request, lunch_id: int, payload: CorrectionIn):
     except Lunch.DoesNotExist as missing:
         raise HttpError(404, NOT_FOUND) from missing
     record(request, Action.LUNCH_CORRECTED, lunch.account, lunch_rows(lunch_snapshot(before), lunch))
-    return describe_entry(lunch, actor, now)
+    return describe_entry(lunch, now)
+
+
+@router.delete("/{lunch_id}", auth=session_auth, response={204: None})
+def delete(request, lunch_id: int, payload: DeleteIn):
+    board_actor(request)
+    try:
+        lunch, reason = refused_as_bad_request(lambda: delete_lunch(lunch_id, payload.reason))
+    except Lunch.DoesNotExist as missing:
+        raise HttpError(404, NOT_FOUND) from missing
+    record(request, Action.LUNCH_DELETED, lunch.account, deleted_rows(lunch, reason))
+    return Status(204, None)

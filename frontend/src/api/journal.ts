@@ -15,6 +15,7 @@ export type JournalAction =
   | "password_issued"
   | "lunch_corrected"
   | "lunch_added"
+  | "lunch_deleted"
   | "rules_changed"
   | "network_added"
   | "network_removed"
