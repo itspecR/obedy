@@ -9,6 +9,7 @@ const props = withDefaults(
     type?: string;
     autocomplete?: string;
     error?: string;
+    invalid?: boolean;
     hint?: string;
     disabled?: boolean;
     required?: boolean;
@@ -17,7 +18,7 @@ const props = withDefaults(
     hideLabel?: boolean;
     icon?: IconName;
   }>(),
-  { type: "text", autocomplete: "off", error: "", hint: "", disabled: false, required: false, plain: false, placeholder: undefined, hideLabel: false, icon: undefined },
+  { type: "text", autocomplete: "off", error: "", invalid: false, hint: "", disabled: false, required: false, plain: false, placeholder: undefined, hideLabel: false, icon: undefined },
 );
 
 const model = defineModel<string>({ default: "" });
@@ -25,6 +26,7 @@ const id = useId();
 const revealed = ref(false);
 const isPassword = computed(() => props.type === "password");
 const inputType = computed(() => (isPassword.value && revealed.value ? "text" : props.type));
+const marked = computed(() => Boolean(props.error) || props.invalid);
 const revealLabel = computed(() => (revealed.value ? "Скрыть пароль" : "Показать пароль"));
 </script>
 
@@ -34,7 +36,7 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
       <label class="field__label" :for="id">{{ label }}</label>
       <InfoTip v-if="hint" :text="hint" :label="label" />
     </div>
-    <div class="field__box" :class="{ 'field__box--invalid': error, 'field__box--disabled': disabled }">
+    <div class="field__box" :class="{ 'field__box--invalid': marked, 'field__box--disabled': disabled }">
       <AppIcon v-if="icon" :name="icon" class="field__icon" />
       <input
         :id="id"
@@ -45,7 +47,7 @@ const revealLabel = computed(() => (revealed.value ? "Скрыть пароль"
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
-        :aria-invalid="error ? 'true' : undefined"
+        :aria-invalid="marked ? 'true' : undefined"
         :aria-describedby="error ? `${id}-note` : undefined"
         :autocapitalize="plain || isPassword ? 'none' : undefined"
         :autocorrect="plain || isPassword ? 'off' : undefined"
