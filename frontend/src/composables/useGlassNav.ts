@@ -1,6 +1,7 @@
 import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type WatchSource } from "vue";
 import { leanOf, nextIndex, NO_LEAN, revealScroll, type Axis, type Lean } from "../components/ui/glass";
 import { useGlassDrag } from "./useGlassDrag";
+import { lightModeOn } from "./useLightMode";
 import { useGlassPill } from "./useGlassPill";
 
 export interface GlassNavOptions {
@@ -71,7 +72,7 @@ export function useGlassNav(nav: Ref<HTMLElement | null>, options: GlassNavOptio
   }
 
   function track(event: PointerEvent): void {
-    if (event.pointerType !== "mouse") {
+    if (event.pointerType !== "mouse" || lightModeOn()) {
       return;
     }
     pending = event;

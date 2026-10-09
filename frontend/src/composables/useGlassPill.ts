@@ -14,6 +14,7 @@ import {
   type Scale,
   type SpringState,
 } from "../components/ui/glass";
+import { lightModeOn } from "./useLightMode";
 
 const SHIMMER_MS = 700;
 const MAX_FRAME_S = 1 / 30;
@@ -81,7 +82,7 @@ export function useGlassPill(track: Ref<HTMLElement | null>) {
 
   function moveTo(box: GlassBox, next: Motion): void {
     const host = track.value;
-    if (!host || !pill.box || reducedMotion()) {
+    if (!host || !pill.box || stillMotion()) {
       show(box);
       return;
     }
@@ -160,6 +161,6 @@ function motionOf(edges: Edges, goal: Edges): GlassMotion {
   return edges.axis === "x" ? { dx: shift, dy: 0, sx: stretch, sy: neck } : { dx: 0, dy: shift, sx: neck, sy: stretch };
 }
 
-function reducedMotion(): boolean {
-  return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function stillMotion(): boolean {
+  return lightModeOn() || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 }

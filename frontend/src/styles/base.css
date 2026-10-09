@@ -131,6 +131,12 @@ input:-webkit-autofill:focus {
   }
 }
 
+:root.light-mode {
+  --glass-blur: none;
+  --card-fill: var(--surface-glass-strong);
+  --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
