@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+echo "$*" >> "$FAKE_LOG"
+case "$1 $2" in
+    "image inspect") [[ " $FAKE_LOCAL " == *" $3 "* ]] ;;
+    "pull -q") [[ "$FAKE_PULL" == ok ]] || sleep 30 ;;
+    "compose build") [[ "$FAKE_BUILD" == ok ]] || sleep 30 ;;
+esac

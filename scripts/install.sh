@@ -20,7 +20,7 @@ main() {
     step "3/7" "Собираем и запускаем систему"
     export APP_RELEASE
     APP_RELEASE="$(release_label "$root")"
-    (cd "$root" && docker compose up -d --build --remove-orphans && wait_for_app "$root" && docker compose exec -T app python manage.py migrate --noinput)
+    (cd "$root" && build_images "$root" && docker compose up -d --remove-orphans && wait_for_app "$root" && docker compose exec -T app python manage.py migrate --noinput)
     step "4/7" "Создаём локального администратора"
     (cd "$root" && docker compose exec -T app python manage.py create_admin || true)
     step "5/7" "Включаем ежедневную резервную копию"

@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+PULL_TIMEOUT_SECONDS=300
+PULL_ATTEMPTS=3
+PULL_RETRY_PAUSE_SECONDS=10
+BUILD_TIMEOUT_SECONDS=1800
+
 project_root() {
     cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
@@ -57,4 +62,50 @@ release_label() {
     else
         echo "из архива · $(TZ=Europe/Moscow date '+%d.%m.%Y %H:%M')"
     fi
+}
+
+base_images() {
+    awk 'toupper($1) == "FROM" { print $2 }' "$1"/deploy/*.Dockerfile | sort -u
+}
+
+has_image() {
+    docker image inspect "$1" >/dev/null 2>&1
+}
+
+pull_image() {
+    local attempt
+    for attempt in $(seq 1 "$PULL_ATTEMPTS"); do
+        if timeout "$PULL_TIMEOUT_SECONDS" docker pull -q "$1" >/dev/null; then
+            return 0
+        fi
+        echo "Docker Hub не отдал $1 (попытка $attempt из $PULL_ATTEMPTS)." >&2
+        if [[ $attempt -lt $PULL_ATTEMPTS ]]; then
+            sleep "$PULL_RETRY_PAUSE_SECONDS"
+        fi
+    done
+    return 1
+}
+
+ensure_base_images() {
+    local image
+    for image in $(base_images "$1"); do
+        if has_image "$image"; then
+            echo "Образ $image уже есть на сервере."
+        elif pull_image "$image"; then
+            echo "Образ $image скачан."
+        else
+            echo "Не удалось скачать $image: Docker Hub не отвечает. Проверка сети: sudo ./scripts/registry-check.sh" >&2
+            return 1
+        fi
+    done
+}
+
+build_images() {
+    local status=0
+    ensure_base_images "$1" || return 1
+    timeout "$BUILD_TIMEOUT_SECONDS" docker compose build || status=$?
+    if [[ $status -eq 124 ]]; then
+        echo "Сборка не закончилась за $((BUILD_TIMEOUT_SECONDS / 60)) минут и остановлена. Проверка сети: sudo ./scripts/registry-check.sh" >&2
+    fi
+    return "$status"
 }

@@ -24,7 +24,7 @@ main() {
     step "2/7" "Собираем контейнеры"
     export APP_RELEASE
     APP_RELEASE="$(release_label "$root")"
-    docker compose build
+    build_images "$root"
     step "3/7" "Резервная копия базы перед миграциями"
     "$root/scripts/backup.sh"
     step "4/7" "Применяем миграции базы"
@@ -89,7 +89,7 @@ roll_back() {
     echo >&2
     echo "Ошибка развёртывания. Возвращаем прошлую версию кода ($(git rev-parse --short "$1"))." >&2
     git reset --hard "$1"
-    docker compose up -d --build --remove-orphans || true
+    { build_images "$(project_root)" && docker compose up -d --remove-orphans; } || true
     echo "Прошлая версия запущена. Если миграции успели примениться и сайт работает с ошибками," >&2
     echo "восстановите базу из копии, сделанной перед миграциями: sudo ./scripts/restore.sh $(latest_backup)" >&2
     exit 1
