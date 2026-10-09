@@ -150,3 +150,31 @@ def test_export_keeps_formula_like_text_as_text():
 
     assert all(cell.data_type != "f" for cell in cells)
     assert "=1+1" in [cell.value for cell in cells]
+
+
+def test_selected_people_narrow_overview_and_show_their_lunches(october):
+    ivanov, petrova, _ = october
+
+    body = signed_in().get(f"/api/lunch/stats{OCTOBER}&person={ivanov.pk}&person={petrova.pk}").json()
+
+    assert body["overview"] == {"count": 5, "violations": 3, "average_minutes": 43, "on_time_percent": 40, "people": 2}
+    assert len(body["people"]) == 3
+    assert [(row["name"], row["lunch"]["day"]) for row in body["lunches"]][:3] == [
+        ("Иванов Иван", "2026-10-01"),
+        ("Петрова Анна", "2026-10-01"),
+        ("Иванов Иван", "2026-10-02"),
+    ]
+    assert {row["person_id"] for row in body["lunches"]} == {ivanov.pk, petrova.pk}
+
+
+def test_without_selection_daily_lunches_are_not_sent(october):
+    assert signed_in().get(f"/api/lunch/stats{OCTOBER}").json()["lunches"] == []
+
+
+def test_export_contains_only_selected_people(october):
+    petrova = october[1]
+
+    book = workbook_of(signed_in().get(f"/api/lunch/stats/export{OCTOBER}&person={petrova.pk}"))
+
+    assert [row[1] for row in book["Сотрудники"].iter_rows(min_row=2, values_only=True)] == ["petrova"]
+    assert {row[2] for row in book["Все обеды"].iter_rows(min_row=2, values_only=True)} == {"petrova"}

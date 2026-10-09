@@ -29,6 +29,7 @@ function stats(overrides: Partial<Stats> = {}): Stats {
     date_to: "2026-10-08",
     overview: { count: 5, violations: 2, average_minutes: 40, on_time_percent: 60, people: 2 },
     people: [person(), person({ id: 2, name: "Петрова Анна", login: "petrova", violations: 0, overruns: 0, unreturned: 0, overrun_minutes: 0 })],
+    lunches: [],
     ...overrides,
   };
 }
@@ -121,6 +122,43 @@ describe("StatsPage", () => {
     expect(createObjectURL).toHaveBeenCalled();
     expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe("obedy_2026-10-01_2026-10-08.xlsx");
     click.mockRestore();
+    wrapper.unmount();
+  });
+
+  it("narrows to one person by name and adds more with checkboxes", async () => {
+    const ivanovUrl = `${OCTOBER}&person=1`;
+    const bothUrl = `${OCTOBER}&person=1&person=2`;
+    const lunch = {
+      id: 7,
+      day: "2026-10-02",
+      started_at: "2026-10-02T09:00:00Z",
+      ended_at: "2026-10-02T09:55:00Z",
+      limit_minutes: 45,
+      status: "overrun" as const,
+      duration_seconds: 3300,
+      auto_closed: false,
+      correction: null,
+    };
+    const { spy, wrapper } = await mounted({
+      [ivanovUrl]: [200, stats({ overview: { count: 3, violations: 2, average_minutes: 42, on_time_percent: 33, people: 1 }, lunches: [{ person_id: 1, name: "Иванов Иван", lunch }] })],
+      [bothUrl]: [200, stats()],
+    });
+
+    await wrapper.findAll(".stats-table__name").find((name) => name.text() === "Иванов Иван")?.trigger("click");
+    await flushPromises();
+    expect(wasRequested(spy, ivanovUrl, "GET")).toBe(true);
+    expect(wrapper.get(".stats__selection").text()).toContain("Выбрано сотрудников: 1");
+    expect(wrapper.get(".stats-lunches__row").text()).toContain("12:00–12:55");
+    expect(wrapper.text()).toContain("Скачать Excel · выбрано 1");
+
+    await wrapper.get('[aria-label="Выбрать: Петрова Анна"]').setValue(true);
+    await flushPromises();
+    expect(wasRequested(spy, bothUrl, "GET")).toBe(true);
+
+    await wrapper.findAll("button").find((button) => button.text() === "Все сотрудники")?.trigger("click");
+    await flushPromises();
+    expect(wrapper.find(".stats__selection").exists()).toBe(false);
+    expect(wrapper.find(".stats-lunches").exists()).toBe(false);
     wrapper.unmount();
   });
 
