@@ -5,7 +5,7 @@ const { items, dismiss } = useToasts();
 </script>
 
 <template>
-  <div class="toasts">
+  <TransitionGroup tag="div" name="toast" class="toasts">
     <div
       v-for="toast in items"
       :key="toast.id"
@@ -15,7 +15,7 @@ const { items, dismiss } = useToasts();
       <span>{{ toast.text }}</span>
       <button v-if="toast.kind === 'error'" type="button" class="toast__close" aria-label="Закрыть уведомление" @click="dismiss(toast.id)">×</button>
     </div>
-  </div>
+  </TransitionGroup>
 </template>
 
 <style scoped>
@@ -44,7 +44,28 @@ const { items, dismiss } = useToasts();
   color: var(--ink);
   box-shadow: var(--shadow-menu);
   pointer-events: auto;
-  animation: appear var(--motion) ease-out;
+}
+
+.toast-enter-active {
+  transition: opacity var(--motion) ease-out, transform var(--motion) ease-out;
+}
+
+.toast-leave-active {
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.toast-move {
+  transition: transform var(--motion) ease;
 }
 
 .toast--error {
@@ -60,12 +81,5 @@ const { items, dismiss } = useToasts();
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
-}
-
-@keyframes appear {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
 }
 </style>

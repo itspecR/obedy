@@ -4,7 +4,8 @@ import DateField from "../src/components/ui/DateField.vue";
 import InfoTip from "../src/components/ui/InfoTip.vue";
 import PersonPicker from "../src/components/ui/PersonPicker.vue";
 import TimeField from "../src/components/ui/TimeField.vue";
-import { indexAt, parseClock } from "../src/components/ui/timeWheel";
+import TimeWheel from "../src/components/ui/TimeWheel.vue";
+import { MINUTES, indexAt, parseClock } from "../src/components/ui/timeWheel";
 import { monthGrid, shiftDay, weekdayIndex } from "../src/format/calendar";
 
 describe("calendar math", () => {
@@ -191,6 +192,36 @@ describe("InfoTip", () => {
     expect(wrapper.get("[role=note]").text()).toBe("Пояснение к блоку");
     await wrapper.trigger("keydown", { key: "Escape" });
     expect(wrapper.find("[role=note]").exists()).toBe(false);
+    wrapper.unmount();
+  });
+});
+
+describe("TimeWheel drag", () => {
+  it("turns with the mouse held down and ignores the click that ends the drag", async () => {
+    const wrapper = mount(TimeWheel, { props: { values: MINUTES, label: "Минуты", modelValue: 10 }, attachTo: document.body });
+    const wheel = wrapper.get(".wheel");
+    (wheel.element as HTMLElement).scrollTop = 400;
+
+    await wheel.trigger("pointerdown", { pointerType: "mouse", button: 0, pointerId: 1, clientY: 300 });
+    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, clientY: 220 });
+    expect(wheel.classes()).toContain("wheel--dragging");
+    await wheel.trigger("pointerup", { pointerType: "mouse", pointerId: 1, clientY: 220 });
+    await wrapper.findAll(".wheel__item")[30].trigger("click");
+
+    expect(wrapper.emitted("update:modelValue")).toEqual([[12]]);
+    expect(wheel.classes()).not.toContain("wheel--dragging");
+    wrapper.unmount();
+  });
+
+  it("leaves touch scrolling to the browser", async () => {
+    const wrapper = mount(TimeWheel, { props: { values: MINUTES, label: "Минуты", modelValue: 10 }, attachTo: document.body });
+    const wheel = wrapper.get(".wheel");
+
+    await wheel.trigger("pointerdown", { pointerType: "touch", pointerId: 2, clientY: 300 });
+    await wheel.trigger("pointermove", { pointerType: "touch", pointerId: 2, clientY: 100 });
+    await wheel.trigger("pointerup", { pointerType: "touch", pointerId: 2, clientY: 100 });
+
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
     wrapper.unmount();
   });
 });
