@@ -3,12 +3,23 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { WHEEL_ITEM_HEIGHT, WHEEL_VISIBLE_ITEMS, indexAt, twoDigits } from "./timeWheel";
 
 const SETTLE_MS = 90;
+const DRAG_THRESHOLD_PX = 4;
+
+interface Drag {
+  pointer: number;
+  startY: number;
+  startTop: number;
+  moved: boolean;
+}
 
 const props = defineProps<{ values: number[]; label: string }>();
 const model = defineModel<number>({ required: true });
 
 const list = ref<HTMLElement | null>(null);
 let settle: number | undefined;
+const dragging = ref(false);
+let drag: Drag | null = null;
+let swallowClick = false;
 
 function scrollToValue(value: number, behavior: ScrollBehavior): void {
   list.value?.scrollTo({ top: props.values.indexOf(value) * WHEEL_ITEM_HEIGHT, behavior });
@@ -22,11 +33,56 @@ function choose(value: number): void {
 function onScroll(): void {
   window.clearTimeout(settle);
   settle = window.setTimeout(() => {
-    const value = props.values[indexAt(list.value?.scrollTop ?? 0, props.values.length)];
+    const value = valueAtScroll();
     if (value !== model.value) {
       model.value = value;
     }
   }, SETTLE_MS);
+}
+
+function valueAtScroll(): number {
+  return props.values[indexAt(list.value?.scrollTop ?? 0, props.values.length)];
+}
+
+function startDrag(event: PointerEvent): void {
+  if (event.pointerType !== "mouse" || event.button !== 0 || !list.value) {
+    return;
+  }
+  drag = { pointer: event.pointerId, startY: event.clientY, startTop: list.value.scrollTop, moved: false };
+  list.value.setPointerCapture?.(event.pointerId);
+}
+
+function moveDrag(event: PointerEvent): void {
+  if (!drag || !list.value) {
+    return;
+  }
+  const shift = event.clientY - drag.startY;
+  drag.moved ||= Math.abs(shift) > DRAG_THRESHOLD_PX;
+  dragging.value = drag.moved;
+  if (drag.moved) {
+    list.value.scrollTop = drag.startTop - shift;
+  }
+}
+
+function endDrag(): void {
+  if (!drag) {
+    return;
+  }
+  list.value?.releasePointerCapture?.(drag.pointer);
+  swallowClick = drag.moved;
+  if (drag.moved) {
+    choose(valueAtScroll());
+  }
+  drag = null;
+  dragging.value = false;
+}
+
+function pick(value: number): void {
+  if (swallowClick) {
+    swallowClick = false;
+    return;
+  }
+  choose(value);
 }
 
 function step(delta: number): void {
@@ -45,7 +101,7 @@ function onKey(event: KeyboardEvent): void {
 }
 
 watch(model, (value) => {
-  if (list.value && props.values[indexAt(list.value.scrollTop, props.values.length)] !== value) {
+  if (list.value && valueAtScroll() !== value) {
     scrollToValue(value, "smooth");
   }
 });
@@ -58,6 +114,7 @@ onBeforeUnmount(() => window.clearTimeout(settle));
   <div
     ref="list"
     class="wheel"
+    :class="{ 'wheel--dragging': dragging }"
     role="spinbutton"
     tabindex="0"
     :aria-label="label"
@@ -68,9 +125,13 @@ onBeforeUnmount(() => window.clearTimeout(settle));
     :style="{ '--wheel-item': `${WHEEL_ITEM_HEIGHT}px`, '--wheel-visible': WHEEL_VISIBLE_ITEMS }"
     @scroll="onScroll"
     @keydown="onKey"
+    @pointerdown="startDrag"
+    @pointermove="moveDrag"
+    @pointerup="endDrag"
+    @pointercancel="endDrag"
   >
     <div class="wheel__pad" />
-    <div v-for="value in values" :key="value" class="wheel__item numeric" :class="{ 'wheel__item--chosen': value === model }" @click="choose(value)">
+    <div v-for="value in values" :key="value" class="wheel__item numeric" :class="{ 'wheel__item--chosen': value === model }" @click="pick(value)">
       {{ twoDigits(value) }}
     </div>
     <div class="wheel__pad" />
@@ -84,6 +145,8 @@ onBeforeUnmount(() => window.clearTimeout(settle));
   height: calc(var(--wheel-item) * var(--wheel-visible));
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
+  cursor: grab;
+  user-select: none;
   scrollbar-width: none;
   outline: none;
   mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
@@ -118,5 +181,10 @@ onBeforeUnmount(() => window.clearTimeout(settle));
   color: var(--ink);
   font-size: 24px;
   font-weight: 600;
+}
+
+.wheel--dragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
 }
 </style>

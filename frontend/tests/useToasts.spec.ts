@@ -9,23 +9,24 @@ describe("useToasts", () => {
     vi.useRealTimers();
   });
 
-  it("hides an info toast after 5.5 seconds", () => {
+  it("hides an info toast after 5 seconds", () => {
     const { items, notify } = useToasts();
     notify("Отметки сохранены");
 
-    vi.advanceTimersByTime(5499);
+    vi.advanceTimersByTime(4999);
     expect(items).toHaveLength(1);
     vi.advanceTimersByTime(1);
     expect(items).toHaveLength(0);
   });
 
-  it("keeps an error toast until it is dismissed", () => {
+  it("hides an error toast after 5 seconds or right away on close", () => {
     const { items, fail, dismiss } = useToasts();
-    const id = fail("Не удалось сохранить");
+    fail("Не удалось сохранить");
+    const closed = fail("Ещё одна ошибка");
 
-    vi.advanceTimersByTime(60_000);
+    dismiss(closed);
     expect(items).toHaveLength(1);
-    dismiss(id);
+    vi.advanceTimersByTime(5000);
     expect(items).toHaveLength(0);
   });
 });

@@ -8,7 +8,7 @@ export interface Toast {
   text: string;
 }
 
-const INFO_LIFETIME_MS = 5500;
+const TOAST_LIFETIME_MS = 5000;
 
 const state = reactive<{ items: Toast[] }>({ items: [] });
 let nextId = 1;
@@ -23,9 +23,7 @@ function dismiss(id: number): void {
 function push(kind: ToastKind, text: string): number {
   const id = nextId++;
   state.items.push({ id, kind, text });
-  if (kind === "info") {
-    window.setTimeout(() => dismiss(id), INFO_LIFETIME_MS);
-  }
+  window.setTimeout(() => dismiss(id), TOAST_LIFETIME_MS);
   return id;
 }
 
