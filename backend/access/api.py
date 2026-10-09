@@ -8,12 +8,18 @@ from access.policy import current_policy, load_policy
 from access.service import DuplicateNetwork, LockoutRisk, NetworkNotFound, add_network, remove_network, set_private_networks
 from accounts.permissions import require_admin
 from accounts.security import session_auth
+from journal.entries import differences, record, record_changes, removed
+from journal.models import Action
+from journal.snapshots import switch
 
 NOTE_MAX_LENGTH = 120
 
 INVALID_NETWORK = "Неверный адрес. Пример: 192.168.1.10 или 192.168.1.0/24"
 DUPLICATE_NETWORK = "Этот адрес уже есть в списке"
 NETWORK_NOT_FOUND = "Адрес не найден. Обновите страницу"
+ADDRESS_LABEL = "Адрес"
+NOTE_LABEL = "Заметка"
+PRIVATE_LABEL = "Вся локальная сеть"
 
 router = Router(tags=["Доступ"])
 
@@ -44,6 +50,11 @@ def lockout_message(address):
     return f"Нельзя: ваш адрес {address} потеряет доступ. Сначала добавьте его в список"
 
 
+def network_snapshot(network):
+    snapshot = {ADDRESS_LABEL: network.network}
+    return {**snapshot, NOTE_LABEL: network.note} if network.note else snapshot
+
+
 def overview(request):
     return AccessOut(
         allow_private=load_policy().allow_private,
@@ -69,11 +80,12 @@ def show(request):
 def create(request, payload: NetworkIn):
     require_admin(request)
     try:
-        add_network(payload.network, payload.note)
+        created = add_network(payload.network, payload.note)
     except InvalidNetwork as error:
         raise HttpError(400, INVALID_NETWORK) from error
     except DuplicateNetwork as error:
         raise HttpError(409, DUPLICATE_NETWORK) from error
+    record(request, Action.NETWORK_ADDED, rows=differences({}, network_snapshot(created)))
     return Status(201, overview(request))
 
 
@@ -81,11 +93,12 @@ def create(request, payload: NetworkIn):
 def delete(request, network_id: int):
     require_admin(request)
     try:
-        remove_network(network_id, client_address(request))
+        gone_network = remove_network(network_id, client_address(request))
     except NetworkNotFound as error:
         raise HttpError(404, NETWORK_NOT_FOUND) from error
     except LockoutRisk as error:
         raise HttpError(400, lockout_message(error.address)) from error
+    record(request, Action.NETWORK_REMOVED, rows=removed(network_snapshot(gone_network)))
     return overview(request)
 
 
@@ -93,7 +106,8 @@ def delete(request, network_id: int):
 def private(request, payload: PrivateIn):
     require_admin(request)
     try:
-        set_private_networks(payload.enabled, client_address(request))
+        was_enabled = set_private_networks(payload.enabled, client_address(request))
     except LockoutRisk as error:
         raise HttpError(400, lockout_message(error.address)) from error
+    record_changes(request, Action.PRIVATE_NETWORKS_CHANGED, {PRIVATE_LABEL: switch(was_enabled)}, {PRIVATE_LABEL: switch(payload.enabled)})
     return overview(request)

@@ -12,6 +12,9 @@ from directory.diagnostics import check_connection
 from directory.models import DEFAULT_SESSION_DAYS, Mode
 from directory.settings_store import IncompleteSettings, save_settings
 from directory.sync import SyncBusy, latest_report, run_sync
+from journal.entries import Row, record, record_changes
+from journal.models import Action
+from journal.snapshots import directory_snapshot
 
 TEXT_LIMIT = 500
 SECRET_LIMIT = 255
@@ -21,6 +24,8 @@ MAX_SESSION_DAYS = 90
 MAX_PORT = 65535
 
 SYNC_BUSY = "Синхронизация уже идёт. Подождите минуту и обновите страницу"
+PASSWORD_CHANGED = Row("Пароль учётной записи для чтения", after="изменён")
+RESULT_LABEL = "Итог"
 INVALID_CERTIFICATE = "Сертификат не распознан. Вставьте корневой сертификат домена в формате PEM (-----BEGIN CERTIFICATE-----)"
 
 router = Router(tags=["Active Directory"])
@@ -100,12 +105,15 @@ def show(request):
 @router.put("", auth=session_auth, response=DirectoryOut)
 def update(request, payload: DirectoryIn):
     require_admin(request)
+    before = directory_snapshot(stored_settings())
     try:
         stored = save_settings(payload.dict())
     except InvalidCertificate as error:
         raise HttpError(400, INVALID_CERTIFICATE) from error
     except IncompleteSettings as error:
         raise HttpError(400, f"Чтобы включить вход через домен, заполните: {', '.join(error.missing)}") from error
+    password_rows = [PASSWORD_CHANGED] if payload.bind_password else []
+    record_changes(request, Action.DIRECTORY_CHANGED, before, directory_snapshot(stored), extra=password_rows)
     return describe(stored)
 
 
@@ -113,6 +121,7 @@ def update(request, payload: DirectoryIn):
 def check(request):
     require_admin(request)
     result = check_connection(config_from(stored_settings()))
+    record(request, Action.DIRECTORY_CHECKED, rows=[Row(RESULT_LABEL, after=result.message)])
     return CheckOut(ok=result.ok, message=result.message)
 
 
@@ -144,4 +153,6 @@ def sync_now(request):
         run_sync(timezone.now())
     except SyncBusy as error:
         raise HttpError(409, SYNC_BUSY) from error
-    return sync_report()
+    report = sync_report()
+    record(request, Action.DIRECTORY_SYNCED, rows=[Row(RESULT_LABEL, after=report.message)])
+    return report

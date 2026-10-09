@@ -23,8 +23,9 @@ main() {
     (cd "$root" && docker compose exec -T app python manage.py create_admin || true)
     step "5/7" "Включаем ежедневную резервную копию"
     "$root/scripts/backup-timer.sh" install
-    step "6/7" "Включаем синхронизацию с доменом раз в час"
+    step "6/7" "Включаем синхронизацию с доменом раз в час и ежедневную очистку журнала"
     "$root/scripts/directory-sync-timer.sh" install
+    "$root/scripts/journal-clean-timer.sh" install
     step "7/7" "Режим работы: ${mode^^}"
     enable_mode "$root" "$mode" "$@"
     echo

@@ -32,8 +32,9 @@ main() {
     step "6/7" "Проверяем, что сайт отвечает"
     wait_for_health
     trap - ERR
-    step "7/7" "Включаем синхронизацию с доменом раз в час"
+    step "7/7" "Включаем синхронизацию с доменом раз в час и ежедневную очистку журнала"
     enable_directory_sync "$root"
+    enable_journal_clean "$root"
     echo "Готово: новая версия развёрнута. Обновите страницу в браузере."
 }
 
@@ -58,6 +59,11 @@ sync_branch() {
 enable_directory_sync() {
     "$1/scripts/directory-sync-timer.sh" install \
         || echo "Не удалось включить таймер синхронизации. Повторите: sudo ./scripts/directory-sync-timer.sh install" >&2
+}
+
+enable_journal_clean() {
+    "$1/scripts/journal-clean-timer.sh" install \
+        || echo "Не удалось включить очистку журнала. Повторите: sudo ./scripts/journal-clean-timer.sh install" >&2
 }
 
 health() {

@@ -45,12 +45,15 @@ def remove_network(network_id, keep_address):
     guard(Policy(current.allow_private, remaining), keep_address)
     target.delete()
     forget_policy()
+    return target
 
 
 @transaction.atomic
 def set_private_networks(enabled, keep_address):
     policy = stored_policy()
     guard(Policy(enabled, load_policy().networks), keep_address)
+    was_enabled = policy.allow_private_networks
     policy.allow_private_networks = enabled
     policy.save(update_fields=["allow_private_networks"])
     forget_policy()
+    return was_enabled

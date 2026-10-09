@@ -6,6 +6,9 @@ from ninja.errors import HttpError
 
 from accounts.names import display_name
 from accounts.security import session_auth
+from journal.entries import Row, differences, record
+from journal.models import Action
+from journal.snapshots import day_text, lunch_snapshot
 from lunches.clock import today
 from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch
 from lunches.models import REASON_LIMIT, Lunch
@@ -71,6 +74,10 @@ def board_actor(request):
     return require_supervisor(request, BOARD_ONLY)
 
 
+def lunch_rows(before, lunch):
+    return [Row("День", after=day_text(lunch.day)), *differences(before, lunch_snapshot(lunch)), Row("Причина", after=lunch.correction_reason)]
+
+
 def refused_as_bad_request(action):
     try:
         return action()
@@ -108,6 +115,7 @@ def add(request, payload: AddLunchIn):
         raise HttpError(404, PERSON_NOT_FOUND)
     now = timezone.now()
     lunch = refused_as_bad_request(lambda: add_lunch(actor, account, payload.day, payload.correction(), now))
+    record(request, Action.LUNCH_ADDED, account, lunch_rows({}, lunch))
     return Status(201, describe_entry(lunch, actor, now))
 
 
@@ -115,8 +123,10 @@ def add(request, payload: AddLunchIn):
 def correct(request, lunch_id: int, payload: CorrectionIn):
     actor = board_actor(request)
     now = timezone.now()
+    before = Lunch.objects.filter(pk=lunch_id).first()
     try:
         lunch = refused_as_bad_request(lambda: correct_lunch(actor, lunch_id, payload.correction(), now))
     except Lunch.DoesNotExist as missing:
         raise HttpError(404, NOT_FOUND) from missing
+    record(request, Action.LUNCH_CORRECTED, lunch.account, lunch_rows(lunch_snapshot(before), lunch))
     return describe_entry(lunch, actor, now)

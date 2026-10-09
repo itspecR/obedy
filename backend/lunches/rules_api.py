@@ -5,6 +5,9 @@ from ninja.errors import HttpError
 
 from accounts.permissions import require_admin
 from accounts.security import session_auth
+from journal.entries import record_changes
+from journal.models import Action
+from journal.snapshots import rules_snapshot
 from lunches.rule_changes import MAX_LIMIT_MINUTES, MIN_LIMIT_MINUTES, WEEKDAYS, InvalidRules, RulesDraft, save_rules
 from lunches.rules import current_rules
 
@@ -58,7 +61,10 @@ def rules(request):
 @router.put("", auth=session_auth, response=RulesOut)
 def update_rules(request, payload: RulesIn):
     require_admin(request)
+    before = rules_snapshot(current_rules())
     try:
-        return describe_rules(save_rules(payload.draft()))
+        saved = save_rules(payload.draft())
     except InvalidRules as invalid:
         raise HttpError(400, invalid.message) from invalid
+    record_changes(request, Action.RULES_CHANGED, before, rules_snapshot(saved))
+    return describe_rules(saved)
