@@ -6,6 +6,7 @@ import type { Tone } from "../ui/tone";
 export const DEFAULT_PERIOD_DAYS = 7;
 export const ALL_CATEGORIES = "all";
 export const UNKNOWN_LOGIN = "Неизвестный логин";
+export const SERVER = "Сервер";
 
 export type CategoryChoice = JournalCategory | typeof ALL_CATEGORIES;
 
@@ -29,6 +30,7 @@ export const ACTIONS: Record<JournalAction, ActionInfo> = {
   lunch_corrected: { label: "Исправлен обед", tone: "neutral" },
   lunch_added: { label: "Добавлен обед", tone: "neutral" },
   lunch_deleted: { label: "Удалён обед", tone: "alarm" },
+  lunches_reset: { label: "Обеды сброшены", tone: "alarm" },
   rules_changed: { label: "Изменены правила обеда", tone: "neutral" },
   network_added: { label: "Добавлен адрес доступа", tone: "neutral" },
   network_removed: { label: "Удалён адрес доступа", tone: "alarm" },
@@ -55,11 +57,14 @@ export function categoryOf(choice: CategoryChoice): JournalCategory | null {
 }
 
 export function subjectName(entry: JournalEntry): string {
-  return (entry.actor ?? entry.target)?.name ?? UNKNOWN_LOGIN;
+  if (entry.action === "login_failed") {
+    return entry.target?.name ?? UNKNOWN_LOGIN;
+  }
+  return entry.actor?.name ?? SERVER;
 }
 
 export function objectOf(entry: JournalEntry): Person | null {
-  return entry.actor ? entry.target : null;
+  return entry.action === "login_failed" ? null : entry.target;
 }
 
 export function rowValue(row: JournalRow): string {

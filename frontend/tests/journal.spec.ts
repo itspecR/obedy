@@ -37,6 +37,7 @@ describe("journal entries", () => {
     expect(subjectName(FAILED)).toBe("Неизвестный логин");
     expect(subjectName({ ...FAILED, target: PETROVA })).toBe("Петрова Анна");
     expect(subjectName(entry())).toBe("Администратор");
+    expect(subjectName(entry({ action: "lunches_reset", actor: null, target: null }))).toBe("Сервер");
   });
 
   it("opens on the last seven days", () => {

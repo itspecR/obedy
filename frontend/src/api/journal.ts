@@ -16,6 +16,7 @@ export type JournalAction =
   | "lunch_corrected"
   | "lunch_added"
   | "lunch_deleted"
+  | "lunches_reset"
   | "rules_changed"
   | "network_added"
   | "network_removed"
