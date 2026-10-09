@@ -7,6 +7,7 @@ from django.db import transaction
 from ldap3.core.exceptions import LDAPException
 
 from accounts.models import Account, Source
+from config.database import release_lock, try_lock
 from accounts.sessions import revoke_all_sessions
 from directory.config import current_config
 from directory.diagnostics import UNREACHABLE, ConnectionProblem, explained_connection
@@ -60,16 +61,12 @@ class SyncPlan:
 
 @contextmanager
 def sync_lock():
-    with database.cursor() as cursor:
-        cursor.execute("SELECT GET_LOCK(%s, 0)", [LOCK_NAME])
-        acquired = cursor.fetchone()[0] == 1
-    if not acquired:
+    if not try_lock(database, LOCK_NAME):
         raise SyncBusy
     try:
         yield
     finally:
-        with database.cursor() as cursor:
-            cursor.execute("SELECT RELEASE_LOCK(%s)", [LOCK_NAME])
+        release_lock(database, LOCK_NAME)
 
 
 def collect(config):
