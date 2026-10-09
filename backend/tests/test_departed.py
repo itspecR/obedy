@@ -109,8 +109,8 @@ def test_statistics_and_excel_hide_departed(people):
 
     assert logins(stats["people"]) == ["blocked", "staying"]
     assert stats["overview"]["count"] == 2
-    assert sorted(row[1] for row in list(book["Сотрудники"].values)[1:]) == ["blocked", "staying"]
-    assert sorted(row[2] for row in list(book["Все обеды"].values)[1:]) == ["blocked", "staying"]
+    assert sorted(row[1] for row in list(book["Сводка"].values)[1:]) == ["blocked", "staying"]
+    assert "departed" not in [cell for row in book["Отчёт"].values for cell in row]
 
 
 def test_returned_person_appears_again_with_history(people):

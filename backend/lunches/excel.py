@@ -1,29 +1,23 @@
 from io import BytesIO
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from accounts.names import display_name
-from lunches.clock import clock_text, local
-from lunches.statistics import SECONDS_IN_MINUTE
-from lunches.status import MEASURED, duration_of, is_violation, status_of
+from lunches.excel_report import fill_report
+from lunches.excel_style import ALARM, BRAND, CENTER, GRID, LANDSCAPE, LEFT, fill, fit_page, font, put
 
-PEOPLE_SHEET = "Сотрудники"
-LUNCHES_SHEET = "Все обеды"
-PEOPLE_HEADERS = ["Сотрудник", "Логин", "Обедов", "Нарушений", "Превышений", "Без возврата", "Среднее, мин", "Перебор, мин"]
-LUNCH_HEADERS = ["Дата", "Сотрудник", "Логин", "Ушёл", "Вернулся", "Длительность, мин", "Лимит, мин", "Статус", "Изменение", "Кто изменил", "Причина"]
-ADDED = "Добавлено"
-CORRECTED = "Исправлено"
-FORMULA_TYPE = "f"
-TEXT_TYPE = "s"
-DATE_FORMAT = "DD.MM.YYYY"
-DATE_COLUMN = 1
-HEADER_FONT = Font(bold=True)
-ALARM_FILL = PatternFill("solid", fgColor="FDE2E1")
-MIN_WIDTH = 8
-MAX_WIDTH = 60
-WIDTH_PADDING = 2
+SUMMARY_SHEET = "Сводка"
+SUMMARY_COLUMNS = (
+    ("Сотрудник", 34),
+    ("Логин", 16),
+    ("Обедов", 10),
+    ("Нарушений", 12),
+    ("Превышений", 13),
+    ("Без возврата", 13),
+    ("Среднее, мин", 13),
+    ("Перебор, мин", 13),
+)
 
 
 def person_row(stats):
@@ -40,68 +34,32 @@ def person_row(stats):
     ]
 
 
-def change_of(lunch):
-    if lunch.corrected_at is None:
-        return ["", "", ""]
-    author = display_name(lunch.corrected_by) if lunch.corrected_by else ""
-    return [ADDED if lunch.added_by_hand else CORRECTED, author, lunch.correction_reason]
+def write_summary_titles(sheet):
+    for column, (title, width) in enumerate(SUMMARY_COLUMNS, start=1):
+        put(sheet, 1, column, title, font=font(bold=True, color="FFFFFF"), fill=fill(BRAND), alignment=CENTER, border=GRID)
+        sheet.column_dimensions[get_column_letter(column)].width = width
 
 
-def lunch_row(lunch, now):
-    status = status_of(lunch, now)
-    duration = round(duration_of(lunch, now).total_seconds() / SECONDS_IN_MINUTE) if status in MEASURED else None
-    return [
-        lunch.day,
-        display_name(lunch.account),
-        lunch.account.login,
-        clock_text(local(lunch.started_at)),
-        clock_text(local(lunch.ended_at)) if lunch.ended_at else "",
-        duration,
-        lunch.limit_minutes,
-        status.label,
-        *change_of(lunch),
-    ]
+def write_summary_row(sheet, row, stats):
+    for column, value in enumerate(person_row(stats), start=1):
+        cell = put(sheet, row, column, value, alignment=LEFT if column <= 2 else CENTER, border=GRID)
+        if stats.violations:
+            cell.fill = fill(ALARM)
 
 
-def fit_columns(sheet):
-    for index, column in enumerate(sheet.iter_cols(values_only=True), start=1):
-        longest = max(len(str(value)) for value in column if value is not None)
-        sheet.column_dimensions[get_column_letter(index)].width = min(MAX_WIDTH, max(MIN_WIDTH, longest + WIDTH_PADDING))
-
-
-def keep_as_text(cell):
-    if cell.data_type == FORMULA_TYPE:
-        cell.data_type = TEXT_TYPE
-
-
-def fill_sheet(sheet, headers, rows):
-    sheet.append(headers)
-    for cell in sheet[1]:
-        cell.font = HEADER_FONT
-    for values, alarming in rows:
-        sheet.append(values)
-        for cell in sheet[sheet.max_row]:
-            keep_as_text(cell)
-            if alarming:
-                cell.fill = ALARM_FILL
+def fill_summary(sheet, people):
+    write_summary_titles(sheet)
+    for row, stats in enumerate(people, start=2):
+        write_summary_row(sheet, row, stats)
     sheet.freeze_panes = "A2"
     sheet.auto_filter.ref = sheet.dimensions
-    fit_columns(sheet)
+    fit_page(sheet, LANDSCAPE)
 
 
-def format_dates(sheet):
-    for row in sheet.iter_rows(min_row=2, min_col=DATE_COLUMN, max_col=DATE_COLUMN):
-        row[0].number_format = DATE_FORMAT
-
-
-def workbook_bytes(people, lunches, now):
+def workbook_bytes(export):
     book = Workbook()
-    people_sheet = book.active
-    people_sheet.title = PEOPLE_SHEET
-    fill_sheet(people_sheet, PEOPLE_HEADERS, [(person_row(stats), stats.violations > 0) for stats in people])
-    lunches_sheet = book.create_sheet(LUNCHES_SHEET)
-    fill_sheet(lunches_sheet, LUNCH_HEADERS, [(lunch_row(lunch, now), is_violation(lunch, now)) for lunch in lunches])
-    format_dates(lunches_sheet)
+    fill_report(book.active, export)
+    fill_summary(book.create_sheet(SUMMARY_SHEET), export.people)
     buffer = BytesIO()
     book.save(buffer)
     return buffer.getvalue()

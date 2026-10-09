@@ -10,6 +10,8 @@ from ninja.errors import HttpError
 from accounts.names import display_name
 from accounts.security import session_auth
 from lunches.excel import workbook_bytes
+from lunches.excel_report import Export
+from lunches.rules import current_rules
 from lunches.service import close_overdue
 from lunches.schemas import LunchOut, describe_lunch
 from lunches.statistics import BadPeriod, checked_period, chosen, lunches_in, overview_of, people_stats
@@ -111,6 +113,7 @@ def export(request, date_from: date, date_to: date, person: People = None):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
     lunches = chosen(lunches_in(period), person or ())
-    response = HttpResponse(workbook_bytes(people_stats(lunches, now), lunches, now), content_type=XLSX_TYPE)
+    export = Export(period, people_stats(lunches, now), lunches, now, current_rules(), len(set(person or ())), display_name(request.auth.account))
+    response = HttpResponse(workbook_bytes(export), content_type=XLSX_TYPE)
     response["Content-Disposition"] = f'attachment; filename="{FILE_NAME.format(first=period.first, last=period.last)}"'
     return response

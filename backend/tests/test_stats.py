@@ -119,37 +119,67 @@ def workbook_of(response):
     return load_workbook(BytesIO(response.content))
 
 
-def test_export_has_people_and_lunch_sheets(october):
+def report_rows(book):
+    return list(book["Отчёт"].iter_rows(values_only=True))
+
+
+def row_starting(rows, first):
+    return next(index for index, row in enumerate(rows) if row[0] == first)
+
+
+@pytest.mark.usefixtures("october")
+def test_export_is_a_report_by_days_and_a_summary():
     hr = signed_in()
-    ivanov = october[0]
-    Lunch.objects.filter(account=ivanov, day=date(2026, 10, 1)).update(
-        corrected_by=Account.objects.get(login="hr"), corrected_at=NOW, correction_reason="Забыл нажать", added_by_hand=True
-    )
+    Account.objects.filter(login="hr").update(full_name="Кадрова Ольга")
 
     response = hr.get(f"/api/lunch/stats/export{OCTOBER}")
     book = workbook_of(response)
-    people = list(book["Сотрудники"].values)
-    lunches = list(book["Все обеды"].values)
+    rows = report_rows(book)
 
     assert response["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     assert response["Content-Disposition"] == 'attachment; filename="obedy_2026-10-01_2026-10-31.xlsx"'
-    assert people[0][:4] == ("Сотрудник", "Логин", "Обедов", "Нарушений")
-    assert people[1] == ("Иванов Иван", "ivanov", 3, 2, 1, 1, 42, 10)
-    assert len(lunches) == 7
-    assert lunches[1][1:] == ("Иванов Иван", "ivanov", "12:00", "12:30", 30, 45, "В пределах лимита", "Добавлено", "hr", "Забыл нажать")
-    assert lunches[1][0].date() == date(2026, 10, 1)
-    assert book["Все обеды"].freeze_panes == "A2"
+    assert book.sheetnames == ["Отчёт", "Сводка"]
+    assert rows[0][2] == "Отчёт «Обеды за период»"
+    assert rows[4][:7] == ("08.10.2026", None, "01.10.2026 — 31.10.2026", None, None, "Все", None)
+    assert rows[5][0] == "Составил: Кадрова Ольга"
+    block = row_starting(rows, "Иванов Иван")
+    assert rows[block][5] == "ivanov"
+    assert rows[block + 1] == ("Дата", "День", "Ушёл", "Вернулся", "Длительность, мин", "Перебор, мин", "Статус")
+    days = rows[block + 2 : block + 33]
+    assert days[0][0].date() == date(2026, 10, 1)
+    assert days[0][1:] == ("чт", "12:00", "12:30", 30, None, "В пределах лимита")
+    assert days[1][1:] == ("пт", "12:00", "12:55", 55, 10, "Превышение")
+    assert days[2][1:] == ("сб", "—", "—", None, None, "Выходной")
+    assert days[4][1:] == ("пн", "12:00", "—", None, None, "Возврат не отмечен")
+    assert days[5][1:] == ("вт", "—", "—", None, None, "—")
+    assert rows[block + 33][0] == "ИТОГО"
+    assert rows[block + 33][4:] == (85, 10, "Нарушений: 2")
+    assert rows[block + 34][0] == "Дней рабочих: 22 · выходных: 9 · обедов: 3"
+    assert [row[0] for row in rows if row[0] in ("Иванов Иван", "Петрова Анна", "Сидоров Сидор")] == ["Иванов Иван", "Петрова Анна", "Сидоров Сидор"]
+    assert rows[-4][0] == "Ответственное лицо"
+    assert rows[-1][0] == "«___» ____________ 20___ г."
+    assert list(book["Сводка"].values)[1] == ("Иванов Иван", "ivanov", 3, 2, 1, 1, 42, 10)
+    assert book["Сводка"].freeze_panes == "A2"
+
+
+def test_export_names_the_chosen_count(october):
+    ivanov, petrova, _ = october
+
+    rows = report_rows(workbook_of(signed_in().get(f"/api/lunch/stats/export{OCTOBER}&person={ivanov.pk}&person={petrova.pk}")))
+
+    assert rows[4][5] == "Выбрано: 2"
+    assert [row[0] for row in rows if row[0] in ("Иванов Иван", "Петрова Анна", "Сидоров Сидор")] == ["Иванов Иван", "Петрова Анна"]
 
 
 def test_export_keeps_formula_like_text_as_text():
     ivanov = person("ivanov", "=HYPERLINK(\"http://evil\")")
-    lunch(ivanov, date(2026, 10, 1), 30, corrected_at=NOW, correction_reason="=1+1")
+    lunch(ivanov, date(2026, 10, 1), 30)
 
     book = workbook_of(signed_in().get(f"/api/lunch/stats/export{OCTOBER}"))
-    cells = [cell for row in book["Все обеды"].iter_rows(min_row=2) for cell in row]
+    cells = [cell for sheet in book for row in sheet.iter_rows() for cell in row]
 
     assert all(cell.data_type != "f" for cell in cells)
-    assert "=1+1" in [cell.value for cell in cells]
+    assert "=HYPERLINK(\"http://evil\")" in [cell.value for cell in cells]
 
 
 def test_selected_people_narrow_overview_and_show_their_lunches(october):
@@ -176,5 +206,5 @@ def test_export_contains_only_selected_people(october):
 
     book = workbook_of(signed_in().get(f"/api/lunch/stats/export{OCTOBER}&person={petrova.pk}"))
 
-    assert [row[1] for row in book["Сотрудники"].iter_rows(min_row=2, values_only=True)] == ["petrova"]
-    assert {row[2] for row in book["Все обеды"].iter_rows(min_row=2, values_only=True)} == {"petrova"}
+    assert [row[1] for row in book["Сводка"].iter_rows(min_row=2, values_only=True)] == ["petrova"]
+    assert "Иванов Иван" not in [row[0] for row in report_rows(book)]
