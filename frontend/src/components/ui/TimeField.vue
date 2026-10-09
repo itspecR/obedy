@@ -11,7 +11,7 @@ withDefaults(defineProps<{ label: string; hint?: string; disabled?: boolean }>()
 const model = defineModel<string>({ default: "" });
 
 const root = ref<HTMLElement | null>(null);
-const { open, alignEnd, show, close, closeOnEscape } = usePopover(root);
+const { open, place, show, close, closeOnEscape } = usePopover(root);
 const id = useId();
 const hours = ref(0);
 const minutes = ref(0);
@@ -56,7 +56,7 @@ function done(): void {
       <span :id="`${id}-value`" class="numeric" :class="{ 'field-placeholder': !model }">{{ model || "--:--" }}</span>
       <AppIcon name="clock" class="time-field__icon" />
     </button>
-    <div v-if="open" class="popover time-field__panel" :class="{ 'popover--end': alignEnd }" role="dialog" :aria-label="label">
+    <div v-if="open" class="popover time-field__panel" :style="place" role="dialog" :aria-label="label">
       <div class="time-field__wheels" :style="{ '--wheel-item': `${WHEEL_ITEM_HEIGHT}px` }">
         <span class="time-field__band" aria-hidden="true" />
         <TimeWheel v-model="hours" :values="HOURS" label="Часы" @update:model-value="commit" />

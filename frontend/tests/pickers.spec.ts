@@ -218,12 +218,42 @@ describe("TimeWheel drag", () => {
     (wheel.element as HTMLElement).scrollTop = 400;
 
     await wheel.trigger("pointerdown", { pointerType: "mouse", button: 0, pointerId: 1, clientY: 300 });
-    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, clientY: 220 });
+    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, buttons: 1, clientY: 220 });
     expect(wheel.classes()).toContain("wheel--dragging");
     await wheel.trigger("pointerup", { pointerType: "mouse", pointerId: 1, clientY: 220 });
     await wrapper.findAll(".wheel__item")[30].trigger("click");
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[12]]);
+    expect(wheel.classes()).not.toContain("wheel--dragging");
+    wrapper.unmount();
+  });
+
+  it("picks a number with a plain click without grabbing the pointer", async () => {
+    const wrapper = mount(TimeWheel, { props: { values: MINUTES, label: "Минуты", modelValue: 10 }, attachTo: document.body });
+    const wheel = wrapper.get(".wheel");
+    const capture = vi.fn();
+    (wheel.element as HTMLElement).setPointerCapture = capture;
+
+    await wheel.trigger("pointerdown", { pointerType: "mouse", button: 0, pointerId: 1, clientY: 300 });
+    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, buttons: 1, clientY: 302 });
+    await wheel.trigger("pointerup", { pointerType: "mouse", pointerId: 1, clientY: 302 });
+    await wrapper.findAll(".wheel__item")[25].trigger("click");
+
+    expect(capture).not.toHaveBeenCalled();
+    expect(wrapper.emitted("update:modelValue")).toEqual([[25]]);
+    wrapper.unmount();
+  });
+
+  it("stops following the mouse once the button is no longer held", async () => {
+    const wrapper = mount(TimeWheel, { props: { values: MINUTES, label: "Минуты", modelValue: 10 }, attachTo: document.body });
+    const wheel = wrapper.get(".wheel");
+    (wheel.element as HTMLElement).scrollTop = 400;
+
+    await wheel.trigger("pointerdown", { pointerType: "mouse", button: 0, pointerId: 1, clientY: 300 });
+    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, buttons: 0, clientY: 200 });
+    await wheel.trigger("pointermove", { pointerType: "mouse", pointerId: 1, buttons: 0, clientY: 100 });
+
+    expect((wheel.element as HTMLElement).scrollTop).toBe(400);
     expect(wheel.classes()).not.toContain("wheel--dragging");
     wrapper.unmount();
   });

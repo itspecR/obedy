@@ -4,6 +4,7 @@ import { WHEEL_ITEM_HEIGHT, WHEEL_VISIBLE_ITEMS, indexAt, twoDigits } from "./ti
 
 const SETTLE_MS = 90;
 const DRAG_THRESHOLD_PX = 4;
+const PRIMARY_BUTTON = 1;
 
 interface Drag {
   pointer: number;
@@ -49,16 +50,26 @@ function startDrag(event: PointerEvent): void {
     return;
   }
   drag = { pointer: event.pointerId, startY: event.clientY, startTop: list.value.scrollTop, moved: false };
-  list.value.setPointerCapture?.(event.pointerId);
+}
+
+function beginMoving(current: Drag): void {
+  current.moved = true;
+  dragging.value = true;
+  list.value?.setPointerCapture?.(current.pointer);
 }
 
 function moveDrag(event: PointerEvent): void {
   if (!drag || !list.value) {
     return;
   }
+  if ((event.buttons & PRIMARY_BUTTON) === 0) {
+    endDrag();
+    return;
+  }
   const shift = event.clientY - drag.startY;
-  drag.moved ||= Math.abs(shift) > DRAG_THRESHOLD_PX;
-  dragging.value = drag.moved;
+  if (!drag.moved && Math.abs(shift) > DRAG_THRESHOLD_PX) {
+    beginMoving(drag);
+  }
   if (drag.moved) {
     list.value.scrollTop = drag.startTop - shift;
   }
@@ -68,13 +79,14 @@ function endDrag(): void {
   if (!drag) {
     return;
   }
-  list.value?.releasePointerCapture?.(drag.pointer);
-  swallowClick = drag.moved;
-  if (drag.moved) {
-    choose(valueAtScroll());
-  }
+  const current = drag;
   drag = null;
   dragging.value = false;
+  swallowClick = current.moved;
+  if (current.moved) {
+    list.value?.releasePointerCapture?.(current.pointer);
+    choose(valueAtScroll());
+  }
 }
 
 function pick(value: number): void {
@@ -129,6 +141,7 @@ onBeforeUnmount(() => window.clearTimeout(settle));
     @pointermove="moveDrag"
     @pointerup="endDrag"
     @pointercancel="endDrag"
+    @lostpointercapture="endDrag"
   >
     <div class="wheel__pad" />
     <div v-for="value in values" :key="value" class="wheel__item numeric" :class="{ 'wheel__item--chosen': value === model }" @click="pick(value)">

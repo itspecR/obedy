@@ -14,7 +14,7 @@ const model = defineModel<string>({ default: "" });
 const emit = defineEmits<{ change: [day: string] }>();
 
 const root = ref<HTMLElement | null>(null);
-const { open, alignEnd, show, close, closeOnEscape } = usePopover(root);
+const { open, place, show, close, closeOnEscape } = usePopover(root);
 const id = useId();
 const today = todayIso();
 const viewMonth = ref(monthOf(model.value || props.max || today));
@@ -58,7 +58,7 @@ function pick(day: string): void {
       <span :id="`${id}-value`" class="numeric" :class="{ 'field-placeholder': !model }">{{ model ? formatFullDay(model) : "дд.мм.гггг" }}</span>
       <AppIcon name="calendar" class="date-field__icon" />
     </button>
-    <div v-if="open" class="popover date-field__panel" :class="{ 'popover--end': alignEnd }" role="dialog" :aria-label="label">
+    <div v-if="open" class="popover date-field__panel" :style="place" role="dialog" :aria-label="label">
       <div class="date-field__head">
         <button type="button" class="date-field__nav" aria-label="Предыдущий месяц" @click="viewMonth = shiftMonth(viewMonth, -1)">‹</button>
         <span class="date-field__month">{{ formatMonth(viewMonth) }}</span>

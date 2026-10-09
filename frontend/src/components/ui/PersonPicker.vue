@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<{ label: string; people: PickerPerson[]; 
 const model = defineModel<number | null>({ default: null });
 
 const root = ref<HTMLElement | null>(null);
-const { open, show, close } = usePopover(root);
+const { open, place, show, close } = usePopover(root, "stretch");
 const id = useId();
 const text = ref("");
 const typed = ref(false);
@@ -98,7 +98,7 @@ watch(
       @keydown="onKey"
       @blur="close"
     />
-    <ul v-if="open" :id="`${id}-list`" class="popover picker__list" role="listbox" :aria-label="label">
+    <ul v-if="open" :id="`${id}-list`" class="popover picker__list" :style="place" role="listbox" :aria-label="label">
       <li
         v-for="(person, index) in shown"
         :id="`${id}-option-${person.id}`"
@@ -136,7 +136,6 @@ watch(
 }
 
 .picker__list {
-  right: 0;
   max-height: 280px;
   margin: 0;
   padding: 6px;

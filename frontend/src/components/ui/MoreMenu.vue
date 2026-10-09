@@ -12,7 +12,7 @@ defineProps<{ label: string; items: MenuItem[] }>();
 const emit = defineEmits<{ select: [key: string] }>();
 
 const root = ref<HTMLElement | null>(null);
-const { open, toggle, close, closeOnEscape } = usePopover(root);
+const { open, place, toggle, close, closeOnEscape } = usePopover(root, "end");
 const id = useId();
 
 function choose(key: string): void {
@@ -24,7 +24,7 @@ function choose(key: string): void {
 <template>
   <div ref="root" class="more" @keydown="closeOnEscape">
     <button type="button" class="more__button" :aria-label="label" aria-haspopup="menu" :aria-expanded="open" :aria-controls="`${id}-menu`" @click="toggle">⋯</button>
-    <div v-if="open" :id="`${id}-menu`" class="popover more__menu" role="menu" :aria-label="label">
+    <div v-if="open" :id="`${id}-menu`" class="popover more__menu" :style="place" role="menu" :aria-label="label">
       <button
         v-for="item in items"
         :key="item.key"
@@ -64,8 +64,6 @@ function choose(key: string): void {
 }
 
 .more__menu {
-  right: 0;
-  left: auto;
   display: flex;
   flex-direction: column;
   min-width: 200px;
