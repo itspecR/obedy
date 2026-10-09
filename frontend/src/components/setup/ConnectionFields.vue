@@ -3,8 +3,8 @@ import type { ConnectionForm } from "../../api/setup";
 import SwitchField from "../ui/SwitchField.vue";
 import TextField from "../ui/TextField.vue";
 
-const HOST_HINT = "IP или имя сервера SQL. Для именованного экземпляра: 192.168.1.10\\SQLEXPRESS.";
-const PORT_HINT = "Пусто — порт по умолчанию или через SQL Server Browser для именованного экземпляра.";
+const HOST_HINT = "IP или имя сервера SQL. Для именованного экземпляра — через обратную косую черту: 192.168.1.10\\SQLEXPRESS.";
+const PORT_HINT = "Пусто — сайт сам узнает текущий порт экземпляра у службы SQL Server Browser (или возьмёт 1433). Если порт указан, он главнее.";
 const TRUST_HINT = "Включите, если у SQL Server свой (самоподписанный) сертификат — так обычно у SQL Server Express.";
 
 defineProps<{ disabled?: boolean }>();
