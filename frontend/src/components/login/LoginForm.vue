@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchDirectoryStatus } from "../../api/directory";
 import { ApiError } from "../../api/http";
 import { useSession } from "../../stores/session";
@@ -10,7 +10,7 @@ import { isAutofilled } from "./autofill";
 
 const AUTOFILL_CHECKS_MS = [100, 500, 1500];
 
-const props = defineProps<{ melted?: boolean }>();
+const props = defineProps<{ melted?: boolean; held?: boolean }>();
 const emit = defineEmits<{ attempt: []; success: []; failure: [] }>();
 const session = useSession();
 
@@ -64,10 +64,15 @@ function buttonBox(): Box {
   return button ? boxOf(button) : NO_BOX;
 }
 
-async function focusPassword(): Promise<void> {
+async function focusGap(): Promise<void> {
   await nextTick();
-  input("current-password")?.focus();
+  input(login.value.trim() ? "current-password" : "username")?.focus();
 }
+
+watch(
+  () => props.held,
+  (held) => !held && error.value && focusGap(),
+);
 
 onMounted(async () => {
   AUTOFILL_CHECKS_MS.forEach((delay) => timers.push(window.setTimeout(checkAutofill, delay)));
@@ -81,10 +86,14 @@ onMounted(async () => {
 onBeforeUnmount(() => timers.forEach((timer) => window.clearTimeout(timer)));
 
 async function submit(): Promise<void> {
+  if (props.held) {
+    return;
+  }
   error.value = "";
   takeBrowserValues();
   if (!login.value.trim() || !password.value) {
     error.value = "Введите логин и пароль";
+    emit("failure");
     return;
   }
   busy.value = true;
@@ -99,7 +108,7 @@ async function submit(): Promise<void> {
     busy.value = false;
   }
   if (failed.value) {
-    await focusPassword();
+    await focusGap();
   }
 }
 </script>
