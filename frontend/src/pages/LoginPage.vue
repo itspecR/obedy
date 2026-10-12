@@ -86,10 +86,8 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 <template>
   <AuthLayout title="Вход" :state="state">
     <LoginForm :melted="flight !== null" @attempt="attempt" @success="succeeded" @failure="failed">
-      <template #launch>
-        <Transition name="rabbit-melt">
-          <LoginRabbit v-if="flight" :outcome="flight.outcome" @fill="fillFrom" @done="landed" />
-        </Transition>
+      <template #launch="{ button }">
+        <LoginRabbit v-if="flight" :outcome="flight.outcome" :button="button" @fill="fillFrom" @done="landed" />
       </template>
     </LoginForm>
   </AuthLayout>
@@ -97,15 +95,3 @@ onBeforeUnmount(() => window.clearTimeout(timer));
   <ScreenFill v-if="flight?.fill" :x="flight.fill.x" :y="flight.fill.y" :duration="FILL_MS" />
 </template>
 
-<style scoped>
-.rabbit-melt-leave-active {
-  transition:
-    opacity 240ms ease,
-    filter 240ms ease;
-}
-
-.rabbit-melt-leave-to {
-  opacity: 0;
-  filter: blur(8px) brightness(3);
-}
-</style>

@@ -12,6 +12,7 @@ import { useToasts } from "../composables/useToasts";
 import { stillMotion } from "../device/motion";
 import { shortName } from "../navigation";
 import { preloadScenes } from "../rabbit/frames";
+import type { Box } from "../rabbit/morph";
 import { useSession } from "../stores/session";
 
 const REFRESH_MS = 60_000;
@@ -61,10 +62,10 @@ async function act(action: () => Promise<LunchState>, done: string, then: (next:
   }
 }
 
-function start(): void {
+function start(button: Box): void {
   void act(startLunch, "Приятного аппетита! Время пошло", () => {
     if (rabbit.value) {
-      rabbit.value.fresh = true;
+      rabbit.value.from = button;
     }
   });
 }
@@ -79,14 +80,14 @@ function finish(): void {
 
 function parted(): void {
   if (rabbit.value) {
+    rabbit.value.from = null;
     rabbit.value.parting = false;
-    rabbit.value.fresh = false;
   }
 }
 
 async function wakeRabbit(): Promise<void> {
   if (await rabbitWanted()) {
-    rabbit.value = { fresh: false, still: stillMotion(), parting: false };
+    rabbit.value = { still: stillMotion(), from: null, parting: false };
     preloadScenes(["start", "run", "ontime", "dive", "late"]);
   }
 }
