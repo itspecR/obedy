@@ -49,7 +49,7 @@ withDefaults(defineProps<{ kind: BadgeKind; leaving?: boolean }>(), { leaving: f
   --tone: var(--muted);
   --tone-bg: var(--gray-bg);
   --tone-line: var(--gray-line);
-  --stroke-ms: 240ms;
+  --stroke-ms: 180ms;
 }
 
 .auth-badge--leaving {
@@ -86,6 +86,14 @@ withDefaults(defineProps<{ kind: BadgeKind; leaving?: boolean }>(), { leaving: f
 
 .auth-badge__stroke--third {
   animation-delay: 900ms;
+}
+
+.auth-badge--farewell .auth-badge__stroke--second {
+  animation-delay: 700ms;
+}
+
+.auth-badge--farewell .auth-badge__stroke--third {
+  animation-delay: 800ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
