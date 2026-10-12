@@ -42,7 +42,7 @@ const { items, dismiss } = useToasts();
   border-radius: var(--radius-menu);
   background: var(--toast);
   color: var(--ink);
-  box-shadow: var(--shadow-menu);
+  box-shadow: var(--shadow-float), var(--card-shine);
   pointer-events: auto;
 }
 

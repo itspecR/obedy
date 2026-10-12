@@ -183,7 +183,7 @@ onMounted(load);
   padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-field);
-  background: var(--blue-tint);
+  background: var(--accent-tint);
 }
 
 .stats__overview {

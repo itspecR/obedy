@@ -91,13 +91,13 @@ function toggle(): void {
 
 .info__button:hover,
 .info__button[aria-expanded="true"] {
-  border-color: var(--blue);
-  background: var(--blue-tint);
+  border-color: var(--accent);
+  background: var(--accent-tint);
   color: var(--ink);
 }
 
 .info__button:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

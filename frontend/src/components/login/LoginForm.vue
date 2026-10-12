@@ -214,7 +214,7 @@ async function submit(): Promise<void> {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--blue);
+  color: var(--accent);
   font: inherit;
   cursor: pointer;
 }

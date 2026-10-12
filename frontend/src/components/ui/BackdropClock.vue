@@ -106,6 +106,7 @@ onUnmounted(() => document.removeEventListener("visibilitychange", syncWhenVisib
 
 <style scoped>
 .backdrop-clock {
+  --dial: min(88vmin, 820px);
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -114,8 +115,22 @@ onUnmounted(() => document.removeEventListener("visibilitychange", syncWhenVisib
   pointer-events: none;
 }
 
+.backdrop-clock::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: calc(var(--dial) * 1.2);
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle closest-side, transparent 66%, var(--accent-halo) 77.8%, transparent 90%),
+    radial-gradient(circle closest-side, var(--accent-halo), transparent 70%);
+  opacity: 0.8;
+}
+
 .backdrop-clock__dial {
-  width: min(88vmin, 820px);
+  width: var(--dial);
   height: auto;
   stroke-linecap: round;
 }
@@ -145,9 +160,10 @@ onUnmounted(() => document.removeEventListener("visibilitychange", syncWhenVisib
 }
 
 .backdrop-clock__window {
-  stroke: var(--green);
-  stroke-opacity: 0.4;
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
   stroke-width: 14;
+  filter: drop-shadow(0 0 10px var(--accent-glow));
 }
 
 .backdrop-clock__hand {

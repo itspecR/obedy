@@ -158,7 +158,7 @@ watch(
 }
 
 .picker__option--chosen {
-  color: var(--blue-hover);
+  color: var(--accent-hover);
 }
 
 .picker__name {

@@ -130,7 +130,7 @@ function pick(day: string): void {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-button);
-  color: var(--blue);
+  color: var(--accent);
   font-size: 20px;
 }
 
@@ -168,9 +168,9 @@ function pick(day: string): void {
 
 .date-field__day--chosen,
 .date-field__day--chosen:hover:not(:disabled) {
-  border-color: var(--blue);
-  background: var(--blue-tint);
-  color: var(--blue-hover);
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-hover);
   font-weight: 600;
 }
 
@@ -190,6 +190,6 @@ function pick(day: string): void {
 .date-field__today {
   padding: 6px 10px;
   border-radius: var(--radius-button);
-  color: var(--blue);
+  color: var(--accent);
 }
 </style>

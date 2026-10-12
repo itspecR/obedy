@@ -31,7 +31,7 @@ withDefaults(defineProps<{ caption?: boolean }>(), { caption: true });
   height: 42px;
   flex: none;
   border: 1px solid var(--line-strong);
-  border-radius: 13px;
+  border-radius: var(--radius-menu);
   background:
     radial-gradient(circle at 30% 20%, rgba(130, 200, 255, 0.45), transparent 60%),
     linear-gradient(150deg, #2c2f38 0%, #111216 100%);
