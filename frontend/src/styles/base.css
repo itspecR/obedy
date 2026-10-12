@@ -28,11 +28,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 34% 26% at 76% 18%, rgba(255, 150, 95, 0.32), transparent 70%),
-    radial-gradient(ellipse 22% 30% at 92% 40%, rgba(120, 240, 215, 0.16), transparent 70%),
-    radial-gradient(ellipse 95% 80% at 70% 108%, transparent 56%, rgba(40, 90, 255, 0.5) 61%, rgba(130, 200, 255, 0.85) 64.5%, rgba(60, 110, 255, 0.45) 67%, transparent 73%),
-    radial-gradient(ellipse 70% 95% at 112% 40%, transparent 58%, rgba(80, 120, 255, 0.35) 63%, rgba(200, 225, 255, 0.55) 65.5%, rgba(255, 170, 120, 0.25) 67.5%, transparent 72%),
-    radial-gradient(ellipse 60% 45% at 25% 105%, rgba(30, 80, 255, 0.4), transparent 70%),
+    url("./backdrop-dial.svg") no-repeat right -22vmax bottom -30vmax / 92vmax 92vmax,
+    radial-gradient(ellipse 80% 60% at 85% 100%, var(--green-bg), transparent 70%),
     var(--canvas);
 }
 
