@@ -107,27 +107,15 @@ describe("RabbitSprite", () => {
     expect(wrapper.get("img").attributes("src")).toBe(frameUrl("dive", SCENES.dive.steps[SCENES.dive.steps.length - 1][0]));
   });
 
-  it("fades between poses in slow scenes", async () => {
+  it("shows exactly one sharp picture at a time, even in slow scenes", async () => {
     const frames = animationFrames();
     const wrapper = mount(RabbitSprite, { props: { scene: "tap" } });
-    expect(wrapper.findAll("img")).toHaveLength(1);
 
     frames.advance(TICK_MS * SCENES.tap.steps[0][1] + 40);
     await nextTick();
 
-    const [previous, current] = wrapper.findAll("img");
-    expect(previous.attributes("src")).toBe(frameUrl("tap", 1));
-    expect(current.classes()).toContain("rabbit-sprite__frame--blend");
-  });
-
-  it("cuts sharply between running frames", async () => {
-    const frames = animationFrames();
-    const wrapper = mount(RabbitSprite, { props: { scene: "run" } });
-
-    frames.advance(TICK_MS * SCENES.run.steps[0][1] + 40);
-    await nextTick();
-
     expect(wrapper.findAll("img")).toHaveLength(1);
+    expect(wrapper.get("img").attributes("src")).toBe(frameUrl("tap", SCENES.tap.steps[1][0]));
   });
 
   it("holds the first pose while told to stay still and plays once released", async () => {
