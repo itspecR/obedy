@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { FRAMES_PER_SECOND, SCENES, sceneLength } from "../../rabbit/scenes";
+import { FEET_LINE } from "../../rabbit/scenes";
 import RabbitHole from "../rabbit/RabbitHole.vue";
 import RabbitSprite from "../rabbit/RabbitSprite.vue";
 import { FILL_MS, PHASE_SCENE, nextPhase, type Outcome, type Phase } from "./rabbitPlot";
@@ -16,9 +16,8 @@ const HOLE_MARGIN = 70;
 const SPEED = 1.8;
 const APPEAR_MS = 220;
 const RUN_MS = 420;
-const MS_PER_SECOND = 1000;
-const DIVE_MS = (sceneLength(SCENES.dive) / (FRAMES_PER_SECOND * SPEED)) * MS_PER_SECOND;
-const TIMED: Partial<Record<Phase, number>> = { appear: APPEAR_MS, run: RUN_MS, fill: FILL_MS };
+const DIVE_MS = 420;
+const TIMED: Partial<Record<Phase, number>> = { appear: APPEAR_MS, run: RUN_MS, dive: DIVE_MS, fill: FILL_MS };
 
 const props = defineProps<{ outcome: Outcome }>();
 const emit = defineEmits<{ fill: [center: Point]; done: [] }>();
@@ -34,7 +33,7 @@ const travelled = computed(() => ["run", "dive", "fill"].includes(phase.value));
 const dived = computed(() => ["dive", "fill"].includes(phase.value));
 const holeOpen = computed(() => ["start", "run", "dive", "fill"].includes(phase.value));
 
-const sizes = { "--size": `${RABBIT_SIZE}px`, "--appear": `${APPEAR_MS}ms` };
+const sizes = { "--size": `${RABBIT_SIZE}px`, "--appear": `${APPEAR_MS}ms`, "--sink": `${(1 - FEET_LINE) * RABBIT_SIZE}px` };
 const holeStyle = computed(() => ({ left: `${holeOffset.value}px` }));
 const body = computed(() => ({
   transform: `translate(${travelled.value ? holeOffset.value : 0}px, ${dived.value ? RABBIT_SIZE : 0}px)`,
@@ -62,6 +61,12 @@ function advance(): void {
   schedule();
 }
 
+function sceneEnded(): void {
+  if (TIMED[phase.value] === undefined) {
+    advance();
+  }
+}
+
 function schedule(): void {
   const wait = TIMED[phase.value];
   if (wait !== undefined) {
@@ -82,7 +87,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
     <RabbitHole ref="hole" class="login-rabbit__hole" :open="holeOpen" :style="holeStyle" />
     <div class="login-rabbit__box">
       <div class="login-rabbit__body" :class="{ 'login-rabbit__body--appear': phase === 'appear' }" :style="body">
-        <RabbitSprite v-if="scene" :scene="scene" :speed="SPEED" :repeat="phase === 'tap' && outcome === 'pending'" @ended="advance" />
+        <RabbitSprite v-if="scene" :scene="scene" :speed="SPEED" :repeat="phase === 'tap' && outcome === 'pending'" @ended="sceneEnded" />
       </div>
     </div>
   </div>
@@ -96,11 +101,11 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
 .login-rabbit__box {
   position: absolute;
-  bottom: 0;
+  bottom: calc(var(--sink) * -1);
   left: calc(var(--size) / -2);
   width: var(--size);
   height: var(--size);
-  clip-path: inset(-100vh -100vw 0 -100vw);
+  clip-path: inset(-100vh -100vw var(--sink) -100vw);
 }
 
 .login-rabbit__body {

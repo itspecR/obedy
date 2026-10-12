@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import type { SceneName } from "../../rabbit/scenes";
+import { FEET_LINE, type SceneName } from "../../rabbit/scenes";
 import RabbitHole from "../rabbit/RabbitHole.vue";
 import RabbitSprite from "../rabbit/RabbitSprite.vue";
 
@@ -27,6 +27,7 @@ const sizes = {
   "--hole-width": `${HOLE_WIDTH}px`,
   "--appear": `${APPEAR_MS}ms`,
   "--vanish": `${VANISH_MS}ms`,
+  "--sink": `${(1 - FEET_LINE) * RABBIT_SIZE}px`,
 };
 const runner = computed(() => ({ left: `calc((100% - var(--size) - var(--hole-width) / 2) * ${props.progress})` }));
 
@@ -114,7 +115,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
 .lunch-rabbit__runner {
   position: absolute;
-  bottom: 6px;
+  bottom: calc(6px - var(--sink));
   width: var(--size);
   height: var(--size);
   transition: left 1s linear;

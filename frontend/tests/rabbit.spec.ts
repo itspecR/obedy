@@ -6,7 +6,7 @@ import LoginRabbit from "../src/components/login/LoginRabbit.vue";
 import { FILL_MS, nextPhase } from "../src/components/login/rabbitPlot";
 import RabbitSprite from "../src/components/rabbit/RabbitSprite.vue";
 import { frameUrl } from "../src/rabbit/frames";
-import { SCENES, frameAt, sceneEnded, sceneLength, type SceneName } from "../src/rabbit/scenes";
+import { SCENES, frameAt, sceneEnded, sceneFrames, sceneLength, type SceneName } from "../src/rabbit/scenes";
 import { routeFetch } from "./helpers";
 import { me } from "./people";
 
@@ -50,16 +50,17 @@ afterEach(() => {
 });
 
 describe("rabbit scenes", () => {
-  it("holds each frame for its number of ticks", () => {
-    const scene = { holds: [2, 1, 3], loop: false };
+  it("holds each frame for its number of ticks and may return to an earlier frame", () => {
+    const scene = { steps: [[1, 2], [2, 1], [3, 3], [1, 2]] as [number, number][], loop: false };
 
-    expect([0, 1, 2, 3, 5, 9].map((tick) => frameAt(scene, tick))).toEqual([1, 1, 2, 3, 3, 3]);
-    expect(sceneLength(scene)).toBe(6);
-    expect([sceneEnded(scene, 5), sceneEnded(scene, 6)]).toEqual([false, true]);
+    expect([0, 1, 2, 3, 5, 6, 7, 20].map((tick) => frameAt(scene, tick))).toEqual([1, 1, 2, 3, 3, 1, 1, 1]);
+    expect(sceneLength(scene)).toBe(8);
+    expect(sceneFrames(scene)).toEqual([1, 2, 3]);
+    expect([sceneEnded(scene, 7), sceneEnded(scene, 8)]).toEqual([false, true]);
   });
 
   it("wraps looping scenes and never ends them", () => {
-    const scene = { holds: [2, 2], loop: true };
+    const scene = { steps: [[1, 2], [2, 2]] as [number, number][], loop: true };
 
     expect([0, 3, 4, 7].map((tick) => frameAt(scene, tick))).toEqual([1, 2, 1, 2]);
     expect(sceneEnded(scene, 100)).toBe(false);
@@ -67,7 +68,7 @@ describe("rabbit scenes", () => {
 
   it("has a picture for every frame of every scene", () => {
     for (const [name, scene] of Object.entries(SCENES)) {
-      scene.holds.forEach((_, index) => expect(frameUrl(name as SceneName, index + 1), `${name} ${index + 1}`).not.toBe(""));
+      sceneFrames(scene).forEach((frame) => expect(frameUrl(name as SceneName, frame), `${name} ${frame}`).not.toBe(""));
     }
   });
 });
@@ -89,14 +90,14 @@ describe("RabbitSprite", () => {
     const wrapper = mount(RabbitSprite, { props: { scene: "dive" } });
     const first = wrapper.get("img").attributes("src");
 
-    frames.advance(TICK_MS * SCENES.dive.holds[0] + 40);
+    frames.advance(TICK_MS * SCENES.dive.steps[0][1] + 40);
     await nextTick();
     expect(wrapper.get("img").attributes("src")).not.toBe(first);
 
     frames.advance(TICK_MS * sceneLength(SCENES.dive));
     await nextTick();
     expect(wrapper.emitted("ended")).toEqual([["dive"]]);
-    expect(wrapper.get("img").attributes("src")).toBe(frameUrl("dive", SCENES.dive.holds.length));
+    expect(wrapper.get("img").attributes("src")).toBe(frameUrl("dive", SCENES.dive.steps[SCENES.dive.steps.length - 1][0]));
   });
 
   it("starts over while asked to repeat", () => {
@@ -142,6 +143,8 @@ describe("LoginRabbit", () => {
     await vi.advanceTimersByTimeAsync(450);
     expect(shown(wrapper)).toBe("dive");
     await end(wrapper);
+    expect(wrapper.emitted("fill")).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(450);
 
     expect(wrapper.emitted("fill")).toHaveLength(1);
     expect(wrapper.emitted("done")).toBeUndefined();
