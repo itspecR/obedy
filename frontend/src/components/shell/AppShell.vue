@@ -2,26 +2,47 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { mayLeaveAll } from "../../composables/useLeaveGuard";
+import { stillMotion } from "../../device/motion";
 import { useSession } from "../../stores/session";
+import AuthBadge from "../login/AuthBadge.vue";
 import ProfileDialog from "./ProfileDialog.vue";
 import SideNav from "./SideNav.vue";
+
+const FAREWELL_MS = 1000;
 
 const session = useSession();
 const router = useRouter();
 const profileOpen = ref(false);
+const leaving = ref(false);
+const origin = ref("");
+let signingOut = false;
 
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function waveGoodbye(): Promise<void> {
+  origin.value = `50% ${window.scrollY + window.innerHeight / 2}px`;
+  leaving.value = true;
+  await pause(FAREWELL_MS);
+}
 
 async function logout(): Promise<void> {
-  if (!(await mayLeaveAll())) {
+  if (signingOut || !(await mayLeaveAll())) {
     return;
   }
+  signingOut = true;
+  const farewell = !stillMotion();
+  if (farewell) {
+    await waveGoodbye();
+  }
   await session.signOut();
-  await router.replace({ name: "login" });
+  await router.replace({ name: "login", state: { farewell } });
 }
 </script>
 
 <template>
-  <div v-if="session.me" class="shell">
+  <div v-if="session.me" class="shell" :class="{ 'shell--leaving': leaving }" :style="leaving ? { transformOrigin: origin } : undefined">
     <SideNav :me="session.me" @logout="logout" @open-profile="profileOpen = true" />
     <div class="shell__main">
       <main class="shell__content">
@@ -30,6 +51,9 @@ async function logout(): Promise<void> {
     </div>
     <ProfileDialog v-if="profileOpen" :me="session.me" @close="profileOpen = false" />
   </div>
+  <div v-if="leaving" class="farewell">
+    <AuthBadge kind="farewell" />
+  </div>
 </template>
 
 <style scoped>
@@ -37,6 +61,20 @@ async function logout(): Promise<void> {
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
   min-height: 100vh;
+}
+
+.shell--leaving {
+  animation: fold-to-dot 420ms cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
+  pointer-events: none;
+}
+
+.farewell {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
 }
 
 .shell__main {

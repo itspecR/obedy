@@ -122,17 +122,17 @@ describe("LoginPage", () => {
 
     expect(card(wrapper)).toContain("auth__card--failure");
     expect(card(wrapper)).not.toContain("auth__card--error");
-    expect(wrapper.find(".auth__done--refused").exists()).toBe(true);
+    expect(wrapper.find(".auth-badge--refused").exists()).toBe(true);
     expect(wrapper.find('[role="status"]').exists()).toBe(false);
     expect(wrapper.get('[role="alert"]').text()).toBe("Неверный логин или пароль");
 
     await vi.advanceTimersByTimeAsync(1200);
     expect(card(wrapper)).toContain("auth__card--recovery");
-    expect(wrapper.get(".auth__done--refused").classes()).toContain("auth__done--leaving");
+    expect(wrapper.get(".auth-badge--refused").classes()).toContain("auth-badge--leaving");
 
     await vi.advanceTimersByTimeAsync(420);
     expect(card(wrapper)).toContain("auth__card--idle");
-    expect(wrapper.find(".auth__done--refused").exists()).toBe(false);
+    expect(wrapper.find(".auth-badge--refused").exists()).toBe(false);
     expect(spy.mock.calls.filter(([url]) => url === "/api/auth/login")).toHaveLength(1);
     wrapper.unmount();
   });
