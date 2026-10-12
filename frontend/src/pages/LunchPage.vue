@@ -87,7 +87,7 @@ function parted(): void {
 async function wakeRabbit(): Promise<void> {
   if (await rabbitWanted()) {
     rabbit.value = { fresh: false, still: stillMotion(), parting: false };
-    preloadScenes(["start", "run", "ontime"]);
+    preloadScenes(["start", "run", "ontime", "dive", "late"]);
   }
 }
 

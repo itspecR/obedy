@@ -1,4 +1,4 @@
-export type SceneName = "tap" | "start" | "run" | "dive" | "no" | "ontime";
+export type SceneName = "tap" | "start" | "run" | "dive" | "no" | "ontime" | "late";
 
 export type Step = [frame: number, ticks: number];
 
@@ -17,6 +17,7 @@ export const SCENES: Record<SceneName, Scene> = {
   dive: { steps: [[1, 3], [2, 3]], loop: false },
   no: { steps: [[1, 3], [2, 3], [3, 3], [4, 12]], loop: false },
   ontime: { steps: [[1, 5], [2, 6], [3, 6], [4, 4], [5, 8]], loop: false },
+  late: { steps: [[1, 8], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 8], [8, 8], [1, 4]], loop: true },
 };
 
 export function sceneLength(scene: Scene): number {

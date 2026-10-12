@@ -41,7 +41,7 @@ describe("lunch progress", () => {
 });
 
 describe("LunchRabbit", () => {
-  const rabbit = (props: Partial<{ progress: number; fresh: boolean; still: boolean; parting: boolean }> = {}) =>
+  const rabbit = (props: Partial<{ progress: number; fresh: boolean; still: boolean; parting: boolean; late: boolean }> = {}) =>
     mount(LunchRabbit, { props: { progress: 0.5, fresh: false, still: false, parting: false, ...props }, global: { stubs } });
   const scene = (wrapper: ReturnType<typeof rabbit>) => wrapper.get("i").attributes("data-scene");
   const end = async (wrapper: ReturnType<typeof rabbit>) => {
@@ -81,6 +81,39 @@ describe("LunchRabbit", () => {
     expect(wrapper.emitted("parted")).toHaveLength(1);
   });
 
+  it("falls into the hole when time runs out, rises and taps the watch until the return", async () => {
+    vi.useFakeTimers();
+    const wrapper = rabbit({ progress: 1 });
+
+    await wrapper.setProps({ late: true });
+    expect(scene(wrapper)).toBe("dive");
+    expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--fall");
+    await vi.advanceTimersByTimeAsync(450);
+    expect(wrapper.find(".lunch-rabbit__runner").exists()).toBe(false);
+    expect(wrapper.get(".lunch-rabbit__peek-body").classes()).toContain("lunch-rabbit__peek-body--rise");
+    await vi.advanceTimersByTimeAsync(650);
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.get(".lunch-rabbit__peek-body").classes()).not.toContain("lunch-rabbit__peek-body--rise");
+    expect(wrapper.get(".lunch-rabbit__hole").classes()).toContain("rabbit-hole--open");
+  });
+
+  it("is already in the hole when the page opens after the limit", () => {
+    const wrapper = rabbit({ progress: 1, late: true });
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.find(".lunch-rabbit__runner").exists()).toBe(false);
+  });
+
+  it("skips the fall on calm devices", async () => {
+    const wrapper = rabbit({ progress: 1, still: true });
+
+    await wrapper.setProps({ late: true });
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.get("i").attributes("data-still")).toBe("true");
+  });
+
   it("stays still on calm devices and leaves at once", async () => {
     const wrapper = rabbit({ still: true, fresh: true });
 
@@ -100,6 +133,13 @@ describe("LunchControl with the rabbit", () => {
     expect(mount(LunchControl, { props: { state: ongoing, now: at(10), busy: false, rabbit: view }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(true);
     expect(mount(LunchControl, { props: { state: ongoing, now: at(10), busy: false, rabbit: null }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(false);
     expect(mount(LunchControl, { props: { state: state(), now: at(10), busy: false, rabbit: view }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(false);
+  });
+
+  it("puts the rabbit into the hole once the limit is over", () => {
+    const ongoing = state({ today: lunch(), can_start: false });
+    const wrapper = mount(LunchControl, { props: { state: ongoing, now: at(41), busy: false, rabbit: view }, global: { stubs } });
+
+    expect(wrapper.find(".lunch-rabbit__peek").exists()).toBe(true);
   });
 
   it("says goodbye where the rabbit stopped when the employee came back in time", () => {
