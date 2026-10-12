@@ -109,8 +109,10 @@ describe("LoginPage", () => {
     return mount(LoginPage, { attachTo: document.body });
   }
 
-  it("shakes the card on a wrong password and calms down after", async () => {
-    routeFetch(WRONG);
+  const card = (wrapper: Awaited<ReturnType<typeof page>>) => wrapper.get(".auth__card").classes();
+
+  it("folds into a red cross on a wrong password and unfolds back to try again", async () => {
+    const spy = routeFetch(WRONG);
     const wrapper = await page();
     await typeIn(wrapper, "ivanov.ii", "wrong-password");
     vi.useFakeTimers();
@@ -118,9 +120,54 @@ describe("LoginPage", () => {
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(wrapper.get(".auth__card").classes()).toContain("auth__card--error");
-    await vi.advanceTimersByTimeAsync(450);
-    expect(wrapper.get(".auth__card").classes()).not.toContain("auth__card--error");
+    expect(card(wrapper)).toContain("auth__card--failure");
+    expect(card(wrapper)).not.toContain("auth__card--error");
+    expect(wrapper.find(".auth__done--refused").exists()).toBe(true);
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+    expect(wrapper.get('[role="alert"]').text()).toBe("Неверный логин или пароль");
+
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(card(wrapper)).toContain("auth__card--recovery");
+    expect(wrapper.get(".auth__done--refused").classes()).toContain("auth__done--leaving");
+
+    await vi.advanceTimersByTimeAsync(420);
+    expect(card(wrapper)).toContain("auth__card--idle");
+    expect(wrapper.find(".auth__done--refused").exists()).toBe(false);
+    expect(spy.mock.calls.filter(([url]) => url === "/api/auth/login")).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it("does not send the form again while the cross is shown", async () => {
+    const spy = routeFetch(WRONG);
+    const wrapper = await page();
+    await typeIn(wrapper, "ivanov.ii", "wrong-password");
+    vi.useFakeTimers();
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    await typeIn(wrapper, "ivanov.ii", "another-password");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(spy.mock.calls.filter(([url]) => url === "/api/auth/login")).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it("shows the cross for empty fields too, without asking the server", async () => {
+    const spy = routeFetch(WRONG);
+    const wrapper = await page();
+    vi.useFakeTimers();
+
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(card(wrapper)).toContain("auth__card--failure");
+    expect(wrapper.get('[role="alert"]').text()).toBe("Введите логин и пароль");
+    expect(spy.mock.calls.some(([url]) => url === "/api/auth/login")).toBe(false);
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    await vi.advanceTimersByTimeAsync(1620);
+    expect(document.activeElement).toBe(wrapper.findAll("input")[0].element);
     wrapper.unmount();
   });
 

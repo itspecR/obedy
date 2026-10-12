@@ -2,7 +2,8 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { rabbitWanted } from "../api/appearance";
-import AuthLayout, { type AuthState } from "../components/login/AuthLayout.vue";
+import AuthLayout from "../components/login/AuthLayout.vue";
+import { refusing, type AuthState } from "../components/login/authState";
 import LoginForm from "../components/login/LoginForm.vue";
 import LoginRabbit, { type Point } from "../components/login/LoginRabbit.vue";
 import { FILL_MS, type Outcome } from "../components/login/rabbitPlot";
@@ -12,6 +13,8 @@ import { preloadScenes } from "../rabbit/frames";
 
 const SHAKE_MS = 450;
 const SUCCESS_PAUSE_MS = 1100;
+const REFUSAL_PAUSE_MS = 1200;
+const RECOVERY_MS = 420;
 
 const router = useRouter();
 const state = ref<AuthState>("idle");
@@ -31,6 +34,14 @@ function enter(): void {
 function shake(): void {
   state.value = "error";
   after(SHAKE_MS, () => (state.value = "idle"));
+}
+
+function refuse(): void {
+  state.value = "failure";
+  after(REFUSAL_PAUSE_MS, () => {
+    state.value = "recovery";
+    after(RECOVERY_MS, () => (state.value = "idle"));
+  });
 }
 
 function attempt(): void {
@@ -54,7 +65,7 @@ function settle(outcome: Outcome, fallback: () => void): void {
 }
 
 function failed(): void {
-  settle("failure", shake);
+  settle("failure", refuse);
 }
 
 function succeeded(): void {
@@ -85,7 +96,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
 <template>
   <AuthLayout title="Вход" :state="state">
-    <LoginForm :melted="flight !== null" @attempt="attempt" @success="succeeded" @failure="failed">
+    <LoginForm :melted="flight !== null" :held="refusing(state)" @attempt="attempt" @success="succeeded" @failure="failed">
       <template #launch="{ button }">
         <LoginRabbit v-if="flight" :outcome="flight.outcome" :button="button" @fill="fillFrom" @done="landed" />
       </template>

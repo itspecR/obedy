@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import BrandMark from "../ui/BrandMark.vue";
+import { refusing, type AuthState } from "./authState";
 
-export type AuthState = "idle" | "error" | "success";
+const props = withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle" });
 
-withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle" });
+const refused = computed(() => refusing(props.state));
 </script>
 
 <template>
@@ -19,6 +21,9 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
       <div v-if="state === 'success'" class="auth__done" role="status">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         <span class="visually-hidden">Вход выполнен</span>
+      </div>
+      <div v-else-if="refused" class="auth__done auth__done--refused" :class="{ 'auth__done--leaving': state === 'recovery' }" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M7 7l10 10" /><path class="auth__stroke-second" d="M17 7L7 17" /></svg>
       </div>
     </div>
   </main>
@@ -65,13 +70,24 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
   animation: auth-shake 450ms var(--ease-out);
 }
 
-.auth__card--success {
+.auth__card--success,
+.auth__card--failure {
   animation: auth-collapse var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
   pointer-events: none;
 }
 
-.auth__card--success .auth__content {
+.auth__card--success .auth__content,
+.auth__card--failure .auth__content {
   animation: auth-fade 180ms ease-in forwards;
+}
+
+.auth__card--recovery {
+  animation: auth-collapse var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) reverse backwards;
+  pointer-events: none;
+}
+
+.auth__card--recovery .auth__content {
+  animation: auth-fade 180ms ease-out 240ms reverse backwards;
 }
 
 .auth__done {
@@ -98,6 +114,28 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
   stroke-dasharray: 24;
   stroke-dashoffset: 0;
   animation: auth-draw 360ms ease-out 560ms backwards;
+}
+
+.auth__done--refused {
+  border-color: var(--red);
+  background: var(--red-bg);
+  box-shadow: 0 0 32px var(--red-line);
+}
+
+.auth__done--refused svg {
+  width: 40px;
+  height: 40px;
+  stroke: var(--red);
+  stroke-dasharray: 15;
+  animation: auth-draw-cross 220ms ease-out 560ms backwards;
+}
+
+.auth__done--refused .auth__stroke-second {
+  animation: auth-draw-cross 220ms ease-out 760ms backwards;
+}
+
+.auth__done--leaving {
+  animation: auth-vanish 200ms ease-in forwards;
 }
 
 @keyframes auth-shake {
@@ -152,8 +190,23 @@ withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle
   }
 }
 
+@keyframes auth-draw-cross {
+  from {
+    stroke-dashoffset: 15;
+  }
+}
+
+@keyframes auth-vanish {
+  to {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .auth__card--success {
+  .auth__card--success,
+  .auth__card--failure,
+  .auth__done--leaving {
     visibility: hidden;
   }
 }
