@@ -49,7 +49,7 @@ const name = computed(() => shortName(props.me.display_name));
   height: 34px;
   flex: none;
   border-radius: 50%;
-  background: var(--blue-tint);
+  background: var(--accent-tint);
   color: var(--brand);
   font-size: var(--text-small);
   font-weight: 700;

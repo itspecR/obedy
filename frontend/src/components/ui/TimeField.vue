@@ -108,7 +108,7 @@ function done(): void {
   left: 0;
   height: var(--wheel-item);
   border-radius: var(--radius-button);
-  background: var(--blue-tint);
+  background: var(--accent-tint);
   transform: translateY(-50%);
 }
 
@@ -124,7 +124,7 @@ function done(): void {
   border: 0;
   border-radius: var(--radius-button);
   background: transparent;
-  color: var(--blue);
+  color: var(--accent);
   font: inherit;
   font-weight: 600;
   cursor: pointer;

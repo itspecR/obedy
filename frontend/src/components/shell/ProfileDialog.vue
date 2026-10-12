@@ -69,7 +69,7 @@ function passwordChanged(): void {
   height: 52px;
   flex: none;
   border-radius: 50%;
-  background: var(--blue-tint);
+  background: var(--accent-tint);
   color: var(--brand);
   font-weight: 700;
 }

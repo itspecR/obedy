@@ -65,7 +65,7 @@ const id = useId();
   min-height: 36px;
   padding: 6px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: calc(var(--radius-field) - 4px);
   background: transparent;
   color: var(--muted);
   font: inherit;

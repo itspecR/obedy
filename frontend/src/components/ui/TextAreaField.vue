@@ -68,8 +68,8 @@ const id = useId();
 }
 
 .area__input:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-tint);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
 }
 
 .area__head {

@@ -23,7 +23,7 @@ const emit = defineEmits<{ change: [checked: boolean] }>();
   height: 20px;
   margin: 0;
   border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   background: var(--field);
   cursor: pointer;
   appearance: none;
@@ -41,8 +41,8 @@ const emit = defineEmits<{ change: [checked: boolean] }>();
 }
 
 .check:checked {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .check:checked::after {
@@ -50,7 +50,7 @@ const emit = defineEmits<{ change: [checked: boolean] }>();
 }
 
 .check:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

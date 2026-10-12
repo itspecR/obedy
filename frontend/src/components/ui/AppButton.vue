@@ -39,7 +39,7 @@ withDefaults(
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
-  transition: background var(--motion), transform var(--motion), border-color var(--motion), box-shadow var(--motion);
+  transition: background var(--motion), transform var(--motion) var(--ease-out), border-color var(--motion), box-shadow var(--motion);
 }
 
 .button:hover:not(:disabled) {
@@ -48,7 +48,7 @@ withDefaults(
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .button:disabled {
@@ -93,17 +93,17 @@ withDefaults(
 .button--ghost {
   border-color: transparent;
   background: transparent;
-  color: var(--blue);
+  color: var(--accent);
 }
 
 .button--ghost:hover:not(:disabled) {
   border-color: transparent;
-  background: var(--blue-tint);
+  background: var(--accent-tint);
 }
 
 .button--pressed {
-  border-color: var(--blue);
-  background: var(--blue-tint);
-  color: var(--blue);
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent);
 }
 </style>

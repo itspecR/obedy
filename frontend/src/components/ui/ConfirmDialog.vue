@@ -68,8 +68,8 @@ function onKeydown(event: KeyboardEvent): void {
   padding: 24px;
   border: 1px solid var(--card-edge);
   border-radius: var(--radius-panel);
-  background: var(--surface-glass-strong);
-  box-shadow: var(--shadow-card), var(--card-shine);
+  background: var(--material-float);
+  box-shadow: var(--shadow-float), var(--card-shine);
   animation: appear var(--motion) ease-out;
 }
 

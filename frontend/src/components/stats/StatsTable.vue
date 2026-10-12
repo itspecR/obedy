@@ -100,11 +100,11 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
 }
 
 .stats-table__name:hover {
-  color: var(--blue-hover);
+  color: var(--accent-hover);
 }
 
 .stats-table__row--chosen .stats-table__name {
-  color: var(--blue-hover);
+  color: var(--accent-hover);
 }
 
 .stats-table__details {

@@ -82,7 +82,7 @@ const glass = useGlassNav(nav, {
   height: 100vh;
   padding: 24px 16px;
   border-right: 1px solid var(--line);
-  background: var(--surface-glass);
+  background: var(--material-chrome);
 }
 
 .side__top,

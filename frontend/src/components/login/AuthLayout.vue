@@ -143,7 +143,7 @@ const badge = computed(() => badgeOf(props.state));
 
   .auth__card {
     padding: 28px 20px 24px;
-    border-radius: 24px;
+    border-radius: var(--radius-card-compact);
   }
 
   .auth__title {
