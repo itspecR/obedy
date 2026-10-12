@@ -29,6 +29,7 @@ const badge = computed(() => badgeOf(props.state));
 .auth {
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --collapse: 420ms;
+  --fold-ease: cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +79,7 @@ const badge = computed(() => badgeOf(props.state));
 
 .auth__card--success,
 .auth__card--failure {
-  animation: fold-to-dot var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
+  animation: auth-fold var(--collapse) var(--fold-ease) 120ms forwards;
   pointer-events: none;
 }
 
@@ -89,7 +90,7 @@ const badge = computed(() => badgeOf(props.state));
 
 .auth__card--recovery,
 .auth__card--return {
-  animation: fold-to-dot var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) reverse backwards;
+  animation: auth-fold var(--collapse) var(--fold-ease) reverse backwards;
   pointer-events: none;
 }
 
@@ -110,6 +111,14 @@ const badge = computed(() => badgeOf(props.state));
   40%,
   80% {
     transform: translateX(10px);
+  }
+}
+
+@keyframes auth-fold {
+  to {
+    border-radius: 240px;
+    opacity: 0;
+    transform: scale(0.2);
   }
 }
 

@@ -64,8 +64,22 @@ async function logout(): Promise<void> {
 }
 
 .shell--leaving {
-  animation: fold-to-dot 420ms cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
+  --glass-blur: none;
+  --card-fill: var(--surface-glass-strong);
+  animation: shell-fold 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.shell--leaving :deep(.glass__warp) {
+  backdrop-filter: none;
+}
+
+@keyframes shell-fold {
+  to {
+    opacity: 0;
+    transform: scale(0.18);
+  }
 }
 
 .farewell {
