@@ -1,23 +1,30 @@
 export type SceneName = "tap" | "start" | "run" | "dive" | "no" | "ontime";
 
+export type Step = [frame: number, ticks: number];
+
 export interface Scene {
-  holds: number[];
+  steps: Step[];
   loop: boolean;
 }
 
 export const FRAMES_PER_SECOND = 24;
+export const FEET_LINE = 0.88;
 
 export const SCENES: Record<SceneName, Scene> = {
-  tap: { holds: [6, 3, 3, 3, 3, 6, 6, 6], loop: false },
-  start: { holds: [3, 3, 3, 3, 3, 3], loop: false },
-  run: { holds: [3, 3, 2, 3, 3, 2], loop: true },
-  dive: { holds: [3, 3, 3, 3, 3, 3], loop: false },
-  no: { holds: [3, 3, 3, 6, 6, 9], loop: false },
-  ontime: { holds: [3, 5, 6, 4, 4, 14], loop: false },
+  tap: { steps: [[1, 6], [2, 3], [3, 3], [4, 3], [5, 3], [6, 6], [1, 12]], loop: false },
+  start: { steps: [[1, 3], [2, 3], [3, 3]], loop: false },
+  run: { steps: [[1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [8, 2]], loop: true },
+  dive: { steps: [[1, 3], [2, 3]], loop: false },
+  no: { steps: [[1, 3], [2, 3], [3, 3], [4, 12]], loop: false },
+  ontime: { steps: [[1, 5], [2, 6], [3, 6], [4, 4], [5, 8]], loop: false },
 };
 
 export function sceneLength(scene: Scene): number {
-  return scene.holds.reduce((total, hold) => total + hold, 0);
+  return scene.steps.reduce((total, [, ticks]) => total + ticks, 0);
+}
+
+export function sceneFrames(scene: Scene): number[] {
+  return [...new Set(scene.steps.map(([frame]) => frame))];
 }
 
 export function sceneEnded(scene: Scene, tick: number): boolean {
@@ -27,11 +34,11 @@ export function sceneEnded(scene: Scene, tick: number): boolean {
 export function frameAt(scene: Scene, tick: number): number {
   const length = sceneLength(scene);
   let rest = scene.loop ? tick % length : Math.min(tick, length - 1);
-  for (const [index, hold] of scene.holds.entries()) {
-    if (rest < hold) {
-      return index + 1;
+  for (const [frame, ticks] of scene.steps) {
+    if (rest < ticks) {
+      return frame;
     }
-    rest -= hold;
+    rest -= ticks;
   }
-  return scene.holds.length;
+  return scene.steps[scene.steps.length - 1][0];
 }

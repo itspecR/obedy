@@ -1,5 +1,5 @@
 import type { SceneName } from "./scenes";
-import { SCENES } from "./scenes";
+import { SCENES, sceneFrames } from "./scenes";
 
 const FILES = import.meta.glob<string>("./frames/*/*.webp", { eager: true, query: "?url", import: "default" });
 const NUMBER_WIDTH = 2;
@@ -10,8 +10,8 @@ export function frameUrl(scene: SceneName, frame: number): string {
 
 export function preloadScenes(scenes: SceneName[]): void {
   for (const scene of scenes) {
-    SCENES[scene].holds.forEach((_, index) => {
-      new Image().src = frameUrl(scene, index + 1);
+    sceneFrames(SCENES[scene]).forEach((frame) => {
+      new Image().src = frameUrl(scene, frame);
     });
   }
 }
