@@ -46,7 +46,7 @@ const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includ
     <template v-else-if="today && ongoing">
       <p class="control__label">{{ remaining < 0 ? "Время обеда вышло" : "До конца обеда" }}</p>
       <p class="control__clock numeric" :class="`control__clock--${tone}`" role="timer">{{ countdownText(remaining) }}</p>
-      <LunchRabbit v-if="rabbit" :progress="progress" :fresh="rabbit.fresh" :still="rabbit.still" :parting="false" />
+      <LunchRabbit v-if="rabbit" :progress="progress" :fresh="rabbit.fresh" :still="rabbit.still" :parting="false" :late="remaining < 0" />
       <p class="control__note">Ушли в {{ formatTime(today.started_at) }} · вернуться до {{ deadline }}</p>
       <AppButton class="control__main" variant="primary" block :disabled="busy" @click="emit('finish')">Вернулся</AppButton>
       <AppButton v-if="undoLeft > 0" variant="ghost" size="small" :disabled="busy" @click="emit('undo')">
