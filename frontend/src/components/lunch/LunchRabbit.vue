@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { FEET_LINE, type SceneName } from "../../rabbit/scenes";
+import { frameUrl } from "../../rabbit/frames";
+import { MORPH_MS, boxOf, type Box } from "../../rabbit/morph";
+import { FEET_LINE, SCENES, type SceneName } from "../../rabbit/scenes";
+import ButtonMorph, { type MorphDirection } from "../rabbit/ButtonMorph.vue";
 import RabbitHole from "../rabbit/RabbitHole.vue";
 import RabbitSprite from "../rabbit/RabbitSprite.vue";
 
@@ -9,8 +12,6 @@ type Phase = "appear" | "start" | "run" | "fall" | "rise" | "late" | "ontime" | 
 const RABBIT_SIZE = 96;
 const LATE_SIZE = 116;
 const HOLE_WIDTH = 84;
-const APPEAR_MS = 220;
-const VANISH_MS = 320;
 const FALL_MS = 420;
 const RISE_MS = 600;
 const JOG_SPEED = 0.6;
@@ -26,11 +27,17 @@ const PHASE_SCENE: Record<Phase, SceneName> = {
 };
 const RUNNING: Phase[] = ["appear", "start", "run"];
 const IN_HOLE: Phase[] = ["rise", "late"];
+const MORPHS: Partial<Record<Phase, MorphDirection>> = { appear: "in", vanish: "out" };
+const LAST_ONTIME_FRAME = SCENES.ontime.steps[SCENES.ontime.steps.length - 1][0];
 
-const props = defineProps<{ progress: number; fresh: boolean; still: boolean; parting: boolean; late?: boolean }>();
+const props = defineProps<{ progress: number; still: boolean; from?: Box | null; parting?: boolean; button?: () => Box; late?: boolean }>();
 const emit = defineEmits<{ parted: [] }>();
 
 const phase = ref<Phase>(firstPhase());
+const body = ref<HTMLElement | null>(null);
+const target = ref<Box | null>(null);
+const buttonBox = ref<Box | null>(null);
+const shown = ref(phase.value !== "appear");
 let timer = 0;
 
 const scene = computed(() => PHASE_SCENE[phase.value]);
@@ -41,19 +48,24 @@ const sizes = {
   "--size": `${RABBIT_SIZE}px`,
   "--late-size": `${LATE_SIZE}px`,
   "--hole-width": `${HOLE_WIDTH}px`,
-  "--appear": `${APPEAR_MS}ms`,
-  "--vanish": `${VANISH_MS}ms`,
   "--fall": `${FALL_MS}ms`,
   "--rise": `${RISE_MS}ms`,
   "--sink": `${(1 - FEET_LINE) * RABBIT_SIZE}px`,
 };
+const morph = computed(() => MORPHS[phase.value] ?? null);
+const button = computed(() => (morph.value === "in" ? props.from : buttonBox.value) ?? null);
+const morphFrame = computed(() => (morph.value === "in" ? frameUrl("start", 1) : frameUrl("ontime", LAST_ONTIME_FRAME)));
 const runner = computed(() => ({ left: `calc((100% - var(--size) - var(--hole-width) / 2) * ${props.progress})` }));
 
 function firstPhase(): Phase {
   if (props.late) {
     return "late";
   }
-  return props.fresh && !props.still ? "appear" : "run";
+  return props.from && !props.still ? "appear" : "run";
+}
+
+function measure(): void {
+  target.value = body.value ? boxOf(body.value) : null;
 }
 
 function later(ms: number, action: () => void): void {
@@ -65,8 +77,29 @@ function ended(): void {
   if (phase.value === "start") {
     phase.value = "run";
   } else if (phase.value === "ontime") {
-    phase.value = "vanish";
-    later(VANISH_MS, () => emit("parted"));
+    leave();
+  }
+}
+
+function leave(): void {
+  if (!props.button) {
+    emit("parted");
+    return;
+  }
+  measure();
+  buttonBox.value = props.button();
+  phase.value = "vanish";
+}
+
+function swapped(): void {
+  shown.value = morph.value === "in";
+}
+
+function morphed(): void {
+  if (phase.value === "appear") {
+    phase.value = "start";
+  } else {
+    emit("parted");
   }
 }
 
@@ -104,7 +137,7 @@ watch(
 
 onMounted(() => {
   if (phase.value === "appear") {
-    later(APPEAR_MS, () => (phase.value = "start"));
+    measure();
   }
   if (props.parting) {
     part();
@@ -124,10 +157,22 @@ onBeforeUnmount(() => window.clearTimeout(timer));
       </div>
     </div>
     <div v-else class="lunch-rabbit__runner" :style="runner">
-      <div class="lunch-rabbit__body" :class="`lunch-rabbit__body--${phase}`">
-        <RabbitSprite :scene="scene" :speed="speed" :still="still" @ended="ended" />
+      <div ref="body" class="lunch-rabbit__body" :class="[`lunch-rabbit__body--${phase}`, { 'lunch-rabbit__body--hidden': !shown }]">
+        <RabbitSprite :scene="scene" :speed="speed" :still="still || phase === 'appear'" @ended="ended" />
       </div>
     </div>
+    <ButtonMorph
+      v-if="morph && button && target"
+      :key="morph"
+      :from="button"
+      :to="target"
+      :frame="morphFrame"
+      :direction="morph"
+      :duration="MORPH_MS"
+      :lands="false"
+      @swap="swapped"
+      @done="morphed"
+    />
   </div>
 </template>
 
@@ -176,23 +221,13 @@ onBeforeUnmount(() => window.clearTimeout(timer));
   height: 100%;
 }
 
-.lunch-rabbit__body--appear {
-  animation: lunch-rabbit-appear var(--appear) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.lunch-rabbit__body--hidden {
+  visibility: hidden;
 }
 
 .lunch-rabbit__body--fall {
   transform: translate(calc(var(--size) / 2), var(--size));
   transition: transform var(--fall) cubic-bezier(0.5, 0, 0.9, 0.6);
-}
-
-.lunch-rabbit__body--vanish {
-  opacity: 0;
-  filter: blur(8px) brightness(3);
-  transform: scale(0.6);
-  transition:
-    opacity var(--vanish) ease,
-    filter var(--vanish) ease,
-    transform var(--vanish) ease;
 }
 
 .lunch-rabbit__peek {
@@ -216,14 +251,6 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 .lunch-rabbit--still .lunch-rabbit__runner,
 .lunch-rabbit--still .lunch-rabbit__trail {
   transition: none;
-}
-
-@keyframes lunch-rabbit-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-    filter: blur(8px) brightness(4);
-  }
 }
 
 @keyframes lunch-rabbit-rise {

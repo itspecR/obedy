@@ -1,11 +1,13 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, nextTick } from "vue";
 import LoginRabbit from "../src/components/login/LoginRabbit.vue";
 import { FILL_MS, nextPhase } from "../src/components/login/rabbitPlot";
 import RabbitSprite from "../src/components/rabbit/RabbitSprite.vue";
+import ButtonMorph from "../src/components/rabbit/ButtonMorph.vue";
 import { frameUrl } from "../src/rabbit/frames";
+import { MORPH_MS, SWAP_IN, SWAP_OUT, bodyOf } from "../src/rabbit/morph";
 import { SCENES, frameAt, sceneEnded, sceneFrames, sceneLength, type SceneName } from "../src/rabbit/scenes";
 import { routeFetch } from "./helpers";
 import { me } from "./people";
@@ -37,7 +39,11 @@ function animationFrames() {
   };
 }
 
-const SpriteStub = defineComponent({ name: "RabbitSprite", props: ["scene", "speed", "repeat"], emits: ["ended"], template: "<i :data-scene='scene' :data-repeat='repeat' />" });
+const BUTTON = { left: 20, top: 300, width: 280, height: 48 };
+
+const SpriteStub = defineComponent({ name: "RabbitSprite", props: ["scene", "speed", "repeat", "still"], emits: ["ended"], template: "<i :data-scene='scene' :data-repeat='repeat' :data-still='still' />" });
+
+enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   setActivePinia(createPinia());
@@ -80,7 +86,8 @@ describe("login plot", () => {
     expect(["start", "run", "dive", "fill"].map((phase) => nextPhase(phase as never, "success"))).toEqual(["run", "dive", "fill", null]);
     expect(nextPhase("tap", "success")).toBe("start");
     expect(nextPhase("tap", "failure")).toBe("stumble");
-    expect(nextPhase("stumble", "failure")).toBeNull();
+    expect(nextPhase("stumble", "failure")).toBe("melt");
+    expect(nextPhase("melt", "failure")).toBeNull();
   });
 });
 
@@ -100,6 +107,41 @@ describe("RabbitSprite", () => {
     expect(wrapper.get("img").attributes("src")).toBe(frameUrl("dive", SCENES.dive.steps[SCENES.dive.steps.length - 1][0]));
   });
 
+  it("fades between poses in slow scenes", async () => {
+    const frames = animationFrames();
+    const wrapper = mount(RabbitSprite, { props: { scene: "tap" } });
+    expect(wrapper.findAll("img")).toHaveLength(1);
+
+    frames.advance(TICK_MS * SCENES.tap.steps[0][1] + 40);
+    await nextTick();
+
+    const [previous, current] = wrapper.findAll("img");
+    expect(previous.attributes("src")).toBe(frameUrl("tap", 1));
+    expect(current.classes()).toContain("rabbit-sprite__frame--blend");
+  });
+
+  it("cuts sharply between running frames", async () => {
+    const frames = animationFrames();
+    const wrapper = mount(RabbitSprite, { props: { scene: "run" } });
+
+    frames.advance(TICK_MS * SCENES.run.steps[0][1] + 40);
+    await nextTick();
+
+    expect(wrapper.findAll("img")).toHaveLength(1);
+  });
+
+  it("holds the first pose while told to stay still and plays once released", async () => {
+    const frames = animationFrames();
+    const wrapper = mount(RabbitSprite, { props: { scene: "tap", still: true } });
+
+    frames.advance(TICK_MS * sceneLength(SCENES.tap));
+    expect(wrapper.emitted("ended")).toBeUndefined();
+
+    await wrapper.setProps({ still: false });
+    frames.advance(TICK_MS * sceneLength(SCENES.tap) + 40);
+    expect(wrapper.emitted("ended")).toEqual([["tap"]]);
+  });
+
   it("starts over while asked to repeat", () => {
     const frames = animationFrames();
     const wrapper = mount(RabbitSprite, { props: { scene: "tap", repeat: true } });
@@ -110,11 +152,53 @@ describe("RabbitSprite", () => {
   });
 });
 
-describe("LoginRabbit", () => {
-  function rabbit(outcome: "pending" | "success" | "failure") {
+describe("ButtonMorph", () => {
+  const RABBIT_BOX = { left: 0, top: 0, width: 200, height: 200 };
+
+  function morph(direction: "in" | "out") {
     vi.useFakeTimers();
-    return mount(LoginRabbit, { props: { outcome }, global: { stubs: { RabbitSprite: SpriteStub } } });
+    return mount(ButtonMorph, { props: { from: BUTTON, to: RABBIT_BOX, frame: "frame.webp", direction, duration: MORPH_MS } });
   }
+
+  it("shows the rabbit at the peak of the silhouette and then finishes", async () => {
+    const wrapper = morph("in");
+    expect(document.body.querySelector(".button-morph__ghost")?.getAttribute("src")).toBe("frame.webp");
+
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_IN - 10);
+    expect(wrapper.emitted("swap")).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(20);
+    expect(wrapper.emitted("swap")).toHaveLength(1);
+    expect(wrapper.emitted("done")).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
+    expect(wrapper.emitted("done")).toHaveLength(1);
+    wrapper.unmount();
+    expect(document.body.querySelector(".button-morph")).toBeNull();
+  });
+
+  it("hides the rabbit earlier when it flows back into the button", async () => {
+    const wrapper = morph("out");
+
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_OUT + 10);
+    expect(wrapper.emitted("swap")).toHaveLength(1);
+  });
+
+  it("narrows the blob to the rabbit's body inside its frame", () => {
+    const body = bodyOf(RABBIT_BOX);
+
+    expect(body.left + body.width / 2).toBe(100);
+    expect(body.width).toBeLessThan(RABBIT_BOX.width);
+    expect(body.top + body.height).toBeLessThanOrEqual(RABBIT_BOX.height);
+  });
+});
+
+describe("LoginRabbit", () => {
+  function rabbit(outcome: "pending" | "success" | "failure", button = () => BUTTON) {
+    vi.useFakeTimers();
+    return mount(LoginRabbit, { props: { outcome, button }, global: { stubs: { RabbitSprite: SpriteStub } } });
+  }
+
+  const hidden = (wrapper: ReturnType<typeof rabbit>) => wrapper.get(".login-rabbit__body").classes().includes("login-rabbit__body--hidden");
+  const morphs = () => document.body.querySelectorAll(".button-morph").length;
 
   const shown = (wrapper: ReturnType<typeof rabbit>) => wrapper.find("i").attributes("data-scene");
   const end = async (wrapper: ReturnType<typeof rabbit>) => {
@@ -122,9 +206,25 @@ describe("LoginRabbit", () => {
     await flushPromises();
   };
 
+  it("grows out of the button before tapping the watch", async () => {
+    const wrapper = rabbit("pending");
+    await nextTick();
+    expect(hidden(wrapper)).toBe(true);
+    expect(morphs()).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_IN + 10);
+    expect(hidden(wrapper)).toBe(false);
+    expect(wrapper.find("i").attributes("data-still")).toBe("true");
+
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
+    expect(morphs()).toBe(0);
+    expect(shown(wrapper)).toBe("tap");
+    expect(wrapper.find("i").attributes("data-still")).toBe("false");
+  });
+
   it("keeps tapping the watch while the server thinks", async () => {
     const wrapper = rabbit("pending");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
 
     expect(wrapper.find("i").attributes("data-repeat")).toBe("true");
     await end(wrapper);
@@ -133,7 +233,7 @@ describe("LoginRabbit", () => {
 
   it("runs to the hole, dives, fills the screen from it and finishes", async () => {
     const wrapper = rabbit("success");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
 
     await end(wrapper);
     expect(shown(wrapper)).toBe("start");
@@ -152,13 +252,22 @@ describe("LoginRabbit", () => {
     expect(wrapper.emitted("done")).toHaveLength(1);
   });
 
-  it("stumbles and finishes on a wrong password", async () => {
-    const wrapper = rabbit("failure");
-    await vi.advanceTimersByTimeAsync(250);
+  it("stumbles, flows back into the button and finishes on a wrong password", async () => {
+    let button = BUTTON;
+    const wrapper = rabbit("failure", () => button);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
 
     await end(wrapper);
     expect(shown(wrapper)).toBe("no");
+    button = { ...BUTTON, top: BUTTON.top + 40 };
     await end(wrapper);
+    expect(morphs()).toBe(1);
+    expect(wrapper.findComponent(ButtonMorph).props("from")).toEqual(button);
+    expect(wrapper.emitted("done")).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_OUT + 10);
+    expect(hidden(wrapper)).toBe(true);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
 
     expect(wrapper.emitted("done")).toHaveLength(1);
     expect(wrapper.emitted("fill")).toBeUndefined();
@@ -167,7 +276,7 @@ describe("LoginRabbit", () => {
 
 describe("LoginPage with the rabbit", () => {
   const DOMAIN_OFF = { "/api/directory/public": [200, { enabled: false }] } as Record<string, [number, unknown]>;
-  const RabbitStub = defineComponent({ name: "LoginRabbit", props: ["outcome"], emits: ["fill", "done"], template: "<b class='rabbit-stub' :data-outcome='outcome' />" });
+  const RabbitStub = defineComponent({ name: "LoginRabbit", props: ["outcome", "button"], emits: ["fill", "done"], template: "<b class='rabbit-stub' :data-outcome='outcome' :data-measured='typeof button().width' />" });
 
   function stillDevice(reduced: boolean) {
     vi.stubGlobal("matchMedia", (query: string) => ({ matches: reduced && query.includes("reduced-motion"), addEventListener() {}, removeEventListener() {} }));
@@ -196,6 +305,7 @@ describe("LoginPage with the rabbit", () => {
     const stub = wrapper.findComponent(RabbitStub);
 
     expect(stub.attributes("data-outcome")).toBe("success");
+    expect(stub.attributes("data-measured")).toBe("number");
     expect(wrapper.get(".login-form__submit-inner").classes()).toContain("login-form__submit-inner--melted");
     expect(wrapper.get(".login-form__submit").classes()).toContain("login-form__submit--shown");
     expect(wrapper.get('[role="status"]').text()).toBe("Вход выполнен");
@@ -215,12 +325,14 @@ describe("LoginPage with the rabbit", () => {
     const { wrapper } = await page(WRONG);
     expect(wrapper.findComponent(RabbitStub).attributes("data-outcome")).toBe("failure");
     expect(wrapper.get(".auth__card").classes()).not.toContain("auth__card--error");
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
 
     wrapper.findComponent(RabbitStub).vm.$emit("done");
     await flushPromises();
 
     expect(wrapper.find(".rabbit-stub").exists()).toBe(false);
     expect(wrapper.get(".auth__card").classes()).toContain("auth__card--error");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Неверный логин или пароль");
     wrapper.unmount();
   });
 

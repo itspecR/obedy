@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { LunchState } from "../../api/lunch";
 import { formatTime } from "../../format/dateTime";
+import { NO_BOX, boxOf, type Box } from "../../rabbit/morph";
 import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import { countdownText, countdownTone, formatClock, formatMinutes, lunchProgress, remainingSeconds, returnBy, secondsUntil } from "./countdown";
@@ -9,13 +10,13 @@ import LunchRabbit from "./LunchRabbit.vue";
 import { LUNCH_STATUS, MEASURED_STATUSES } from "./lunchStatus";
 
 export interface RabbitView {
-  fresh: boolean;
   still: boolean;
+  from: Box | null;
   parting: boolean;
 }
 
 const props = defineProps<{ state: LunchState; now: number; busy: boolean; rabbit?: RabbitView | null }>();
-const emit = defineEmits<{ start: []; finish: []; undo: []; parted: [] }>();
+const emit = defineEmits<{ start: [button: Box]; finish: []; undo: []; parted: [] }>();
 
 const today = computed(() => props.state.today);
 const ongoing = computed(() => today.value?.status === "ongoing");
@@ -29,6 +30,16 @@ const undoLeft = computed(() => (props.state.undo_until ? secondsUntil(props.sta
 const deadline = computed(() => (today.value ? formatTime(returnBy(today.value.started_at, today.value.limit_minutes)) : ""));
 const finishedRange = computed(() => (today.value?.ended_at ? `${formatTime(today.value.started_at)}–${formatTime(today.value.ended_at)}` : ""));
 const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includes(today.value.status) ? ` · ${formatMinutes(today.value.duration_seconds)}` : ""));
+
+const returned = ref<InstanceType<typeof AppButton> | null>(null);
+
+function pressed(event: Event): Box {
+  return boxOf(event.currentTarget as Element);
+}
+
+function returnedBox(): Box {
+  return returned.value ? boxOf(returned.value.$el as Element) : NO_BOX;
+}
 </script>
 
 <template>
@@ -40,13 +51,14 @@ const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includ
 
     <template v-else-if="today && rabbit?.parting">
       <p class="control__title">Вы вернулись вовремя</p>
-      <LunchRabbit :progress="progress" :fresh="false" :still="rabbit.still" parting @parted="emit('parted')" />
+      <LunchRabbit :progress="progress" :still="rabbit.still" parting :button="returnedBox" @parted="emit('parted')" />
+      <AppButton ref="returned" class="control__main control__main--left" variant="primary" block disabled>Вернулся</AppButton>
     </template>
 
     <template v-else-if="today && ongoing">
       <p class="control__label">{{ remaining < 0 ? "Время обеда вышло" : "До конца обеда" }}</p>
       <p class="control__clock numeric" :class="`control__clock--${tone}`" role="timer">{{ countdownText(remaining) }}</p>
-      <LunchRabbit v-if="rabbit" :progress="progress" :fresh="rabbit.fresh" :still="rabbit.still" :parting="false" :late="remaining < 0" />
+      <LunchRabbit v-if="rabbit" :progress="progress" :still="rabbit.still" :from="rabbit.from" :late="remaining < 0" />
       <p class="control__note">Ушли в {{ formatTime(today.started_at) }} · вернуться до {{ deadline }}</p>
       <AppButton class="control__main" variant="primary" block :disabled="busy" @click="emit('finish')">Вернулся</AppButton>
       <AppButton v-if="undoLeft > 0" variant="ghost" size="small" :disabled="busy" @click="emit('undo')">
@@ -61,7 +73,7 @@ const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includ
     </template>
 
     <template v-else-if="state.can_start">
-      <AppButton class="control__main" variant="primary" block :disabled="busy" @click="emit('start')">Ушёл на обед</AppButton>
+      <AppButton class="control__main" variant="primary" block :disabled="busy" @click="emit('start', pressed($event))">Ушёл на обед</AppButton>
       <p class="control__note">Лимит — {{ state.limit_minutes }} мин. Отменить отметку можно в первые {{ formatMinutes(state.undo_seconds) }}.</p>
     </template>
 
@@ -126,6 +138,10 @@ const finishedDuration = computed(() => (today.value && MEASURED_STATUSES.includ
   max-width: 320px;
   min-height: 52px;
   font-size: var(--text-h3);
+}
+
+.control__main--left {
+  visibility: hidden;
 }
 
 @media (max-width: 560px) {

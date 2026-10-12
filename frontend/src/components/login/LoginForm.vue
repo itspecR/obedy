@@ -5,6 +5,7 @@ import { ApiError } from "../../api/http";
 import { useSession } from "../../stores/session";
 import AppButton from "../ui/AppButton.vue";
 import TextField from "../ui/TextField.vue";
+import { NO_BOX, boxOf, type Box } from "../../rabbit/morph";
 import { isAutofilled } from "./autofill";
 
 const AUTOFILL_CHECKS_MS = [100, 500, 1500];
@@ -56,6 +57,11 @@ function reject(message: string): void {
   password.value = "";
   autofilled.value = false;
   emit("failure");
+}
+
+function buttonBox(): Box {
+  const button = form.value?.querySelector("button[type=submit]");
+  return button ? boxOf(button) : NO_BOX;
 }
 
 async function focusPassword(): Promise<void> {
@@ -112,14 +118,14 @@ async function submit(): Promise<void> {
       :disabled="busy"
       @update:model-value="typedPassword"
     />
-    <Transition name="login-alert">
-      <p v-if="error" class="login-form__error" role="alert">{{ error }}</p>
+    <Transition name="login-alert" :css="!melted">
+      <p v-if="error && !melted" class="login-form__error" role="alert">{{ error }}</p>
     </Transition>
     <div class="login-form__submit" :class="{ 'login-form__submit--shown': ready }" :inert="!ready">
       <div class="login-form__submit-inner" :class="{ 'login-form__submit-inner--melted': melted }">
         <AppButton type="submit" variant="primary" block :disabled="busy">{{ busy ? "Входим…" : "Войти →" }}</AppButton>
       </div>
-      <div class="login-form__launch"><slot name="launch" /></div>
+      <div class="login-form__launch"><slot name="launch" :button="buttonBox" /></div>
     </div>
     <div class="login-form__help-box">
       <button type="button" class="login-form__link" :aria-expanded="showHelp" @click="showHelp = !showHelp">Не получается войти?</button>
@@ -169,16 +175,10 @@ async function submit(): Promise<void> {
 .login-form__submit-inner {
   min-height: 0;
   overflow: hidden;
-  transition:
-    opacity var(--reveal) ease,
-    transform var(--reveal) ease,
-    filter var(--reveal) ease;
 }
 
 .login-form__submit-inner--melted {
-  opacity: 0;
-  transform: scale(0.6);
-  filter: blur(6px);
+  visibility: hidden;
 }
 
 .login-form__launch {

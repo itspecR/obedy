@@ -1,12 +1,14 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent } from "vue";
+import { defineComponent, nextTick } from "vue";
 import type { Lunch, LunchState } from "../src/api/lunch";
 import { lunchProgress } from "../src/components/lunch/countdown";
 import LunchControl from "../src/components/lunch/LunchControl.vue";
 import LunchRabbit from "../src/components/lunch/LunchRabbit.vue";
+import ButtonMorph from "../src/components/rabbit/ButtonMorph.vue";
 import { useToasts } from "../src/composables/useToasts";
+import { MORPH_MS, SWAP_IN, SWAP_OUT, type Box } from "../src/rabbit/morph";
 import LunchPage from "../src/pages/LunchPage.vue";
 import { useSession } from "../src/stores/session";
 import { routeFetch } from "./helpers";
@@ -26,6 +28,10 @@ function state(overrides: Partial<LunchState> = {}): LunchState {
 
 const SpriteStub = defineComponent({ name: "RabbitSprite", props: ["scene", "speed", "still", "repeat"], emits: ["ended"], template: "<i :data-scene='scene' :data-still='still' />" });
 const stubs = { RabbitSprite: SpriteStub };
+const BUTTON: Box = { left: 20, top: 400, width: 300, height: 48 };
+const morphs = () => document.body.querySelectorAll(".button-morph").length;
+
+enableAutoUnmount(afterEach);
 
 afterEach(() => {
   vi.useRealTimers();
@@ -41,8 +47,9 @@ describe("lunch progress", () => {
 });
 
 describe("LunchRabbit", () => {
-  const rabbit = (props: Partial<{ progress: number; fresh: boolean; still: boolean; parting: boolean; late: boolean }> = {}) =>
-    mount(LunchRabbit, { props: { progress: 0.5, fresh: false, still: false, parting: false, ...props }, global: { stubs } });
+  const rabbit = (props: Partial<{ progress: number; still: boolean; from: Box | null; parting: boolean; button: () => Box; late: boolean }> = {}) =>
+    mount(LunchRabbit, { props: { progress: 0.5, still: false, ...props }, global: { stubs } });
+  const hidden = (wrapper: ReturnType<typeof rabbit>) => wrapper.get(".lunch-rabbit__body").classes().includes("lunch-rabbit__body--hidden");
   const scene = (wrapper: ReturnType<typeof rabbit>) => wrapper.get("i").attributes("data-scene");
   const end = async (wrapper: ReturnType<typeof rabbit>) => {
     wrapper.findComponent(SpriteStub).vm.$emit("ended");
@@ -56,28 +63,40 @@ describe("LunchRabbit", () => {
     expect(wrapper.get(".lunch-rabbit__runner").attributes("style")).toContain("* 0.25)");
   });
 
-  it("appears from the button, starts and then runs after going to lunch", async () => {
+  it("flows out of the button, starts and then runs after going to lunch", async () => {
     vi.useFakeTimers();
-    const wrapper = rabbit({ fresh: true, progress: 0 });
+    const wrapper = rabbit({ from: BUTTON, progress: 0 });
+    await nextTick();
 
-    expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--appear");
-    await vi.advanceTimersByTimeAsync(250);
+    expect(hidden(wrapper)).toBe(true);
+    expect(morphs()).toBe(1);
+    expect(wrapper.get("i").attributes("data-still")).toBe("true");
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_IN + 10);
+    expect(hidden(wrapper)).toBe(false);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
+    expect(morphs()).toBe(0);
     expect(scene(wrapper)).toBe("start");
+    expect(wrapper.get("i").attributes("data-still")).toBe("false");
     await end(wrapper);
     expect(scene(wrapper)).toBe("run");
   });
 
-  it("nods, closes the hole and melts away after an on-time return", async () => {
+  it("nods, closes the hole and flows back into the button after an on-time return", async () => {
     vi.useFakeTimers();
-    const wrapper = rabbit();
+    const wrapper = rabbit({ button: () => BUTTON });
 
     await wrapper.setProps({ parting: true });
     expect(scene(wrapper)).toBe("ontime");
     expect(wrapper.get(".lunch-rabbit__hole").classes()).not.toContain("rabbit-hole--open");
     await end(wrapper);
-    expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--vanish");
+    await nextTick();
+    expect(morphs()).toBe(1);
+    expect(wrapper.findComponent(ButtonMorph).props("from")).toEqual(BUTTON);
+    expect(hidden(wrapper)).toBe(false);
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_OUT + 10);
+    expect(hidden(wrapper)).toBe(true);
     expect(wrapper.emitted("parted")).toBeUndefined();
-    await vi.advanceTimersByTimeAsync(350);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
     expect(wrapper.emitted("parted")).toHaveLength(1);
   });
 
@@ -115,17 +134,18 @@ describe("LunchRabbit", () => {
   });
 
   it("stays still on calm devices and leaves at once", async () => {
-    const wrapper = rabbit({ still: true, fresh: true });
+    const wrapper = rabbit({ still: true, from: BUTTON });
 
     expect(scene(wrapper)).toBe("run");
     expect(wrapper.get("i").attributes("data-still")).toBe("true");
+    expect(morphs()).toBe(0);
     await wrapper.setProps({ parting: true });
     expect(wrapper.emitted("parted")).toHaveLength(1);
   });
 });
 
 describe("LunchControl with the rabbit", () => {
-  const view = { fresh: false, still: false, parting: false };
+  const view = { still: false, from: null, parting: false };
 
   it("shows the rabbit only while on lunch and only when it is switched on", () => {
     const ongoing = state({ today: lunch(), can_start: false });
@@ -148,6 +168,7 @@ describe("LunchControl with the rabbit", () => {
 
     expect(wrapper.text()).toContain("Вы вернулись вовремя");
     expect(wrapper.get(".lunch-rabbit__runner").attributes("style")).toContain("* 0.75)");
+    expect(wrapper.get(".control__main--left").attributes("disabled")).toBeDefined();
   });
 });
 
@@ -175,6 +196,7 @@ describe("LunchPage with the rabbit", () => {
     await flushPromises();
 
     expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--appear");
+    expect(morphs()).toBe(1);
   });
 
   it("plays the goodbye only for an on-time return and then shows the summary", async () => {
