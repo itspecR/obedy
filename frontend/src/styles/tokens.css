@@ -27,6 +27,8 @@
   --primary-hover: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
   --primary-ink: #0b0c0f;
 
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --green: #4fd18b;
   --green-bg: rgba(79, 209, 139, 0.12);
   --green-line: rgba(79, 209, 139, 0.3);

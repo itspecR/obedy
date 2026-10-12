@@ -21,18 +21,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    url("./backdrop-dial.svg") no-repeat right -22vmax bottom -30vmax / 92vmax 92vmax,
-    radial-gradient(ellipse 80% 60% at 85% 100%, var(--green-bg), transparent 70%),
-    var(--canvas);
-}
-
 h1,
 h2,
 h3 {

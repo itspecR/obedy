@@ -66,7 +66,7 @@ async function logout(): Promise<void> {
 .shell--leaving {
   --glass-blur: none;
   --card-fill: var(--surface-glass-strong);
-  animation: shell-fold 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: shell-fold 520ms var(--ease-in-out) forwards;
   pointer-events: none;
   will-change: transform, opacity;
 }
