@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import BrandMark from "../ui/BrandMark.vue";
-import { refusing, type AuthState } from "./authState";
+import AuthBadge from "./AuthBadge.vue";
+import { badgeOf, type AuthState } from "./authState";
 
 const props = withDefaults(defineProps<{ title: string; state?: AuthState }>(), { state: "idle" });
 
-const refused = computed(() => refusing(props.state));
+const badge = computed(() => badgeOf(props.state));
 </script>
 
 <template>
@@ -18,13 +19,8 @@ const refused = computed(() => refusing(props.state));
           <slot />
         </div>
       </section>
-      <div v-if="state === 'success'" class="auth__done" role="status">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-        <span class="visually-hidden">Вход выполнен</span>
-      </div>
-      <div v-else-if="refused" class="auth__done auth__done--refused" :class="{ 'auth__done--leaving': state === 'recovery' }" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M7 7l10 10" /><path class="auth__stroke-second" d="M17 7L7 17" /></svg>
-      </div>
+      <AuthBadge v-if="badge" class="auth__badge" :class="{ 'auth__badge--screen': state === 'return' }" :kind="badge.kind" :leaving="badge.leaving" />
+      <span v-if="state === 'success'" class="visually-hidden" role="status">Вход выполнен</span>
     </div>
   </main>
 </template>
@@ -33,7 +29,6 @@ const refused = computed(() => refusing(props.state));
 .auth {
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --collapse: 420ms;
-  --done-size: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,8 +43,19 @@ const refused = computed(() => refusing(props.state));
 }
 
 .auth__card,
-.auth__done {
+.auth__badge {
   grid-area: 1 / 1;
+}
+
+.auth__badge {
+  place-self: center;
+}
+
+.auth__badge--screen {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
 }
 
 .auth__card {
@@ -72,7 +78,7 @@ const refused = computed(() => refusing(props.state));
 
 .auth__card--success,
 .auth__card--failure {
-  animation: auth-collapse var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
+  animation: fold-to-dot var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) 120ms forwards;
   pointer-events: none;
 }
 
@@ -81,61 +87,15 @@ const refused = computed(() => refusing(props.state));
   animation: auth-fade 180ms ease-in forwards;
 }
 
-.auth__card--recovery {
-  animation: auth-collapse var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) reverse backwards;
+.auth__card--recovery,
+.auth__card--return {
+  animation: fold-to-dot var(--collapse) cubic-bezier(0.5, 0, 0.2, 1) reverse backwards;
   pointer-events: none;
 }
 
-.auth__card--recovery .auth__content {
+.auth__card--recovery .auth__content,
+.auth__card--return .auth__content {
   animation: auth-fade 180ms ease-out 240ms reverse backwards;
-}
-
-.auth__done {
-  display: grid;
-  place-items: center;
-  place-self: center;
-  width: var(--done-size);
-  height: var(--done-size);
-  border: 2px solid var(--green);
-  border-radius: 50%;
-  background: var(--green-bg);
-  box-shadow: 0 0 32px var(--green-line);
-  animation: auth-pop 380ms var(--ease-out) 340ms backwards;
-}
-
-.auth__done svg {
-  width: 44px;
-  height: 44px;
-  fill: none;
-  stroke: var(--green);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 24;
-  stroke-dashoffset: 0;
-  animation: auth-draw 360ms ease-out 560ms backwards;
-}
-
-.auth__done--refused {
-  border-color: var(--red);
-  background: var(--red-bg);
-  box-shadow: 0 0 32px var(--red-line);
-}
-
-.auth__done--refused svg {
-  width: 40px;
-  height: 40px;
-  stroke: var(--red);
-  stroke-dasharray: 15;
-  animation: auth-draw-cross 220ms ease-out 560ms backwards;
-}
-
-.auth__done--refused .auth__stroke-second {
-  animation: auth-draw-cross 220ms ease-out 760ms backwards;
-}
-
-.auth__done--leaving {
-  animation: auth-vanish 200ms ease-in forwards;
 }
 
 @keyframes auth-shake {
@@ -160,53 +120,9 @@ const refused = computed(() => refusing(props.state));
   }
 }
 
-@keyframes auth-collapse {
-  60% {
-    border-radius: 160px;
-    opacity: 0.7;
-    transform: scale(0.4);
-  }
-  to {
-    border-radius: 240px;
-    opacity: 0;
-    transform: scale(0.2);
-  }
-}
-
-@keyframes auth-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  70% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes auth-draw {
-  from {
-    stroke-dashoffset: 24;
-  }
-}
-
-@keyframes auth-draw-cross {
-  from {
-    stroke-dashoffset: 15;
-  }
-}
-
-@keyframes auth-vanish {
-  to {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .auth__card--success,
-  .auth__card--failure,
-  .auth__done--leaving {
+  .auth__card--failure {
     visibility: hidden;
   }
 }

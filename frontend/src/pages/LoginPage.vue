@@ -14,7 +14,7 @@ import { preloadScenes } from "../rabbit/frames";
 const SHAKE_MS = 450;
 const SUCCESS_PAUSE_MS = 1100;
 const REFUSAL_PAUSE_MS = 1200;
-const RECOVERY_MS = 420;
+const UNFOLD_MS = 420;
 
 const router = useRouter();
 const state = ref<AuthState>("idle");
@@ -40,8 +40,17 @@ function refuse(): void {
   state.value = "failure";
   after(REFUSAL_PAUSE_MS, () => {
     state.value = "recovery";
-    after(RECOVERY_MS, () => (state.value = "idle"));
+    after(UNFOLD_MS, () => (state.value = "idle"));
   });
+}
+
+function greetReturn(): void {
+  if (!window.history.state?.farewell) {
+    return;
+  }
+  window.history.replaceState({ ...window.history.state, farewell: false }, "");
+  state.value = "return";
+  after(UNFOLD_MS, () => (state.value = "idle"));
 }
 
 function attempt(): void {
@@ -85,6 +94,7 @@ function landed(): void {
 }
 
 onMounted(async () => {
+  greetReturn();
   rabbit.value = !stillMotion() && (await rabbitWanted());
   if (rabbit.value) {
     preloadScenes(["tap", "start", "run", "dive", "no"]);
