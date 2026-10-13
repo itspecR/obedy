@@ -63,6 +63,8 @@ def rules_snapshot(rules):
         "Окно с": clock_text(rules.window_start),
         "Окно до": clock_text(rules.window_end),
         "Анимация с кроликом": switch(rules.rabbit_enabled),
+        "Дни без обеда": switch(rules.missing_enabled),
+        "Считать с": day_text(rules.missing_since) if rules.missing_since else EMPTY,
     }
 
 

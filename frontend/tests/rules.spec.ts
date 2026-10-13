@@ -2,7 +2,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LunchRules } from "../src/api/lunchRules";
-import { draftFrom, formFrom, toggleDay } from "../src/components/rules/draft";
+import { draftFrom, formFrom, toggleDay, withMissing } from "../src/components/rules/draft";
 import { useToasts } from "../src/composables/useToasts";
 import RulesPage from "../src/pages/RulesPage.vue";
 import { useSession } from "../src/stores/session";
@@ -17,6 +17,8 @@ function rules(overrides: Partial<LunchRules> = {}): LunchRules {
     window_enabled: false,
     window_start: "12:00:00",
     window_end: "15:00:00",
+    missing_enabled: false,
+    missing_since: null,
     updated_at: "2026-10-08T09:00:00Z",
     min_limit_minutes: 5,
     max_limit_minutes: 240,
@@ -30,6 +32,15 @@ describe("rules draft", () => {
 
     expect([draft.day_end, draft.window_start, draft.limit_minutes]).toEqual(["18:00", "12:00", "45"]);
     expect(formFrom({ ...draft, limit_minutes: " 30 " }).limit_minutes).toBe(30);
+  });
+
+  it("starts counting days without lunch today unless a date is chosen", () => {
+    const draft = draftFrom(rules());
+
+    expect(draft.missing_since).toBe("");
+    expect(withMissing(draft, true, "2026-10-13")).toMatchObject({ missing_enabled: true, missing_since: "2026-10-13" });
+    expect(withMissing({ ...draft, missing_since: "2026-09-01" }, true, "2026-10-13").missing_since).toBe("2026-09-01");
+    expect(formFrom(withMissing(draft, false, "2026-10-13")).missing_since).toBeNull();
   });
 
   it("toggles weekdays keeping them in order", () => {
@@ -90,9 +101,27 @@ describe("RulesPage", () => {
       window_enabled: true,
       window_start: "12:00",
       window_end: "15:30",
+      missing_enabled: false,
+      missing_since: null,
     });
     expect(useToasts().items.map((toast) => toast.text)).toContain("Правила обеда сохранены");
     expect(wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
+  });
+
+  it("switches on days without lunch with the counting date and an explanation in the info button", async () => {
+    const { spy, wrapper } = await mounted();
+    const missing = wrapper.findAll("[role=switch]").at(-1);
+
+    expect(await infoText(wrapper, "Учитывать дни без обеда")).toContain("Это не нарушение");
+    expect(wrapper.find(".rules__form .date-field").exists()).toBe(false);
+    await missing?.trigger("click");
+    expect(wrapper.get(".rules__form .date-field").text()).toContain("Считать с");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    const sent = bodySentTo(spy, "/api/lunch/rules") as Record<string, unknown>;
+    expect(sent.missing_enabled).toBe(true);
+    expect(sent.missing_since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("shows the server explanation when rules are rejected", async () => {

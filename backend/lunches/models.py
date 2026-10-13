@@ -22,6 +22,8 @@ class LunchRules(models.Model):
     window_start = models.TimeField(default=DEFAULT_WINDOW_START)
     window_end = models.TimeField(default=DEFAULT_WINDOW_END)
     rabbit_enabled = models.BooleanField(default=False)
+    missing_enabled = models.BooleanField(default=False)
+    missing_since = models.DateField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 

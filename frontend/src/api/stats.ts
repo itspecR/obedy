@@ -17,6 +17,8 @@ export interface PersonStats {
   unreturned: number;
   average_minutes: number | null;
   overrun_minutes: number;
+  missing: number;
+  absent: number;
 }
 
 export interface StatsOverview {
@@ -25,6 +27,8 @@ export interface StatsOverview {
   average_minutes: number | null;
   on_time_percent: number | null;
   people: number;
+  missing: number;
+  absent: number;
 }
 
 export interface PersonLunch {
@@ -36,6 +40,7 @@ export interface PersonLunch {
 export interface Stats {
   date_from: string;
   date_to: string;
+  attendance_enabled: boolean;
   overview: StatsOverview;
   people: PersonStats[];
   lunches: PersonLunch[];

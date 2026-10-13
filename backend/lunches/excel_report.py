@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from openpyxl.utils import get_column_letter
 
@@ -29,7 +29,7 @@ from lunches.excel_style import (
     put,
     style_range,
 )
-from lunches.statistics import SECONDS_IN_MINUTE, Period, counts_as_overrun, excess_seconds
+from lunches.statistics import SECONDS_IN_MINUTE, Period, counts_as_overrun, days_of, excess_seconds
 from lunches.status import MEASURED, LunchStatus, duration_of, is_violation, status_of
 
 REPORT_SHEET = "Отчёт"
@@ -40,6 +40,7 @@ LAST_COLUMN = len(COLUMNS)
 WEEKDAYS = ("пн", "вт", "ср", "чт", "пт", "сб", "вс")
 EMPTY = "—"
 DAY_OFF = "Выходной"
+MISSING = "Без обеда"
 EVERYONE = "Все"
 CHOSEN = "Выбрано: {count}"
 DAY_FORMAT = "%d.%m.%Y"
@@ -47,6 +48,7 @@ PERIOD_TEXT = "{first} — {last}"
 TOTAL = "ИТОГО"
 VIOLATIONS_TEXT = "Нарушений: {count}"
 COUNTS_TEXT = "Дней рабочих: {workdays} · выходных: {days_off} · обедов: {lunches}"
+ATTENDANCE_TEXT = " · без обеда: {missing} · отсутствий: {absent}"
 AUTHOR_TEXT = "Составил: {name}"
 SIGNATURE = "Ответственное лицо"
 SIGNATURE_DATE = "«___» ____________ 20___ г."
@@ -65,10 +67,7 @@ class Export:
     calendar: object
     chosen: int
     author: str
-
-
-def days_of(period):
-    return [period.first + timedelta(days=offset) for offset in range((period.last - period.first).days + 1)]
+    attendance: dict | None = None
 
 
 def minutes(seconds):
@@ -94,8 +93,16 @@ def lunch_values(lunch, now):
     return [clock_text(local(lunch.started_at)), returned_at(lunch, now), lunch_minutes(lunch, now), overrun_minutes(lunch, now), status.label]
 
 
-def empty_values(workday):
-    return [EMPTY, EMPTY, None, None, EMPTY if workday else DAY_OFF]
+def empty_status(day, workday, attendance):
+    if not workday:
+        return DAY_OFF
+    if attendance and day in attendance.absent:
+        return attendance.absent[day]
+    return MISSING if attendance and day in attendance.missing else EMPTY
+
+
+def empty_values(day, workday, attendance):
+    return [EMPTY, EMPTY, None, None, empty_status(day, workday, attendance)]
 
 
 def set_columns(sheet):
@@ -132,9 +139,13 @@ def write_column_titles(sheet, row):
         put(sheet, row, column, title, font=font(bold=True), fill=fill(HEADER), alignment=CENTER, border=GRID)
 
 
-def write_day(sheet, row, day, lunch, export):
+def attendance_for(export, account):
+    return (export.attendance or {}).get(account.pk)
+
+
+def write_day(sheet, row, day, lunch, export, attendance):
     workday = export.calendar.is_workday(day)
-    values = lunch_values(lunch, export.now) if lunch else empty_values(workday)
+    values = lunch_values(lunch, export.now) if lunch else empty_values(day, workday, attendance)
     put(sheet, row, 1, day, number_format=DATE_FORMAT, alignment=CENTER, border=GRID)
     put(sheet, row, 2, WEEKDAYS[day.weekday()], alignment=CENTER, border=GRID)
     for column, content in enumerate(values, start=3):
@@ -159,6 +170,8 @@ def write_totals(sheet, row, stats, own, now):
 def write_counts(sheet, row, stats, days, export):
     workdays = sum(1 for day in days if export.calendar.is_workday(day))
     text = COUNTS_TEXT.format(workdays=workdays, days_off=len(days) - workdays, lunches=stats.count)
+    if export.attendance is not None:
+        text += ATTENDANCE_TEXT.format(missing=stats.missing, absent=stats.absent)
     merged(sheet, row, 1, LAST_COLUMN, text, font=font(size=10, color=MUTED), alignment=LEFT)
 
 
@@ -172,7 +185,7 @@ def write_person(sheet, row, stats, own, export):
     sheet.row_dimensions[row].height = PERSON_ROW_HEIGHT
     write_column_titles(sheet, row + 1)
     for offset, day in enumerate(days, start=row + 2):
-        write_day(sheet, offset, day, by_day.get(day), export)
+        write_day(sheet, offset, day, by_day.get(day), export, attendance_for(export, account))
     totals_row = row + 2 + len(days)
     write_totals(sheet, totals_row, stats, own, export.now)
     write_counts(sheet, totals_row + 1, stats, days, export)

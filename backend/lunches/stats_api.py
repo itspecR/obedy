@@ -9,6 +9,7 @@ from ninja.errors import HttpError
 
 from accounts.names import display_name
 from accounts.security import session_auth
+from lunches.attendance import attendance_in
 from lunches.excel import workbook_bytes
 from lunches.excel_report import Export
 from lunches.rules import current_rules
@@ -37,6 +38,8 @@ class PersonStatsOut(Schema):
     unreturned: int
     average_minutes: int | None
     overrun_minutes: int
+    missing: int
+    absent: int
 
 
 class OverviewOut(Schema):
@@ -45,6 +48,8 @@ class OverviewOut(Schema):
     average_minutes: int | None
     on_time_percent: int | None
     people: int
+    missing: int
+    absent: int
 
 
 class PersonLunchOut(Schema):
@@ -56,6 +61,7 @@ class PersonLunchOut(Schema):
 class StatsOut(Schema):
     date_from: date
     date_to: date
+    attendance_enabled: bool
     overview: OverviewOut
     people: list[PersonStatsOut]
     lunches: list[PersonLunchOut]
@@ -73,6 +79,8 @@ def describe_stats(stats):
         unreturned=stats.unreturned,
         average_minutes=stats.average_minutes,
         overrun_minutes=stats.overrun_minutes,
+        missing=stats.missing,
+        absent=stats.absent,
     )
 
 
@@ -88,6 +96,11 @@ def period_for(request, date_from, date_to):
         raise HttpError(400, bad.message) from bad
 
 
+def chosen_attendance(attendance, people):
+    wanted = set(people)
+    return {pk: item for pk, item in attendance.items() if pk in wanted} if wanted else attendance
+
+
 def fresh_now():
     now = timezone.now()
     close_overdue(now)
@@ -98,13 +111,16 @@ def fresh_now():
 def stats(request, date_from: date, date_to: date, person: People = None):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
+    rules = current_rules()
     lunches = lunches_in(period)
     selected = chosen(lunches, person or ())
+    attendance = attendance_in(rules, period, now)
     return StatsOut(
         date_from=period.first,
         date_to=period.last,
-        overview=OverviewOut(**asdict(overview_of(selected, now))),
-        people=[describe_stats(item) for item in people_stats(lunches, now)],
+        attendance_enabled=rules.missing_enabled,
+        overview=OverviewOut(**asdict(overview_of(selected, now, chosen_attendance(attendance, person or ())))),
+        people=[describe_stats(item) for item in people_stats(lunches, now, attendance)],
         lunches=[describe_person_lunch(lunch, now) for lunch in selected] if person else [],
     )
 
@@ -113,9 +129,13 @@ def stats(request, date_from: date, date_to: date, person: People = None):
 def export(request, date_from: date, date_to: date, person: People = None):
     period = period_for(request, date_from, date_to)
     now = fresh_now()
+    rules = current_rules()
     lunches = chosen(lunches_in(period), person or ())
-    calendar = work_calendar(current_rules(), period.first, period.last)
-    export = Export(period, people_stats(lunches, now), lunches, now, calendar, len(set(person or ())), display_name(request.auth.account))
+    attendance = chosen_attendance(attendance_in(rules, period, now), person or ())
+    calendar = work_calendar(rules, period.first, period.last)
+    people = people_stats(lunches, now, attendance)
+    shown = attendance if rules.missing_enabled else None
+    export = Export(period, people, lunches, now, calendar, len(set(person or ())), display_name(request.auth.account), shown)
     response = HttpResponse(workbook_bytes(export), content_type=XLSX_TYPE)
     response["Content-Disposition"] = f'attachment; filename="{FILE_NAME.format(first=period.first, last=period.last)}"'
     return response
