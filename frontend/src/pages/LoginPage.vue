@@ -8,6 +8,7 @@ import LoginForm from "../components/login/LoginForm.vue";
 import LoginRabbit, { type Point } from "../components/login/LoginRabbit.vue";
 import { FILL_MS, type Outcome } from "../components/login/rabbitPlot";
 import ScreenFill from "../components/login/ScreenFill.vue";
+import { markArrival } from "../composables/useArrival";
 import { stillMotion } from "../device/motion";
 import { preloadScenes } from "../rabbit/frames";
 
@@ -29,6 +30,11 @@ function after(ms: number, action: () => void): void {
 
 function enter(): void {
   void router.replace({ name: "home" });
+}
+
+function arrive(): void {
+  markArrival();
+  enter();
 }
 
 function shake(): void {
@@ -80,7 +86,7 @@ function failed(): void {
 function succeeded(): void {
   settle("success", () => {
     state.value = "success";
-    after(SUCCESS_PAUSE_MS, enter);
+    after(SUCCESS_PAUSE_MS, arrive);
   });
 }
 
