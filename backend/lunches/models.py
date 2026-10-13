@@ -40,3 +40,9 @@ class Lunch(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["account", "day"], name="one_lunch_per_day")]
         indexes = [models.Index(fields=["day"])]
+
+
+class TrackingSpan(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="tracking_spans")
+    started_on = models.DateField()
+    ended_on = models.DateField(null=True, blank=True)
