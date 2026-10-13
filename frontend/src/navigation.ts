@@ -21,8 +21,8 @@ const JOURNAL: Section = { name: "log", path: "/log", label: "Log", icon: "journ
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
-  hr: [LUNCH, BOARD, ABSENCES, STATS, RULES],
-  admin: [BOARD, ABSENCES, STATS, STAFF, RULES, ACCESS, DIRECTORY, DATABASE, JOURNAL],
+  hr: [LUNCH, BOARD, STATS, ABSENCES, RULES],
+  admin: [BOARD, STATS, STAFF, ABSENCES, RULES, ACCESS, DIRECTORY, DATABASE, JOURNAL],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {
