@@ -7,7 +7,7 @@ import AddLunchDialog from "../src/components/board/AddLunchDialog.vue";
 import BoardList from "../src/components/board/BoardList.vue";
 import CorrectionDialog from "../src/components/board/CorrectionDialog.vue";
 import DeleteLunchDialog from "../src/components/board/DeleteLunchDialog.vue";
-import { filterEntries, groupEntries } from "../src/components/board/groups";
+import { filterEntries, groupEntries, rosterOf } from "../src/components/board/groups";
 import { useToasts } from "../src/composables/useToasts";
 import BoardPage from "../src/pages/BoardPage.vue";
 import { bodySentTo, chooseDay, choosePerson, chooseTime, routeFetch, shownTime, wasRequested } from "./helpers";
@@ -42,7 +42,18 @@ const RETURNED = entry(5, "Вовремя Вера", { ended_at: iso(30), status
 const ENTRIES = [AWAY_LATE, AWAY_EARLY, OVERRUN, UNRETURNED, RETURNED];
 
 function board(overrides: Partial<Board> = {}): Board {
-  return { server_time: NOON, day: "2026-10-08", today: "2026-10-08", warning_minutes: 5, entries: ENTRIES, ...overrides };
+  return {
+    server_time: NOON,
+    day: "2026-10-08",
+    today: "2026-10-08",
+    warning_minutes: 5,
+    entries: ENTRIES,
+    attendance_enabled: false,
+    pending: [],
+    missing: [],
+    absent: [],
+    ...overrides,
+  };
 }
 
 const names = (entries: BoardEntry[]) => entries.map((item) => item.person.name);
@@ -182,6 +193,45 @@ describe("BoardPage", () => {
 
     expect(titles).toEqual(["На обеде сейчас 2", "С нарушениями 2", "Вернулись вовремя 1"]);
     expect(wrapper.text()).toContain("обновляется каждые 30 секунд");
+  });
+
+  const ATTENDANCE = {
+    attendance_enabled: true,
+    pending: [{ id: 21, name: "Ждущая Жанна", login: "zhanna" }],
+    missing: [{ id: 22, name: "Голодный Глеб", login: "gleb" }],
+    absent: [{ id: 7, person_id: 23, name: "Отпускной Олег", login: "oleg", first: "2026-10-05", last: "2026-10-09", kind: "vacation" as const, note: "" }],
+  };
+
+  it("hides people without lunch while the rule is switched off", async () => {
+    const { wrapper } = await mounted({ "/api/lunch/board": [200, board({ pending: ATTENDANCE.pending })] });
+
+    expect(wrapper.find(".roster").exists()).toBe(false);
+  });
+
+  it("shows who has not had lunch, who went without and who is away", async () => {
+    const { wrapper } = await mounted({ "/api/lunch/board": [200, board(ATTENDANCE)] });
+    const titles = wrapper.findAll(".roster__title").map((title) => title.text());
+
+    expect(titles).toEqual(["Ещё не обедали 1", "Без обеда 1", "Отсутствуют 1"]);
+    expect(wrapper.findAll(".roster")[2].text()).toContain("Отпуск");
+    expect(wrapper.findAll(".roster")[2].text()).toContain("05.10.2026 — 09.10.2026");
+  });
+
+  it("opens quick actions with the person already chosen", async () => {
+    const { wrapper } = await mounted({ "/api/lunch/board": [200, board(ATTENDANCE)], "/api/lunch/board/people": [200, [{ id: 22, name: "Голодный Глеб", login: "gleb" }]] });
+
+    await wrapper.findAll(".roster")[1].get(".more__button").trigger("click");
+    await wrapper.findAll("[role=menuitem]").find((item) => item.text() === "Добавить обед")?.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.findComponent(AddLunchDialog).props("personId")).toBe(22);
+    expect((wrapper.get("input[role=combobox]").element as HTMLInputElement).value).toBe("Голодный Глеб");
+  });
+
+  it("finds people without lunch by search too", () => {
+    const roster = rosterOf(board(ATTENDANCE), "олег");
+
+    expect([roster.pending.length, roster.missing.length, roster.absent.map((row) => row.person.name)]).toEqual([0, 0, ["Отпускной Олег"]]);
   });
 
   it("filters by search and shows no department filter", async () => {

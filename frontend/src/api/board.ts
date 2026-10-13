@@ -1,3 +1,4 @@
+import type { Absence } from "./absences";
 import { request } from "./http";
 import type { Lunch } from "./lunch";
 
@@ -18,6 +19,10 @@ export interface Board {
   today: string;
   warning_minutes: number;
   entries: BoardEntry[];
+  attendance_enabled: boolean;
+  pending: Person[];
+  missing: Person[];
+  absent: Absence[];
 }
 
 export interface CorrectionForm {

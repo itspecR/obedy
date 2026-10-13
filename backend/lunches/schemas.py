@@ -3,6 +3,7 @@ from datetime import date, datetime
 from ninja import Schema
 
 from accounts.names import display_name
+from lunches.models import AbsenceKind
 from lunches.status import LunchStatus, duration_of, status_of
 
 
@@ -43,4 +44,29 @@ def describe_lunch(lunch, now):
         duration_seconds=int(duration_of(lunch, now).total_seconds()),
         auto_closed=lunch.auto_closed,
         correction=correction_of(lunch),
+    )
+
+
+class AbsenceOut(Schema):
+    id: int
+    person_id: int
+    name: str
+    login: str
+    first: date
+    last: date
+    kind: AbsenceKind
+    note: str
+
+
+def describe_absence(absence):
+    account = absence.account
+    return AbsenceOut(
+        id=absence.pk,
+        person_id=account.pk,
+        name=display_name(account),
+        login=account.login,
+        first=absence.first,
+        last=absence.last,
+        kind=absence.kind,
+        note=absence.note,
     )
