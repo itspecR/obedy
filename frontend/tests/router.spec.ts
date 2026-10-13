@@ -76,8 +76,8 @@ describe("decideRoute", () => {
 });
 
 describe("pageTitle", () => {
-  it("adds the app name after the section name", () => {
-    expect(pageTitle({ title: "Обед" })).toBe("Обед · Обеды");
+  it("shows only the section name and falls back to the app name", () => {
+    expect(pageTitle({ title: "Правила обеда" })).toBe("Правила обеда");
     expect(pageTitle({})).toBe("Обеды");
   });
 });

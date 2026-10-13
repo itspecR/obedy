@@ -125,7 +125,7 @@ router.beforeEach(async (to) => {
 const APP_TITLE = "Обеды";
 
 export function pageTitle(meta: RouteMeta): string {
-  return typeof meta.title === "string" ? `${meta.title} · ${APP_TITLE}` : APP_TITLE;
+  return typeof meta.title === "string" ? meta.title : APP_TITLE;
 }
 
 router.afterEach((to) => {
