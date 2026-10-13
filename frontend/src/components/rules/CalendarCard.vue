@@ -7,8 +7,11 @@ import { useToasts } from "../../composables/useToasts";
 import AppButton from "../ui/AppButton.vue";
 import ChoiceField from "../ui/ChoiceField.vue";
 import DateField from "../ui/DateField.vue";
+import InfoTip from "../ui/InfoTip.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import { KIND_OPTIONS, entryOf, kindLabel, kindTone, yearOf, type DayKind } from "./calendarDays";
+
+const CALENDAR_HINT = "Дни, которые отличаются от обычной недели: праздники и рабочие субботы из производственного календаря. Пока здесь пусто, рабочими считаются дни недели, отмеченные выше.";
 
 const year = ref(yearOf(todayIso()));
 const days = ref<CalendarDay[] | null>(null);
@@ -67,9 +70,9 @@ onMounted(() => load(year.value));
 <template>
   <section class="panel calendar" aria-labelledby="calendar-title">
     <header class="calendar__head">
-      <div>
+      <div class="calendar__heading">
         <h2 id="calendar-title" class="calendar__title">Праздники и переносы</h2>
-        <p class="calendar__text">Дни, которые отличаются от обычной недели: праздники и рабочие субботы из производственного календаря.</p>
+        <InfoTip :text="CALENDAR_HINT" label="Праздники и переносы" />
       </div>
       <div class="calendar__years">
         <AppButton variant="ghost" size="small" aria-label="Предыдущий год" :disabled="busy" @click="load(year - 1)">‹</AppButton>
@@ -100,7 +103,7 @@ onMounted(() => load(year.value));
     </ul>
     <div v-else-if="days" class="calendar__empty">
       <p class="calendar__empty-title">На {{ year }} год ничего не добавлено</p>
-      <p class="calendar__empty-text">Пока здесь пусто, рабочими считаются дни недели, отмеченные выше.</p>
+      <p class="calendar__empty-text">Добавьте праздники и рабочие субботы этого года.</p>
     </div>
   </section>
 </template>
@@ -125,10 +128,10 @@ onMounted(() => load(year.value));
   font-size: var(--text-h3);
 }
 
-.calendar__text {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: var(--text-small);
+.calendar__heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .calendar__years {
