@@ -92,7 +92,7 @@ describe("leaving the account", () => {
     expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: true } });
   });
 
-  it("leaves at once without the farewell on calm devices", async () => {
+  it("shows the exit badge for the same time when the system asks for less motion", async () => {
     device(true);
     const spy = routeFetch(LOGOUT);
     const wrapper = shell();
@@ -100,9 +100,13 @@ describe("leaving the account", () => {
     wrapper.findComponent(NavStub).vm.$emit("logout");
     await flushPromises();
 
-    expect(wrapper.find(".farewell").exists()).toBe(false);
+    expect(wrapper.find(".farewell .auth-badge--farewell").exists()).toBe(true);
+    expect(logoutCalls(spy)).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(FAREWELL_MS);
+
     expect(logoutCalls(spy)).toBe(1);
-    expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: false } });
+    expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: true } });
   });
 });
 
