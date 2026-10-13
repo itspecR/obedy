@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { mayLeaveAll } from "../../composables/useLeaveGuard";
-import { stillMotion } from "../../device/motion";
+import { reducedMotion } from "../../device/motion";
 import { useSession } from "../../stores/session";
 import AuthBadge from "../login/AuthBadge.vue";
 import ProfileDialog from "./ProfileDialog.vue";
@@ -32,7 +32,7 @@ async function logout(): Promise<void> {
     return;
   }
   signingOut = true;
-  const farewell = !stillMotion();
+  const farewell = !reducedMotion();
   if (farewell) {
     await waveGoodbye();
   }
