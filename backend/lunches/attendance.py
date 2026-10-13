@@ -8,6 +8,8 @@ from lunches.tracking import spans_by_account, tracked_on
 from lunches.work_calendar import work_calendar
 from staff.status import present_accounts
 
+MISSING_LABEL = "Без обеда"
+
 
 @dataclass
 class Attendance:
@@ -17,6 +19,10 @@ class Attendance:
 
     def __bool__(self):
         return bool(self.missing or self.absent)
+
+    def marks(self):
+        named = {**{day: MISSING_LABEL for day in self.missing}, **self.absent}
+        return sorted(named.items(), reverse=True)
 
 
 def closing_time(rules):

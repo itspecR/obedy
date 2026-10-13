@@ -47,7 +47,7 @@ function state(overrides: Partial<LunchState> = {}): LunchState {
 }
 
 function history(overrides: Partial<LunchHistory> = {}): LunchHistory {
-  return { month: "2026-10", lunches: [], summary: { count: 0, violations: 0, average_minutes: null }, ...overrides };
+  return { month: "2026-10", lunches: [], summary: { count: 0, violations: 0, average_minutes: null, missing: 0 }, attendance_enabled: false, marks: [], ...overrides };
 }
 
 describe("lunch countdown", () => {
@@ -200,7 +200,7 @@ describe("LunchPage", () => {
       correction: { by: "Кадрова Ольга", at: "2026-10-07T12:00:00Z", reason: "Забыл нажать", added: false },
     });
     const unreturned = lunch({ id: 3, day: "2026-10-06", ended_at: "2026-10-06T15:00:00Z", status: "unreturned", auto_closed: true });
-    const month = history({ lunches: [corrected, unreturned], summary: { count: 2, violations: 2, average_minutes: 50 } });
+    const month = history({ lunches: [corrected, unreturned], summary: { count: 2, violations: 2, average_minutes: 50, missing: 0 } });
     const { wrapper } = await mounted({ "/api/lunch/me": [200, state()], "/api/lunch/history": [200, month] });
     const rows = wrapper.findAll(".history__row");
 
@@ -212,6 +212,33 @@ describe("LunchPage", () => {
     expect(rows[0].text()).toContain("Исправлено: Кадрова Ольга, 07.10.2026, 15:00. Причина: Забыл нажать");
     expect(rows[1].text()).toContain("Возврат не отмечен");
     expect(rows[1].get(".history__duration").text()).toBe("—");
+  });
+
+  it("shows own days without lunch and absences between lunches, newest first", async () => {
+    const month = history({
+      lunches: [lunch({ id: 4, day: "2026-10-07" })],
+      summary: { count: 1, violations: 0, average_minutes: 40, missing: 1 },
+      attendance_enabled: true,
+      marks: [
+        { day: "2026-10-08", label: "Без обеда" },
+        { day: "2026-10-02", label: "Больничный" },
+      ],
+    });
+    const { wrapper } = await mounted({ "/api/lunch/me": [200, state()], "/api/lunch/history": [200, month] });
+    const rows = wrapper.findAll(".history__row");
+    const tiles = Object.fromEntries(wrapper.findAll(".history__tile").map((tile) => [tile.get("dt").text(), tile.get("dd").text()]));
+
+    expect(rows.map((row) => row.get(".history__day").text())).toEqual(["чт, 08.10", "ср, 07.10", "пт, 02.10"]);
+    expect(rows[0].text()).toContain("Без обеда");
+    expect(rows[2].text()).toContain("Больничный");
+    expect(tiles["Без обеда"]).toBe("1");
+  });
+
+  it("keeps the history as before while the rule is off", async () => {
+    const { wrapper } = await mounted({ "/api/lunch/me": [200, state()], "/api/lunch/history": [200, history()] });
+
+    expect(wrapper.findAll(".history__tile dt").map((title) => title.text())).not.toContain("Без обеда");
+    expect(wrapper.get(".history__empty").text()).toBe("В этом месяце обедов не отмечено.");
   });
 
   it("explains an empty month and moves to the previous one", async () => {

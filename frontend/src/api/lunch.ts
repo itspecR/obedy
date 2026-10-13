@@ -37,12 +37,20 @@ export interface LunchSummary {
   count: number;
   violations: number;
   average_minutes: number | null;
+  missing: number;
+}
+
+export interface DayMark {
+  day: string;
+  label: string;
 }
 
 export interface LunchHistory {
   month: string;
   lunches: Lunch[];
   summary: LunchSummary;
+  attendance_enabled: boolean;
+  marks: DayMark[];
 }
 
 export const fetchLunchState = () => request<LunchState>("GET", "/lunch/me");

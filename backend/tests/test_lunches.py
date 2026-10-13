@@ -328,7 +328,7 @@ def test_history_via_api_returns_own_month(frozen):
     assert (september["month"], len(september["lunches"]), september["summary"]) == (
         "2026-09",
         1,
-        {"count": 1, "violations": 1, "average_minutes": 50},
+        {"count": 1, "violations": 1, "average_minutes": 50, "missing": 0},
     )
     assert september["lunches"][0]["status"] == "overrun"
     assert (october["month"], october["lunches"]) == ("2026-10", [])

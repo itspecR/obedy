@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from lunches.clock import today
 from lunches.models import Lunch
@@ -34,6 +34,10 @@ def month_start(text, now):
 
 def next_month(first):
     return date(first.year + first.month // MONTHS_IN_YEAR, first.month % MONTHS_IN_YEAR + 1, 1)
+
+
+def last_of_month(first):
+    return next_month(first) - timedelta(days=1)
 
 
 def lunches_of_month(account, first):
