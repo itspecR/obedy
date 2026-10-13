@@ -22,6 +22,9 @@ class Action(models.TextChoices):
     LUNCH_ADDED = "lunch_added", "Добавлен обед"
     LUNCH_DELETED = "lunch_deleted", "Удалён обед"
     LUNCHES_RESET = "lunches_reset", "Обеды сброшены"
+    ABSENCE_ADDED = "absence_added", "Отмечено отсутствие"
+    ABSENCE_CHANGED = "absence_changed", "Изменено отсутствие"
+    ABSENCE_REMOVED = "absence_removed", "Удалено отсутствие"
     RULES_CHANGED = "rules_changed", "Изменены правила обеда"
     CALENDAR_DAY_ADDED = "calendar_day_added", "Добавлен день в календарь"
     CALENDAR_DAY_REMOVED = "calendar_day_removed", "Убран день из календаря"
@@ -53,7 +56,15 @@ CATEGORY_ACTIONS = {
         Action.PROFILE_CHANGED,
         Action.PASSWORD_ISSUED,
     ),
-    Category.LUNCHES: (Action.LUNCH_CORRECTED, Action.LUNCH_ADDED, Action.LUNCH_DELETED, Action.LUNCHES_RESET),
+    Category.LUNCHES: (
+        Action.LUNCH_CORRECTED,
+        Action.LUNCH_ADDED,
+        Action.LUNCH_DELETED,
+        Action.LUNCHES_RESET,
+        Action.ABSENCE_ADDED,
+        Action.ABSENCE_CHANGED,
+        Action.ABSENCE_REMOVED,
+    ),
     Category.SETTINGS: (
         Action.RULES_CHANGED,
         Action.CALENDAR_DAY_ADDED,

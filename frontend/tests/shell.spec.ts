@@ -18,8 +18,8 @@ function navLabels(role: Role): string[] {
 describe("SideNav", () => {
   it("shows the lunch section to everyone and access settings to the admin", () => {
     expect(navLabels("employee")).toEqual(["Обед"]);
-    expect(navLabels("hr")).toEqual(["Обед", "Табло", "Статистика", "Правила"]);
-    expect(navLabels("admin")).toEqual(["Табло", "Статистика", "Сотрудники", "Правила", "Доступ", "Домен", "База", "Log"]);
+    expect(navLabels("hr")).toEqual(["Обед", "Табло", "Отсутствия", "Статистика", "Правила"]);
+    expect(navLabels("admin")).toEqual(["Табло", "Отсутствия", "Статистика", "Сотрудники", "Правила", "Доступ", "Домен", "База", "Log"]);
   });
 
   it("shows the app name and emits profile and logout", async () => {

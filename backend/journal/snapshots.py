@@ -66,6 +66,10 @@ def rules_snapshot(rules):
     }
 
 
+def absence_snapshot(absence):
+    return {"Вид": absence.get_kind_display(), "С": day_text(absence.first), "По": day_text(absence.last), "Комментарий": text(absence.note)}
+
+
 def calendar_day_snapshot(calendar_day):
     return {"Дата": day_text(calendar_day.day), "День": WORKING if calendar_day.working else HOLIDAY}
 
