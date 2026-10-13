@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { errorMessage } from "../api/http";
 import { fetchLunchRules, saveLunchRules, type LunchRules } from "../api/lunchRules";
 import { WEEKDAYS, draftFrom, formFrom, sameDraft, toggleDay, type RulesDraft } from "../components/rules/draft";
+import CalendarCard from "../components/rules/CalendarCard.vue";
 import RabbitSwitch from "../components/rules/RabbitSwitch.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
@@ -83,7 +84,7 @@ onMounted(load);
         <div class="rules__field">
           <span class="rules__head">
             <span id="workdays-label" class="rules__label">Рабочие дни</span>
-            <InfoTip text="В нерабочие дни кнопки обеда нет" label="Рабочие дни" />
+            <InfoTip text="В нерабочие дни кнопки обеда нет. Праздники и рабочие субботы задаются ниже, в блоке «Праздники и переносы»" label="Рабочие дни" />
           </span>
           <div class="rules__days" role="group" aria-labelledby="workdays-label">
             <AppButton
@@ -129,6 +130,7 @@ onMounted(load);
       </div>
     </form>
     <div v-else class="panel rules__card rules__loading" aria-busy="true">Загружаем…</div>
+    <CalendarCard />
     <RabbitSwitch v-if="isAdmin" />
   </section>
 </template>

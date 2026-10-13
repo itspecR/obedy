@@ -46,3 +46,8 @@ class TrackingSpan(models.Model):
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="tracking_spans")
     started_on = models.DateField()
     ended_on = models.DateField(null=True, blank=True)
+
+
+class CalendarDay(models.Model):
+    day = models.DateField(unique=True)
+    working = models.BooleanField()

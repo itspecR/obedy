@@ -29,7 +29,6 @@ from lunches.excel_style import (
     put,
     style_range,
 )
-from lunches.rules import is_workday
 from lunches.statistics import SECONDS_IN_MINUTE, Period, counts_as_overrun, excess_seconds
 from lunches.status import MEASURED, LunchStatus, duration_of, is_violation, status_of
 
@@ -63,7 +62,7 @@ class Export:
     people: list
     lunches: list
     now: datetime
-    rules: object
+    calendar: object
     chosen: int
     author: str
 
@@ -134,7 +133,7 @@ def write_column_titles(sheet, row):
 
 
 def write_day(sheet, row, day, lunch, export):
-    workday = is_workday(export.rules, day)
+    workday = export.calendar.is_workday(day)
     values = lunch_values(lunch, export.now) if lunch else empty_values(workday)
     put(sheet, row, 1, day, number_format=DATE_FORMAT, alignment=CENTER, border=GRID)
     put(sheet, row, 2, WEEKDAYS[day.weekday()], alignment=CENTER, border=GRID)
@@ -158,7 +157,7 @@ def write_totals(sheet, row, stats, own, now):
 
 
 def write_counts(sheet, row, stats, days, export):
-    workdays = sum(1 for day in days if is_workday(export.rules, day))
+    workdays = sum(1 for day in days if export.calendar.is_workday(day))
     text = COUNTS_TEXT.format(workdays=workdays, days_off=len(days) - workdays, lunches=stats.count)
     merged(sheet, row, 1, LAST_COLUMN, text, font=font(size=10, color=MUTED), alignment=LEFT)
 

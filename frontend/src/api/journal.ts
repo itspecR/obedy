@@ -18,6 +18,8 @@ export type JournalAction =
   | "lunch_deleted"
   | "lunches_reset"
   | "rules_changed"
+  | "calendar_day_added"
+  | "calendar_day_removed"
   | "network_added"
   | "network_removed"
   | "private_networks_changed"

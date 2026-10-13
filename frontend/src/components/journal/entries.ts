@@ -32,6 +32,8 @@ export const ACTIONS: Record<JournalAction, ActionInfo> = {
   lunch_deleted: { label: "Удалён обед", tone: "alarm" },
   lunches_reset: { label: "Обеды сброшены", tone: "alarm" },
   rules_changed: { label: "Изменены правила обеда", tone: "neutral" },
+  calendar_day_added: { label: "Добавлен день в календарь", tone: "neutral" },
+  calendar_day_removed: { label: "Убран день из календаря", tone: "neutral" },
   network_added: { label: "Добавлен адрес доступа", tone: "neutral" },
   network_removed: { label: "Удалён адрес доступа", tone: "alarm" },
   private_networks_changed: { label: "Изменён доступ из локальной сети", tone: "neutral" },
