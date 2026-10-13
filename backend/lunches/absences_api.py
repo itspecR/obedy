@@ -3,13 +3,13 @@ from datetime import date
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts.names import display_name
 from accounts.security import session_auth
 from journal.entries import differences, record, removed
 from journal.models import Action
 from journal.snapshots import absence_snapshot
 from lunches.absences import AbsenceDraft, AbsenceRefused, absences_between, add_absence, change_absence, remove_absence
 from lunches.models import NOTE_LIMIT, Absence, AbsenceKind
+from lunches.schemas import AbsenceOut, describe_absence
 from lunches.statistics import BadPeriod, checked_period
 from lunches.supervision import require_supervisor
 from staff.status import present_accounts
@@ -19,17 +19,6 @@ NOT_FOUND = "Отсутствие не найдено. Обновите стра
 PERSON_NOT_FOUND = "Сотрудник не найден. Обновите страницу"
 
 router = Router(tags=["Отсутствия"])
-
-
-class AbsenceOut(Schema):
-    id: int
-    person_id: int
-    name: str
-    login: str
-    first: date
-    last: date
-    kind: AbsenceKind
-    note: str
 
 
 class AbsenceIn(Schema):
@@ -44,20 +33,6 @@ class AbsenceIn(Schema):
 
 class NewAbsenceIn(AbsenceIn):
     account_id: int
-
-
-def describe_absence(absence):
-    account = absence.account
-    return AbsenceOut(
-        id=absence.pk,
-        person_id=account.pk,
-        name=display_name(account),
-        login=account.login,
-        first=absence.first,
-        last=absence.last,
-        kind=absence.kind,
-        note=absence.note,
-    )
 
 
 def refused_as_bad_request(action):

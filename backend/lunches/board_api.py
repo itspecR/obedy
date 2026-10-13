@@ -11,8 +11,10 @@ from journal.models import Action
 from journal.snapshots import day_text, lunch_snapshot
 from lunches.clock import today
 from lunches.corrections import Correction, CorrectionRefused, add_lunch, can_receive_lunch, correct_lunch, delete_lunch
+from lunches.attendance import roster_of
 from lunches.models import REASON_LIMIT, Lunch
-from lunches.schemas import LunchOut, describe_lunch
+from lunches.rules import current_rules
+from lunches.schemas import AbsenceOut, LunchOut, describe_absence, describe_lunch
 from lunches.service import WARNING_MINUTES, close_overdue
 from lunches.supervision import require_supervisor
 from staff.status import gone, present_accounts
@@ -41,6 +43,10 @@ class BoardOut(Schema):
     today: date
     warning_minutes: int
     entries: list[BoardEntryOut]
+    attendance_enabled: bool
+    pending: list[PersonOut]
+    missing: list[PersonOut]
+    absent: list[AbsenceOut]
 
 
 class CorrectionIn(Schema):
@@ -106,12 +112,18 @@ def board(request, day: date | None = None):
     now = timezone.now()
     close_overdue(now)
     shown = day or today(now)
+    rules = current_rules()
+    roster = roster_of(rules, shown, now)
     return BoardOut(
         server_time=now,
         day=shown,
         today=today(now),
         warning_minutes=WARNING_MINUTES,
         entries=[describe_entry(lunch, now) for lunch in lunches_of_day(shown)],
+        attendance_enabled=rules.missing_enabled,
+        pending=[describe_person(account) for account in roster.pending],
+        missing=[describe_person(account) for account in roster.missing],
+        absent=[describe_absence(absence) for absence in roster.absent],
     )
 
 

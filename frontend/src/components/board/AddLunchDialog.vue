@@ -10,11 +10,11 @@ import PersonPicker from "../ui/PersonPicker.vue";
 import TextAreaField from "../ui/TextAreaField.vue";
 import TimeField from "../ui/TimeField.vue";
 
-const props = defineProps<{ day: string }>();
+const props = withDefaults(defineProps<{ day: string; personId?: number | null }>(), { personId: null });
 const emit = defineEmits<{ close: []; saved: [entry: BoardEntry] }>();
 
 const people = ref<Person[]>([]);
-const personId = ref<number | null>(null);
+const personId = ref<number | null>(props.personId);
 const startedAt = ref("");
 const endedAt = ref("");
 const reason = ref("");

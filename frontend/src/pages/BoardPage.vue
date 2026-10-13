@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import type { Absence } from "../api/absences";
 import { fetchBoard, type Board, type BoardEntry } from "../api/board";
 import { errorMessage } from "../api/http";
+import AbsenceDialog from "../components/absences/AbsenceDialog.vue";
 import AddLunchDialog from "../components/board/AddLunchDialog.vue";
 import BoardList from "../components/board/BoardList.vue";
+import BoardRoster from "../components/board/BoardRoster.vue";
 import CorrectionDialog from "../components/board/CorrectionDialog.vue";
 import DeleteLunchDialog from "../components/board/DeleteLunchDialog.vue";
-import { filterEntries, groupEntries } from "../components/board/groups";
+import { filterEntries, groupEntries, rosterOf, type RosterRow } from "../components/board/groups";
 import AppButton from "../components/ui/AppButton.vue";
 import DateField from "../components/ui/DateField.vue";
 import PageHeader from "../components/ui/PageHeader.vue";
@@ -24,12 +27,16 @@ const loadError = ref("");
 const editing = ref<BoardEntry | null>(null);
 const deleting = ref<BoardEntry | null>(null);
 const adding = ref(false);
+const addingFor = ref<number | null>(null);
+const absenceDialog = ref<{ absence: Absence | null; personId: number | null } | null>(null);
 const { now, sync } = useServerClock();
 const { fail } = useToasts();
 let refresher: number | undefined;
 
 const isToday = computed(() => Boolean(board.value && board.value.day === board.value.today));
 const groups = computed(() => groupEntries(filterEntries(board.value?.entries ?? [], search.value), now.value));
+const roster = computed(() => (board.value?.attendance_enabled ? rosterOf(board.value, search.value) : null));
+const hasRoster = computed(() => Boolean(roster.value && (roster.value.pending.length || roster.value.missing.length || roster.value.absent.length)));
 const subtitle = computed(() => {
   if (!board.value) {
     return "Кто сейчас на обеде и кто вернулся";
@@ -75,11 +82,33 @@ function forget(lunchId: number): void {
 
 function added(): void {
   adding.value = false;
+  addingFor.value = null;
   void load();
 }
 
+function chooseRoster(row: RosterRow, key: string): void {
+  if (key === "lunch") {
+    addingFor.value = row.person.id;
+    adding.value = true;
+  } else if (key === "absence") {
+    absenceDialog.value = { absence: null, personId: row.person.id };
+  } else {
+    absenceDialog.value = { absence: row.absence, personId: row.person.id };
+  }
+}
+
+function absenceSaved(): void {
+  absenceDialog.value = null;
+  void load();
+}
+
+function closeAdding(): void {
+  adding.value = false;
+  addingFor.value = null;
+}
+
 function refreshToday(): void {
-  if (document.visibilityState === "visible" && isToday.value && !editing.value && !deleting.value && !adding.value) {
+  if (document.visibilityState === "visible" && isToday.value && !editing.value && !deleting.value && !adding.value && !absenceDialog.value) {
     void load();
   }
 }
@@ -149,10 +178,23 @@ onUnmounted(() => {
           @delete="deleting = $event"
         />
       </div>
+      <div v-if="roster && hasRoster" class="board__columns" :class="{ 'board__columns--archive': !isToday }">
+        <BoardRoster v-if="roster.pending.length" title="Ещё не обедали" badge="Ещё нет" :rows="roster.pending" @select="chooseRoster" />
+        <BoardRoster v-if="roster.missing.length" title="Без обеда" badge="Без обеда" :rows="roster.missing" @select="chooseRoster" />
+        <BoardRoster v-if="roster.absent.length" title="Отсутствуют" badge="" :rows="roster.absent" @select="chooseRoster" />
+      </div>
     </template>
     <CorrectionDialog v-if="editing" :entry="editing" @close="editing = null" @saved="replace" />
     <DeleteLunchDialog v-if="deleting" :entry="deleting" @close="deleting = null" @deleted="forget" />
-    <AddLunchDialog v-if="adding && board" :day="board.day" @close="adding = false" @saved="added" />
+    <AddLunchDialog v-if="adding && board" :day="board.day" :person-id="addingFor" @close="closeAdding" @saved="added" />
+    <AbsenceDialog
+      v-if="absenceDialog && board"
+      :absence="absenceDialog.absence"
+      :person-id="absenceDialog.personId"
+      :day="board.day"
+      @close="absenceDialog = null"
+      @saved="absenceSaved"
+    />
   </section>
 </template>
 
