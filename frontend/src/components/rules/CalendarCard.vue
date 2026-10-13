@@ -81,14 +81,14 @@ onMounted(() => load(year.value));
       </div>
     </header>
 
-    <form class="calendar__form" novalidate @submit.prevent="add">
+    <div class="calendar__form">
       <div class="calendar__date">
         <DateField v-model="newDay" label="Дата" :disabled="busy" />
         <p v-if="dayError" class="calendar__error" role="alert">{{ dayError }}</p>
       </div>
       <ChoiceField v-model="kind" label="Этот день" :options="KIND_OPTIONS" :disabled="busy" />
-      <AppButton type="submit" variant="primary" class="calendar__add" :disabled="busy">Добавить</AppButton>
-    </form>
+      <AppButton variant="primary" class="calendar__add" :disabled="busy" @click="add">Добавить</AppButton>
+    </div>
 
     <div v-if="loadError" class="calendar__failed" role="alert">
       <p>{{ loadError }}</p>

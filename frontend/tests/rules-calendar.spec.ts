@@ -61,7 +61,7 @@ describe("CalendarCard", () => {
     const { spy, wrapper } = await mounted({ [yearUrl(YEAR)]: [200, []], [CALENDAR]: [201, [{ day: HOLIDAY, working: false }]] });
 
     await chooseDay(wrapper, "Дата", HOLIDAY);
-    await wrapper.get("form").trigger("submit");
+    await wrapper.get(".calendar__add").trigger("click");
     await flushPromises();
 
     expect(bodySentTo(spy, CALENDAR)).toEqual({ day: HOLIDAY, working: false });
@@ -72,7 +72,7 @@ describe("CalendarCard", () => {
   it("asks for a date before adding", async () => {
     const { spy, wrapper } = await mounted({ [yearUrl(YEAR)]: [200, []] });
 
-    await wrapper.get("form").trigger("submit");
+    await wrapper.get(".calendar__add").trigger("click");
 
     expect(wrapper.get(".calendar__error").text()).toBe("Выберите дату");
     expect(wasRequested(spy, CALENDAR, "POST")).toBe(false);
@@ -82,7 +82,7 @@ describe("CalendarCard", () => {
     const { wrapper } = await mounted({ [yearUrl(YEAR)]: [200, []], [CALENDAR]: [400, { detail: "Этот день и так выходной по правилам" }] });
 
     await chooseDay(wrapper, "Дата", HOLIDAY);
-    await wrapper.get("form").trigger("submit");
+    await wrapper.get(".calendar__add").trigger("click");
     await flushPromises();
 
     expect(useToasts().items.map((toast) => toast.text)).toContain("Этот день и так выходной по правилам");

@@ -113,15 +113,25 @@ describe("RulesPage", () => {
     const missing = wrapper.findAll("[role=switch]").at(-1);
 
     expect(await infoText(wrapper, "Учитывать дни без обеда")).toContain("Это не нарушение");
-    expect(wrapper.find(".rules__form .date-field").exists()).toBe(false);
+    const countingFrom = () => wrapper.findAll(".rules__form .date-field").filter((field) => field.text().includes("Считать с"));
+    expect(countingFrom()).toHaveLength(0);
     await missing?.trigger("click");
-    expect(wrapper.get(".rules__form .date-field").text()).toContain("Считать с");
+    expect(countingFrom()).toHaveLength(1);
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
     const sent = bodySentTo(spy, "/api/lunch/rules") as Record<string, unknown>;
     expect(sent.missing_enabled).toBe(true);
     expect(sent.missing_since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("places holidays right under the working day and keeps them out of the rules form submit", async () => {
+    const { spy, wrapper } = await mounted();
+    const titles = wrapper.findAll(".rules__form h2").map((title) => title.text());
+
+    expect(titles.slice(0, 3)).toEqual(["Длительность", "Рабочий день", "Праздники и переносы"]);
+    await wrapper.get(".calendar__add").trigger("click");
+    expect(spy.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "PUT")).toBe(false);
   });
 
   it("shows the server explanation when rules are rejected", async () => {
