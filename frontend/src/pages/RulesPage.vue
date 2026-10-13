@@ -113,6 +113,8 @@ onMounted(load);
         />
       </div>
 
+      <CalendarCard />
+
       <div class="panel rules__card">
         <SwitchField
           label="Окно обеда"
@@ -145,7 +147,6 @@ onMounted(load);
       </div>
     </form>
     <div v-else class="panel rules__card rules__loading" aria-busy="true">Загружаем…</div>
-    <CalendarCard />
     <RabbitSwitch v-if="isAdmin" />
   </section>
 </template>
