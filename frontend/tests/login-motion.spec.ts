@@ -2,6 +2,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LoginForm from "../src/components/login/LoginForm.vue";
+import { takeArrival } from "../src/composables/useArrival";
 import { bodySentTo, routeFetch } from "./helpers";
 import { me } from "./people";
 
@@ -184,8 +185,10 @@ describe("LoginPage", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("Вход выполнен");
     await vi.advanceTimersByTimeAsync(1000);
     expect(replace).not.toHaveBeenCalled();
+    expect(takeArrival()).toBe(false);
     await vi.advanceTimersByTimeAsync(100);
     expect(replace).toHaveBeenCalledWith({ name: "home" });
+    expect(takeArrival()).toBe(true);
     wrapper.unmount();
   });
 });

@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
 import AppShell from "../src/components/shell/AppShell.vue";
+import { markArrival, takeArrival } from "../src/composables/useArrival";
 import { useLightMode } from "../src/composables/useLightMode";
 import { reducedMotion, stillMotion } from "../src/device/motion";
 import { useSession } from "../src/stores/session";
@@ -107,6 +108,40 @@ describe("leaving the account", () => {
 
     expect(logoutCalls(spy)).toBe(1);
     expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: true } });
+  });
+});
+
+describe("arriving after a successful login", () => {
+  it("unfolds the site out of the checkmark once and ends with its own animation, mirroring the exit", async () => {
+    device(false);
+    routeFetch(LOGOUT);
+    markArrival();
+    const wrapper = shell();
+    await flushPromises();
+
+    expect(wrapper.get(".shell").classes()).toContain("shell--arriving");
+    expect(wrapper.get(".farewell .auth-badge").classes()).toEqual(expect.arrayContaining(["auth-badge--success", "auth-badge--leaving"]));
+    expect(takeArrival()).toBe(false);
+
+    await wrapper.get(".shell nav").trigger("animationend");
+    expect(wrapper.get(".shell").classes()).toContain("shell--arriving");
+    await wrapper.get(".shell").trigger("animationend");
+
+    expect(wrapper.get(".shell").classes()).not.toContain("shell--arriving");
+    expect(wrapper.find(".farewell").exists()).toBe(false);
+  });
+
+  it("opens plainly on reload or with less motion", async () => {
+    device(true);
+    routeFetch(LOGOUT);
+    markArrival();
+    const calm = shell();
+    device(false);
+    const reloaded = shell();
+    await flushPromises();
+
+    expect(calm.get(".shell").classes()).not.toContain("shell--arriving");
+    expect(reloaded.get(".shell").classes()).not.toContain("shell--arriving");
   });
 });
 

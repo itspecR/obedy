@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { takeArrival } from "../../composables/useArrival";
 import { mayLeaveAll } from "../../composables/useLeaveGuard";
+import { reducedMotion } from "../../device/motion";
 import { useSession } from "../../stores/session";
 import AuthBadge from "../login/AuthBadge.vue";
 import ProfileDialog from "./ProfileDialog.vue";
@@ -13,6 +15,7 @@ const session = useSession();
 const router = useRouter();
 const profileOpen = ref(false);
 const leaving = ref(false);
+const arriving = ref(false);
 const origin = ref("");
 let signingOut = false;
 
@@ -20,8 +23,24 @@ function pause(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function waveGoodbye(): Promise<void> {
+function aimAtScreenCenter(): void {
   origin.value = `50% ${window.scrollY + window.innerHeight / 2}px`;
+}
+
+function welcome(): void {
+  if (!takeArrival() || reducedMotion()) {
+    return;
+  }
+  aimAtScreenCenter();
+  arriving.value = true;
+}
+
+function arrived(): void {
+  arriving.value = false;
+}
+
+async function waveGoodbye(): Promise<void> {
+  aimAtScreenCenter();
   leaving.value = true;
   await pause(FAREWELL_MS);
 }
@@ -35,10 +54,18 @@ async function logout(): Promise<void> {
   await session.signOut();
   await router.replace({ name: "login", state: { farewell: true } });
 }
+
+onMounted(welcome);
 </script>
 
 <template>
-  <div v-if="session.me" class="shell" :class="{ 'shell--leaving': leaving }" :style="leaving ? { transformOrigin: origin } : undefined">
+  <div
+    v-if="session.me"
+    class="shell"
+    :class="{ 'shell--leaving': leaving, 'shell--arriving': arriving }"
+    :style="leaving || arriving ? { transformOrigin: origin } : undefined"
+    @animationend.self="arrived"
+  >
     <SideNav :me="session.me" @logout="logout" @open-profile="profileOpen = true" />
     <div class="shell__main">
       <main class="shell__content">
@@ -47,8 +74,8 @@ async function logout(): Promise<void> {
     </div>
     <ProfileDialog v-if="profileOpen" :me="session.me" @close="profileOpen = false" />
   </div>
-  <div v-if="leaving" class="farewell">
-    <AuthBadge kind="farewell" />
+  <div v-if="leaving || arriving" class="farewell">
+    <AuthBadge :kind="arriving ? 'success' : 'farewell'" :leaving="arriving" />
   </div>
 </template>
 
@@ -59,15 +86,24 @@ async function logout(): Promise<void> {
   min-height: 100vh;
 }
 
-.shell--leaving {
+.shell--leaving,
+.shell--arriving {
   --glass-blur: none;
   --card-fill: var(--surface-glass-strong);
-  animation: shell-fold 520ms var(--ease-in-out) forwards;
   pointer-events: none;
   will-change: transform, opacity;
 }
 
-.shell--leaving :deep(.glass__warp) {
+.shell--leaving {
+  animation: shell-fold 520ms var(--ease-in-out) forwards;
+}
+
+.shell--arriving {
+  animation: shell-fold 520ms var(--ease-in-out) reverse backwards;
+}
+
+.shell--leaving :deep(.glass__warp),
+.shell--arriving :deep(.glass__warp) {
   backdrop-filter: none;
 }
 
