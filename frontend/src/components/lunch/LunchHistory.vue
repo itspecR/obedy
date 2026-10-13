@@ -8,6 +8,7 @@ import AppButton from "../ui/AppButton.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import { LUNCH_STATUS, correctionLabel, lunchDuration, lunchRange } from "./lunchStatus";
 import { shiftMonth } from "../../format/calendar";
+import { historyRows } from "./historyRows";
 
 const props = defineProps<{ revision: number }>();
 
@@ -19,6 +20,7 @@ const { fail } = useToasts();
 const month = computed(() => history.value?.month ?? "");
 const isLatest = computed(() => month.value === latest.value);
 const summary = computed(() => history.value?.summary);
+const rows = computed(() => (history.value ? historyRows(history.value) : []));
 
 async function load(target: string): Promise<void> {
   loading.value = true;
@@ -51,7 +53,7 @@ watch(
       </div>
     </header>
 
-    <dl v-if="summary" class="history__summary">
+    <dl v-if="summary" class="history__summary" :class="{ 'history__summary--attendance': history?.attendance_enabled }">
       <div class="history__tile">
         <dt>Обедов</dt>
         <dd class="numeric">{{ summary.count }}</dd>
@@ -64,17 +66,25 @@ watch(
         <dt>В среднем</dt>
         <dd class="numeric">{{ summary.average_minutes === null ? "—" : `${summary.average_minutes} мин` }}</dd>
       </div>
+      <div v-if="history?.attendance_enabled" class="history__tile">
+        <dt>Без обеда</dt>
+        <dd class="numeric">{{ summary.missing }}</dd>
+      </div>
     </dl>
 
-    <ul v-if="history && history.lunches.length" class="history__list">
-      <li v-for="lunch in history.lunches" :key="lunch.id" class="history__row">
-        <span class="history__day">{{ formatDay(lunch.day) }}</span>
-        <span class="history__range numeric">{{ lunchRange(lunch) }}</span>
-        <span class="history__duration numeric">{{ lunchDuration(lunch) }}</span>
-        <StatusBadge class="history__status" :tone="LUNCH_STATUS[lunch.status].tone" :label="LUNCH_STATUS[lunch.status].label" />
-        <p v-if="lunch.correction" class="history__correction">
-          {{ correctionLabel(lunch.correction) }}: {{ lunch.correction.by }}, {{ formatDateTime(lunch.correction.at) }}. Причина: {{ lunch.correction.reason }}
-        </p>
+    <ul v-if="rows.length" class="history__list">
+      <li v-for="row in rows" :key="row.lunch ? `lunch-${row.lunch.id}` : `mark-${row.day}`" class="history__row" :class="{ 'history__row--mark': row.mark }">
+        <span class="history__day">{{ formatDay(row.day) }}</span>
+        <template v-if="row.lunch">
+          <span class="history__range numeric">{{ lunchRange(row.lunch) }}</span>
+          <span class="history__duration numeric">{{ lunchDuration(row.lunch) }}</span>
+          <StatusBadge class="history__status" :tone="LUNCH_STATUS[row.lunch.status].tone" :label="LUNCH_STATUS[row.lunch.status].label" />
+          <p v-if="row.lunch.correction" class="history__correction">
+            {{ correctionLabel(row.lunch.correction) }}: {{ row.lunch.correction.by }}, {{ formatDateTime(row.lunch.correction.at) }}. Причина:
+            {{ row.lunch.correction.reason }}
+          </p>
+        </template>
+        <StatusBadge v-else class="history__status history__status--mark" tone="neutral" :label="row.mark.label" />
       </li>
     </ul>
     <p v-else-if="history" class="history__empty">В этом месяце обедов не отмечено.</p>
@@ -176,6 +186,14 @@ watch(
   justify-self: end;
 }
 
+.history__status--mark {
+  grid-column: 4;
+}
+
+.history__summary--attendance {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .history__correction {
   grid-column: 1 / -1;
   margin: 0;
@@ -201,6 +219,14 @@ watch(
 
   .history__duration {
     text-align: left;
+  }
+
+  .history__status--mark {
+    grid-column: 2;
+  }
+
+  .history__summary--attendance {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from django.utils import timezone
 from ninja import Router, Schema
@@ -8,10 +8,12 @@ from accounts.lunch_policy import LUNCH_ROLES
 from accounts.permissions import require_roles
 from accounts.security import session_auth
 from lunches.board_api import router as board_router
-from lunches.history import BadMonth, lunches_of_month, month_start, summary_of
+from lunches.attendance import attendance_in
+from lunches.history import BadMonth, last_of_month, lunches_of_month, month_start, summary_of
 from lunches.rules import current_rules
 from lunches.rules_api import router as rules_router
 from lunches.schemas import LunchOut, describe_lunch
+from lunches.statistics import Period
 from lunches.stats_api import router as stats_router
 from lunches.service import (
     UNDO_WINDOW,
@@ -51,12 +53,20 @@ class SummaryOut(Schema):
     count: int
     violations: int
     average_minutes: int | None
+    missing: int
+
+
+class DayMarkOut(Schema):
+    day: date
+    label: str
 
 
 class HistoryOut(Schema):
     month: str
     lunches: list[LunchOut]
     summary: SummaryOut
+    attendance_enabled: bool
+    marks: list[DayMarkOut]
 
 
 def undo_until_of(lunch, now):
@@ -126,8 +136,12 @@ def history(request, month: str = ""):
         raise HttpError(400, str(bad)) from bad
     lunches = lunches_of_month(account, first)
     summary = summary_of(lunches, now)
+    rules = current_rules()
+    own = attendance_in(rules, Period(first, last_of_month(first)), now, (account.pk,)).get(account.pk)
     return HistoryOut(
         month=first.strftime(MONTH_FORMAT),
         lunches=[describe_lunch(lunch, now) for lunch in lunches],
-        summary=SummaryOut(count=summary.count, violations=summary.violations, average_minutes=summary.average_minutes),
+        summary=SummaryOut(count=summary.count, violations=summary.violations, average_minutes=summary.average_minutes, missing=len(own.missing) if own else 0),
+        attendance_enabled=rules.missing_enabled,
+        marks=[DayMarkOut(day=day, label=label) for day, label in own.marks()] if own else [],
     )

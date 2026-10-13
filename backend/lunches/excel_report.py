@@ -4,6 +4,7 @@ from datetime import datetime
 from openpyxl.utils import get_column_letter
 
 from accounts.names import display_name
+from lunches.attendance import MISSING_LABEL
 from lunches.clock import clock_text, local
 from lunches.excel_style import (
     ALARM,
@@ -40,7 +41,6 @@ LAST_COLUMN = len(COLUMNS)
 WEEKDAYS = ("пн", "вт", "ср", "чт", "пт", "сб", "вс")
 EMPTY = "—"
 DAY_OFF = "Выходной"
-MISSING = "Без обеда"
 EVERYONE = "Все"
 CHOSEN = "Выбрано: {count}"
 DAY_FORMAT = "%d.%m.%Y"
@@ -98,7 +98,7 @@ def empty_status(day, workday, attendance):
         return DAY_OFF
     if attendance and day in attendance.absent:
         return attendance.absent[day]
-    return MISSING if attendance and day in attendance.missing else EMPTY
+    return MISSING_LABEL if attendance and day in attendance.missing else EMPTY
 
 
 def empty_values(day, workday, attendance):
