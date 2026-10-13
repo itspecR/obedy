@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { mayLeaveAll } from "../../composables/useLeaveGuard";
-import { reducedMotion } from "../../device/motion";
 import { useSession } from "../../stores/session";
 import AuthBadge from "../login/AuthBadge.vue";
 import ProfileDialog from "./ProfileDialog.vue";
@@ -32,12 +31,9 @@ async function logout(): Promise<void> {
     return;
   }
   signingOut = true;
-  const farewell = !reducedMotion();
-  if (farewell) {
-    await waveGoodbye();
-  }
+  await waveGoodbye();
   await session.signOut();
-  await router.replace({ name: "login", state: { farewell } });
+  await router.replace({ name: "login", state: { farewell: true } });
 }
 </script>
 
@@ -89,6 +85,12 @@ async function logout(): Promise<void> {
   display: grid;
   place-items: center;
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell--leaving {
+    visibility: hidden;
+  }
 }
 
 .shell__main {
