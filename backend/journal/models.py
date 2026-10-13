@@ -23,6 +23,8 @@ class Action(models.TextChoices):
     LUNCH_DELETED = "lunch_deleted", "Удалён обед"
     LUNCHES_RESET = "lunches_reset", "Обеды сброшены"
     RULES_CHANGED = "rules_changed", "Изменены правила обеда"
+    CALENDAR_DAY_ADDED = "calendar_day_added", "Добавлен день в календарь"
+    CALENDAR_DAY_REMOVED = "calendar_day_removed", "Убран день из календаря"
     NETWORK_ADDED = "network_added", "Добавлен адрес доступа"
     NETWORK_REMOVED = "network_removed", "Удалён адрес доступа"
     PRIVATE_NETWORKS_CHANGED = "private_networks_changed", "Изменён доступ из локальной сети"
@@ -54,6 +56,8 @@ CATEGORY_ACTIONS = {
     Category.LUNCHES: (Action.LUNCH_CORRECTED, Action.LUNCH_ADDED, Action.LUNCH_DELETED, Action.LUNCHES_RESET),
     Category.SETTINGS: (
         Action.RULES_CHANGED,
+        Action.CALENDAR_DAY_ADDED,
+        Action.CALENDAR_DAY_REMOVED,
         Action.NETWORK_ADDED,
         Action.NETWORK_REMOVED,
         Action.PRIVATE_NETWORKS_CHANGED,

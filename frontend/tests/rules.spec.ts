@@ -111,10 +111,10 @@ describe("RulesPage", () => {
     const { wrapper } = await mounted();
 
     await day(wrapper, "Воскресенье").trigger("click");
-    await wrapper.get("button.button--ghost").trigger("click");
+    await wrapper.get(".rules__actions button.button--ghost").trigger("click");
 
     expect(day(wrapper, "Воскресенье").attributes("aria-pressed")).toBe("false");
-    expect(wrapper.find("button.button--ghost").exists()).toBe(false);
+    expect(wrapper.find(".rules__actions button.button--ghost").exists()).toBe(false);
   });
 
   it("offers a retry when rules cannot be loaded", async () => {

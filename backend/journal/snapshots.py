@@ -9,6 +9,8 @@ OFF = "выключено"
 OPEN = "открыт"
 CLOSED = "заблокирован"
 EMPTY = "—"
+WORKING = "рабочий"
+HOLIDAY = "выходной"
 DEFAULT_PORT = "по умолчанию"
 FINGERPRINT_LENGTH = 12
 WEEKDAY_NAMES = {"1": "Пн", "2": "Вт", "3": "Ср", "4": "Чт", "5": "Пт", "6": "Сб", "7": "Вс"}
@@ -62,6 +64,10 @@ def rules_snapshot(rules):
         "Окно до": clock_text(rules.window_end),
         "Анимация с кроликом": switch(rules.rabbit_enabled),
     }
+
+
+def calendar_day_snapshot(calendar_day):
+    return {"Дата": day_text(calendar_day.day), "День": WORKING if calendar_day.working else HOLIDAY}
 
 
 def directory_snapshot(stored):

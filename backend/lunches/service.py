@@ -4,7 +4,8 @@ from django.db import IntegrityError, transaction
 
 from lunches.clock import clock_text, local, moment_of, today
 from lunches.models import Lunch
-from lunches.rules import current_rules, inside_window, is_workday
+from lunches.rules import current_rules, inside_window
+from lunches.work_calendar import is_workday
 
 UNDO_MINUTES = 5
 UNDO_WINDOW = timedelta(minutes=UNDO_MINUTES)
