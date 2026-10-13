@@ -26,6 +26,8 @@ class RulesOut(Schema):
     window_enabled: bool
     window_start: time
     window_end: time
+    missing_enabled: bool
+    missing_since: date | None
     updated_at: datetime
     min_limit_minutes: int
     max_limit_minutes: int
@@ -38,9 +40,20 @@ class RulesIn(Schema):
     window_enabled: bool
     window_start: time
     window_end: time
+    missing_enabled: bool | None = None
+    missing_since: date | None = None
 
     def draft(self):
-        return RulesDraft(self.limit_minutes, self.workdays, self.day_end, self.window_enabled, self.window_start, self.window_end)
+        return RulesDraft(
+            self.limit_minutes,
+            self.workdays,
+            self.day_end,
+            self.window_enabled,
+            self.window_start,
+            self.window_end,
+            self.missing_enabled,
+            self.missing_since,
+        )
 
 
 def describe_rules(rules):
@@ -51,6 +64,8 @@ def describe_rules(rules):
         window_enabled=rules.window_enabled,
         window_start=rules.window_start,
         window_end=rules.window_end,
+        missing_enabled=rules.missing_enabled,
+        missing_since=rules.missing_since,
         updated_at=rules.updated_at,
         min_limit_minutes=MIN_LIMIT_MINUTES,
         max_limit_minutes=MAX_LIMIT_MINUTES,

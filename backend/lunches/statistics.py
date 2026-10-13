@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from accounts.names import display_name
 from lunches.history import summary_of
@@ -35,6 +35,8 @@ class PersonStats:
     violations: int
     average_minutes: int | None
     overrun_minutes: int
+    missing: int
+    absent: int
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,12 @@ class Overview:
     average_minutes: int | None
     on_time_percent: int | None
     people: int
+    missing: int
+    absent: int
+
+
+def days_of(period):
+    return [period.first + timedelta(days=offset) for offset in range((period.last - period.first).days + 1)]
 
 
 def checked_period(first, last):
@@ -79,7 +87,15 @@ def excess_seconds(lunch, now):
     return max(0, (duration_of(lunch, now) - limit_of(lunch)).total_seconds())
 
 
-def person_stats(account, lunches, now):
+def missing_of(attendance):
+    return len(attendance.missing) if attendance else 0
+
+
+def absent_of(attendance):
+    return len(attendance.absent) if attendance else 0
+
+
+def person_stats(account, lunches, now, attendance=None):
     summary = summary_of(lunches, now)
     overruns = [lunch for lunch in lunches if counts_as_overrun(lunch, now)]
     return PersonStats(
@@ -90,6 +106,8 @@ def person_stats(account, lunches, now):
         violations=summary.violations,
         average_minutes=summary.average_minutes,
         overrun_minutes=round(sum(excess_seconds(lunch, now) for lunch in overruns) / SECONDS_IN_MINUTE),
+        missing=missing_of(attendance),
+        absent=absent_of(attendance),
     )
 
 
@@ -101,11 +119,15 @@ def by_account(lunches):
 
 
 def worst_first(stats):
-    return (-stats.violations, -stats.overrun_minutes, display_name(stats.account).lower())
+    return (-stats.violations, -stats.missing, -stats.overrun_minutes, display_name(stats.account).lower())
 
 
-def people_stats(lunches, now):
-    return sorted((person_stats(account, own, now) for account, own in by_account(lunches)), key=worst_first)
+def people_stats(lunches, now, attendance=None):
+    attendance = attendance or {}
+    groups = {account.pk: (account, own) for account, own in by_account(lunches)}
+    for pk, item in attendance.items():
+        groups.setdefault(pk, (item.account, []))
+    return sorted((person_stats(account, own, now, attendance.get(pk)) for pk, (account, own) in groups.items()), key=worst_first)
 
 
 def on_time_percent(lunches, now):
@@ -116,12 +138,15 @@ def on_time_percent(lunches, now):
     return round(on_time * PERCENT / len(finished))
 
 
-def overview_of(lunches, now):
+def overview_of(lunches, now, attendance=None):
+    attendance = attendance or {}
     summary = summary_of(lunches, now)
     return Overview(
         count=summary.count,
         violations=summary.violations,
         average_minutes=summary.average_minutes,
         on_time_percent=on_time_percent(lunches, now),
-        people=len({lunch.account_id for lunch in lunches}),
+        people=len({lunch.account_id for lunch in lunches} | set(attendance)),
+        missing=sum(missing_of(item) for item in attendance.values()),
+        absent=sum(absent_of(item) for item in attendance.values()),
     )

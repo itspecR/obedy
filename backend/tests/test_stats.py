@@ -60,7 +60,7 @@ def october():
 def test_period_overview_and_worst_first(october):
     body = signed_in().get(f"/api/lunch/stats{OCTOBER}").json()
 
-    assert body["overview"] == {"count": 6, "violations": 3, "average_minutes": 38, "on_time_percent": 50, "people": 3}
+    assert body["overview"] == {"count": 6, "violations": 3, "average_minutes": 38, "on_time_percent": 50, "people": 3, "missing": 0, "absent": 0}
     assert [(row["login"], row["violations"], row["overruns"], row["unreturned"], row["overrun_minutes"]) for row in body["people"]] == [
         ("ivanov", 2, 1, 1, 10),
         ("petrova", 1, 1, 0, 2),
@@ -76,14 +76,14 @@ def test_ongoing_lunch_is_counted_but_not_measured():
 
     body = signed_in().get(f"/api/lunch/stats{OCTOBER}").json()
 
-    assert body["overview"] == {"count": 1, "violations": 1, "average_minutes": None, "on_time_percent": None, "people": 1}
+    assert body["overview"] == {"count": 1, "violations": 1, "average_minutes": None, "on_time_percent": None, "people": 1, "missing": 0, "absent": 0}
     assert body["people"][0]["overrun_minutes"] == 75
 
 
 def test_empty_period_has_no_rows():
     body = signed_in().get("/api/lunch/stats?date_from=2025-01-01&date_to=2025-01-31").json()
 
-    assert body["overview"] == {"count": 0, "violations": 0, "average_minutes": None, "on_time_percent": None, "people": 0}
+    assert body["overview"] == {"count": 0, "violations": 0, "average_minutes": None, "on_time_percent": None, "people": 0, "missing": 0, "absent": 0}
     assert body["people"] == []
 
 
@@ -187,7 +187,7 @@ def test_selected_people_narrow_overview_and_show_their_lunches(october):
 
     body = signed_in().get(f"/api/lunch/stats{OCTOBER}&person={ivanov.pk}&person={petrova.pk}").json()
 
-    assert body["overview"] == {"count": 5, "violations": 3, "average_minutes": 43, "on_time_percent": 40, "people": 2}
+    assert body["overview"] == {"count": 5, "violations": 3, "average_minutes": 43, "on_time_percent": 40, "people": 2, "missing": 0, "absent": 0}
     assert len(body["people"]) == 3
     assert [(row["name"], row["lunch"]["day"]) for row in body["lunches"]][:3] == [
         ("Иванов Иван", "2026-10-01"),

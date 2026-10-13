@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from datetime import time
+from datetime import date, time
 
-from lunches.clock import clock_text
+from django.utils import timezone
+
+from lunches.clock import clock_text, today
 from lunches.rules import current_rules
 
 MIN_LIMIT_MINUTES = 5
@@ -29,6 +31,8 @@ class RulesDraft:
     window_enabled: bool
     window_start: time
     window_end: time
+    missing_enabled: bool | None = None
+    missing_since: date | None = None
 
 
 def normalized_workdays(text):
@@ -53,6 +57,16 @@ def check_window(draft):
         raise InvalidRules(WINDOW_AFTER_DAY.format(end=clock_text(draft.day_end)))
 
 
+def apply_missing(rules, draft):
+    if draft.missing_enabled is None:
+        return
+    rules.missing_enabled = draft.missing_enabled
+    if draft.missing_since is not None:
+        rules.missing_since = draft.missing_since
+    elif draft.missing_enabled and rules.missing_since is None:
+        rules.missing_since = today(timezone.now())
+
+
 def save_rules(draft):
     check_limit(draft.limit_minutes)
     check_window(draft)
@@ -63,6 +77,7 @@ def save_rules(draft):
     rules.window_enabled = draft.window_enabled
     rules.window_start = draft.window_start
     rules.window_end = draft.window_end
+    apply_missing(rules, draft)
     rules.save()
     return rules
 

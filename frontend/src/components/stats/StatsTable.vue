@@ -2,14 +2,14 @@
 import type { PersonStats } from "../../api/stats";
 import CheckBox from "../ui/CheckBox.vue";
 
-defineProps<{ people: PersonStats[]; selected: number[] }>();
+withDefaults(defineProps<{ people: PersonStats[]; selected: number[]; attendance?: boolean }>(), { attendance: false });
 const emit = defineEmits<{ toggle: [id: number, checked: boolean]; only: [id: number] }>();
 
 const minutes = (value: number | null) => (value === null ? "—" : `${value} мин`);
 </script>
 
 <template>
-  <section class="panel stats-table" aria-label="Сотрудники">
+  <section class="panel stats-table" :class="{ 'stats-table--attendance': attendance }" aria-label="Сотрудники">
     <div class="stats-table__head" aria-hidden="true">
       <span />
       <span>Сотрудник</span>
@@ -19,6 +19,10 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
       <span>Без возврата</span>
       <span>В среднем</span>
       <span>Перебор</span>
+      <template v-if="attendance">
+        <span>Без обеда</span>
+        <span>Отсутствий</span>
+      </template>
     </div>
     <ul v-if="people.length" class="stats-table__rows">
       <li
@@ -38,9 +42,13 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
         <span class="stats-table__cell numeric" data-label="Без возврата">{{ person.unreturned }}</span>
         <span class="stats-table__cell numeric" data-label="В среднем">{{ minutes(person.average_minutes) }}</span>
         <span class="stats-table__cell numeric" data-label="Перебор">{{ person.overrun_minutes ? minutes(person.overrun_minutes) : "—" }}</span>
+        <template v-if="attendance">
+          <span class="stats-table__cell numeric" data-label="Без обеда">{{ person.missing }}</span>
+          <span class="stats-table__cell numeric" data-label="Отсутствий">{{ person.absent }}</span>
+        </template>
       </li>
     </ul>
-    <p v-else class="stats-table__empty">За этот период обедов нет. Выберите другой период.</p>
+    <p v-else class="stats-table__empty">{{ attendance ? "За этот период нет ни обедов, ни дней без обеда." : "За этот период обедов нет." }} Выберите другой период.</p>
   </section>
 </template>
 
@@ -55,6 +63,11 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
   grid-template-columns: 28px minmax(0, 1fr) repeat(6, 96px);
   align-items: center;
   gap: 4px 12px;
+}
+
+.stats-table--attendance .stats-table__head,
+.stats-table--attendance .stats-table__row {
+  grid-template-columns: 28px minmax(0, 1fr) repeat(8, 80px);
 }
 
 .stats-table__head {
@@ -141,7 +154,8 @@ const minutes = (value: number | null) => (value === null ? "—" : `${value} м
     display: none;
   }
 
-  .stats-table__row {
+  .stats-table__row,
+  .stats-table--attendance .stats-table__row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     padding: 14px 0;
   }

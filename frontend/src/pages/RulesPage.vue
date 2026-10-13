@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { errorMessage } from "../api/http";
 import { fetchLunchRules, saveLunchRules, type LunchRules } from "../api/lunchRules";
-import { WEEKDAYS, draftFrom, formFrom, sameDraft, toggleDay, type RulesDraft } from "../components/rules/draft";
+import { WEEKDAYS, draftFrom, formFrom, sameDraft, toggleDay, withMissing, type RulesDraft } from "../components/rules/draft";
 import CalendarCard from "../components/rules/CalendarCard.vue";
 import RabbitSwitch from "../components/rules/RabbitSwitch.vue";
 import AppButton from "../components/ui/AppButton.vue";
@@ -11,9 +11,13 @@ import SwitchField from "../components/ui/SwitchField.vue";
 import TextField from "../components/ui/TextField.vue";
 import InfoTip from "../components/ui/InfoTip.vue";
 import TimeField from "../components/ui/TimeField.vue";
+import DateField from "../components/ui/DateField.vue";
 import { useToasts } from "../composables/useToasts";
-import { formatDateTime } from "../format/dateTime";
+import { formatDateTime, todayIso } from "../format/dateTime";
 import { useSession } from "../stores/session";
+
+const MISSING_HINT =
+  "Рабочий день без обеда и без отсутствия станет «Без обеда» после конца окна обеда, а если окна нет — после конца рабочего дня. Это не нарушение: такие дни видны на табло, в статистике и в отчёте. Праздники и отсутствия не считаются.";
 
 const rules = ref<LunchRules | null>(null);
 const draft = ref<RulesDraft | null>(null);
@@ -121,6 +125,17 @@ onMounted(load);
           <TimeField v-model="draft.window_start" label="С" :disabled="busy" />
           <TimeField v-model="draft.window_end" label="До" :disabled="busy" />
         </div>
+      </div>
+
+      <div class="panel rules__card">
+        <SwitchField
+          label="Учитывать дни без обеда"
+          :hint="MISSING_HINT"
+          :checked="draft.missing_enabled"
+          :disabled="busy"
+          @change="draft = withMissing(draft, $event, todayIso())"
+        />
+        <DateField v-if="draft.missing_enabled" v-model="draft.missing_since" class="rules__narrow" label="Считать с" :disabled="busy" />
       </div>
 
       <div class="rules__actions">

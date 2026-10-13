@@ -14,6 +14,8 @@ import { useConfirm } from "../composables/useConfirm";
 import { useToasts } from "../composables/useToasts";
 import { todayIso } from "../format/dateTime";
 
+const ABSENCES_INFO = "Дни, когда сотрудника нет на работе. В эти дни он не попадает в «Без обеда»: на табло и в статистике виден вид отсутствия. Отметить, изменить и удалить могут HR и администратор.";
+
 const ACTIONS: MenuItem[] = [
   { key: "edit", label: "Изменить" },
   { key: "delete", label: "Удалить", danger: true },
@@ -78,7 +80,7 @@ onMounted(load);
 
 <template>
   <section class="absences">
-    <PageHeader title="Отсутствия" subtitle="Отпуска, больничные и другие дни, когда сотрудник не обедает на работе">
+    <PageHeader title="Отсутствия" subtitle="Отпуска, больничные и другие причины" :info="ABSENCES_INFO">
       <AppButton variant="primary" @click="dialog = { absence: null }">Отметить отсутствие</AppButton>
     </PageHeader>
 

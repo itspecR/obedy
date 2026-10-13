@@ -4,7 +4,7 @@ import CalendarCard from "../src/components/rules/CalendarCard.vue";
 import { entryOf, kindLabel, kindTone, yearOf } from "../src/components/rules/calendarDays";
 import { useToasts } from "../src/composables/useToasts";
 import { formatDay, todayIso } from "../src/format/dateTime";
-import { bodySentTo, chooseDay, routeFetch, wasRequested } from "./helpers";
+import { bodySentTo, chooseDay, infoText, routeFetch, wasRequested } from "./helpers";
 
 const YEAR = yearOf(todayIso());
 const HOLIDAY = `${todayIso().slice(0, 8)}04`;
@@ -42,6 +42,13 @@ describe("CalendarCard", () => {
 
     expect(wrapper.get(".calendar__year").text()).toBe(String(YEAR));
     expect(rows(wrapper)).toEqual([`${formatDay(SATURDAY)}РабочийУбрать`]);
+  });
+
+  it("keeps the explanation in the info button", async () => {
+    const { wrapper } = await mounted({ [yearUrl(YEAR)]: [200, []] });
+
+    expect(await infoText(wrapper, "Праздники и переносы")).toContain("рабочие субботы");
+    expect(wrapper.find(".calendar__text").exists()).toBe(false);
   });
 
   it("explains an empty year", async () => {

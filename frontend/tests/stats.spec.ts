@@ -19,6 +19,8 @@ function person(overrides: Partial<PersonStats> = {}): PersonStats {
     unreturned: 1,
     average_minutes: 42,
     overrun_minutes: 10,
+    missing: 0,
+    absent: 0,
     ...overrides,
   };
 }
@@ -27,7 +29,8 @@ function stats(overrides: Partial<Stats> = {}): Stats {
   return {
     date_from: "2026-10-01",
     date_to: "2026-10-08",
-    overview: { count: 5, violations: 2, average_minutes: 40, on_time_percent: 60, people: 2 },
+    attendance_enabled: false,
+    overview: { count: 5, violations: 2, average_minutes: 40, on_time_percent: 60, people: 2, missing: 0, absent: 0 },
     people: [person(), person({ id: 2, name: "Петрова Анна", login: "petrova", violations: 0, overruns: 0, unreturned: 0, overrun_minutes: 0 })],
     lunches: [],
     ...overrides,
@@ -77,6 +80,28 @@ describe("StatsPage", () => {
     expect(rows[0].text()).toContain("Иванов Иван");
     expect(rows[0].classes()).toContain("stats-table__row--alarm");
     expect(rows[1].classes()).not.toContain("stats-table__row--alarm");
+    wrapper.unmount();
+  });
+
+  it("hides days without lunch while the rule is switched off", async () => {
+    const { wrapper } = await mounted();
+
+    expect(wrapper.findAll(".stats__tile dt").map((title) => title.text())).not.toContain("Без обеда");
+    expect(wrapper.get(".stats-table__head").text()).not.toContain("Без обеда");
+    wrapper.unmount();
+  });
+
+  it("shows days without lunch and absences when the rule is on", async () => {
+    const absentee = person({ id: 3, name: "Сидоров Сидор", login: "sidorov", count: 0, violations: 0, overruns: 0, unreturned: 0, overrun_minutes: 0, average_minutes: null, missing: 4, absent: 2 });
+    const { wrapper } = await mounted({
+      [OCTOBER]: [200, stats({ attendance_enabled: true, overview: { ...stats().overview, missing: 4, absent: 2 }, people: [absentee] })],
+    });
+    const tiles = Object.fromEntries(wrapper.findAll(".stats__tile").map((tile) => [tile.get("dt").text(), tile.get("dd").text()]));
+
+    expect([tiles["Без обеда"], tiles["Отсутствий"]]).toEqual(["4", "2"]);
+    expect(wrapper.get(".stats-table__head").text()).toContain("Без обеда");
+    expect(wrapper.get('[data-label="Без обеда"]').text()).toBe("4");
+    expect(wrapper.get('[data-label="Отсутствий"]').text()).toBe("2");
     wrapper.unmount();
   });
 
@@ -140,7 +165,7 @@ describe("StatsPage", () => {
       correction: null,
     };
     const { spy, wrapper } = await mounted({
-      [ivanovUrl]: [200, stats({ overview: { count: 3, violations: 2, average_minutes: 42, on_time_percent: 33, people: 1 }, lunches: [{ person_id: 1, name: "Иванов Иван", lunch }] })],
+      [ivanovUrl]: [200, stats({ overview: { count: 3, violations: 2, average_minutes: 42, on_time_percent: 33, people: 1, missing: 0, absent: 0 }, lunches: [{ person_id: 1, name: "Иванов Иван", lunch }] })],
       [bothUrl]: [200, stats()],
     });
 

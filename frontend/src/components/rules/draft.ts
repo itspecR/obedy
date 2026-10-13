@@ -25,6 +25,8 @@ export interface RulesDraft {
   window_enabled: boolean;
   window_start: string;
   window_end: string;
+  missing_enabled: boolean;
+  missing_since: string;
 }
 
 const clock = (value: string) => value.slice(0, CLOCK_LENGTH);
@@ -37,11 +39,17 @@ export function draftFrom(rules: LunchRules): RulesDraft {
     window_enabled: rules.window_enabled,
     window_start: clock(rules.window_start),
     window_end: clock(rules.window_end),
+    missing_enabled: rules.missing_enabled,
+    missing_since: rules.missing_since ?? "",
   };
 }
 
 export function formFrom(draft: RulesDraft): RulesForm {
-  return { ...draft, limit_minutes: Number(String(draft.limit_minutes).trim()) };
+  return { ...draft, limit_minutes: Number(String(draft.limit_minutes).trim()), missing_since: draft.missing_since || null };
+}
+
+export function withMissing(draft: RulesDraft, enabled: boolean, today: string): RulesDraft {
+  return { ...draft, missing_enabled: enabled, missing_since: draft.missing_since || (enabled ? today : "") };
 }
 
 export function toggleDay(workdays: string, day: string): string {

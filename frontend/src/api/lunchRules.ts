@@ -7,6 +7,8 @@ export interface RulesForm {
   window_enabled: boolean;
   window_start: string;
   window_end: string;
+  missing_enabled: boolean;
+  missing_since: string | null;
 }
 
 export interface LunchRules extends RulesForm {

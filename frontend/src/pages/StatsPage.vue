@@ -14,7 +14,8 @@ import { useToasts } from "../composables/useToasts";
 import { isoDay } from "../format/dateTime";
 import { matchesQuery } from "../format/search";
 
-const STATS_INFO = "Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат. Клик по ФИО — только этот сотрудник, галочки — несколько.";
+const STATS_INFO =
+  "Период — не больше года. Нарушения — превышение лимита и неотмеченный возврат. «Без обеда» — рабочий день без обеда и без отсутствия, это не нарушение; колонка появляется, когда в правилах включён учёт дней без обеда. Клик по ФИО — только этот сотрудник, галочки — несколько.";
 const today = isoDay(new Date());
 const period = ref<Period>(thisMonth(today));
 const search = ref("");
@@ -120,7 +121,7 @@ onMounted(load);
     </div>
     <div v-else-if="!stats" class="panel stats__message" aria-busy="true">Загружаем…</div>
     <template v-else>
-      <dl v-if="overview" class="stats__overview" :aria-busy="loading">
+      <dl v-if="overview" class="stats__overview" :class="{ 'stats__overview--attendance': stats.attendance_enabled }" :aria-busy="loading">
         <div class="panel stats__tile">
           <dt>Обедов</dt>
           <dd class="numeric">{{ overview.count }}</dd>
@@ -141,9 +142,17 @@ onMounted(load);
           <dt>Сотрудников</dt>
           <dd class="numeric">{{ overview.people }}</dd>
         </div>
+        <div v-if="stats.attendance_enabled" class="panel stats__tile">
+          <dt>Без обеда</dt>
+          <dd class="numeric">{{ overview.missing }}</dd>
+        </div>
+        <div v-if="stats.attendance_enabled" class="panel stats__tile">
+          <dt>Отсутствий</dt>
+          <dd class="numeric">{{ overview.absent }}</dd>
+        </div>
       </dl>
       <StatsLunches v-if="selected.length" :lunches="stats.lunches" />
-      <StatsTable :people="people" :selected="selected" @toggle="toggle" @only="only" />
+      <StatsTable :people="people" :selected="selected" :attendance="stats.attendance_enabled" @toggle="toggle" @only="only" />
     </template>
   </section>
 </template>
@@ -193,6 +202,10 @@ onMounted(load);
   margin: 0;
 }
 
+.stats__overview--attendance {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
 .stats__tile {
   padding: 14px 18px;
 }
@@ -239,7 +252,8 @@ onMounted(load);
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .stats__overview {
+  .stats__overview,
+  .stats__overview--attendance {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -253,7 +267,8 @@ onMounted(load);
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .stats__overview {
+  .stats__overview,
+  .stats__overview--attendance {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
