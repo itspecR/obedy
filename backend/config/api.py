@@ -12,6 +12,7 @@ from directory.api import router as directory_router
 from config.database_api import router as database_router
 from config.setup_api import router as setup_router
 from journal.api import router as journal_router
+from lunches.absences_api import router as absences_router
 from lunches.api import router as lunch_router
 from lunches.appearance_api import router as appearance_router
 from lunches.clock_api import router as clock_router
@@ -70,6 +71,7 @@ api.add_router("/access", access_router)
 api.add_router("/directory", directory_router)
 api.add_router("/staff", staff_router)
 api.add_router("/lunch", lunch_router)
+api.add_router("/absences", absences_router)
 api.add_router("/appearance", appearance_router)
 api.add_router("/clock", clock_router)
 api.add_router("/journal", journal_router)

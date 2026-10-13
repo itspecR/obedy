@@ -11,6 +11,7 @@ DEFAULT_DAY_END = time(18, 0)
 DEFAULT_WINDOW_START = time(12, 0)
 DEFAULT_WINDOW_END = time(15, 0)
 REASON_LIMIT = 500
+NOTE_LIMIT = 200
 
 
 class LunchRules(models.Model):
@@ -51,3 +52,21 @@ class TrackingSpan(models.Model):
 class CalendarDay(models.Model):
     day = models.DateField(unique=True)
     working = models.BooleanField()
+
+
+class AbsenceKind(models.TextChoices):
+    VACATION = "vacation", "Отпуск"
+    SICK = "sick", "Больничный"
+    OTHER = "other", "Другое"
+
+
+class Absence(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="absences")
+    first = models.DateField()
+    last = models.DateField()
+    kind = models.CharField(max_length=16, choices=AbsenceKind.choices)
+    note = models.CharField(max_length=NOTE_LIMIT, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["first", "last"])]

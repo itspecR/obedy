@@ -11,6 +11,7 @@ export interface Section {
 const LUNCH: Section = { name: "lunch", path: "/lunch", label: "Обед", icon: "lunch" };
 const RULES: Section = { name: "rules", path: "/rules", label: "Правила", icon: "clock" };
 const BOARD: Section = { name: "board", path: "/board", label: "Табло", icon: "board" };
+const ABSENCES: Section = { name: "absences", path: "/absences", label: "Отсутствия", icon: "calendar" };
 const STATS: Section = { name: "stats", path: "/stats", label: "Статистика", icon: "chart" };
 const STAFF: Section = { name: "staff", path: "/staff", label: "Сотрудники", icon: "users" };
 const ACCESS: Section = { name: "access", path: "/access", label: "Доступ", icon: "shield" };
@@ -20,8 +21,8 @@ const JOURNAL: Section = { name: "log", path: "/log", label: "Log", icon: "journ
 
 export const SECTIONS_BY_ROLE: Record<Role, Section[]> = {
   employee: [LUNCH],
-  hr: [LUNCH, BOARD, STATS, RULES],
-  admin: [BOARD, STATS, STAFF, RULES, ACCESS, DIRECTORY, DATABASE, JOURNAL],
+  hr: [LUNCH, BOARD, ABSENCES, STATS, RULES],
+  admin: [BOARD, ABSENCES, STATS, STAFF, RULES, ACCESS, DIRECTORY, DATABASE, JOURNAL],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {
