@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from django.db import connection as database
 from django.db import transaction
+from django.utils import timezone
 from ldap3.core.exceptions import LDAPException
 
 from accounts.models import Account, Source
@@ -14,6 +15,7 @@ from directory.diagnostics import UNREACHABLE, ConnectionProblem, explained_conn
 from directory.models import SyncReport, SyncStatus
 from directory.provisioning import existing_account, is_outdated, save_account
 from directory.roster import permitted_users
+from lunches.tracking import follow_tracking
 
 REPORT_ID = 1
 LOCK_NAME = "obedy-directory-sync"
@@ -122,6 +124,7 @@ def too_destructive(plan, total):
 def deactivate(account):
     account.in_directory = False
     account.save(update_fields=["in_directory"])
+    follow_tracking(account, timezone.now())
     revoke_all_sessions(account)
 
 

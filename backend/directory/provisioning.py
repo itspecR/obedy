@@ -1,4 +1,7 @@
+from django.utils import timezone
+
 from accounts.models import Account, Role, Source
+from lunches.tracking import follow_tracking
 
 
 def existing_account(user):
@@ -30,4 +33,5 @@ def save_account(user, account=None):
     account.password_hash = ""
     account.in_directory = True
     account.save()
+    follow_tracking(account, timezone.now())
     return account

@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 
 from django.db import transaction
+from django.utils import timezone
 
 from accounts.credentials import set_temporary_password
 from accounts.lunch_policy import tracks_lunch_by_default
@@ -9,6 +10,7 @@ from accounts.models import Account, Source
 from accounts.names import normalize_login
 from accounts.passwords import hash_password
 from accounts.temporary import temporary_password
+from lunches.tracking import follow_tracking
 from staff.changes import ChangeRefused
 
 LOGIN_PATTERN = re.compile(r"[a-z0-9][a-z0-9._-]{1,63}")
@@ -69,6 +71,7 @@ def create_local_account(raw_login, profile, role):
         password_hash=hash_password(password),
         must_change_password=True,
     )
+    follow_tracking(account, timezone.now())
     return Issued(account, password)
 
 

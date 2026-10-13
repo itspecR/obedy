@@ -1,9 +1,11 @@
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from accounts.lunch_policy import can_have_lunch, tracks_lunch_by_default
 from accounts.models import Account, Role, Source
 from accounts.sessions import revoke_all_sessions
+from lunches.tracking import follow_tracking
 
 OWN_ROLE = "Нельзя снять роль администратора с себя. Попросите об этом другого администратора"
 OWN_BLOCK = "Нельзя заблокировать себя"
@@ -42,6 +44,7 @@ def change_role(actor, account, role):
     account.role = role
     account.track_lunch = tracks_lunch_by_default(role)
     account.save(update_fields=["role", "track_lunch"])
+    follow_tracking(account, timezone.now())
     return account
 
 
@@ -50,6 +53,7 @@ def set_track_lunch(account, track_lunch):
         raise ChangeRefused(ADMIN_LUNCH)
     account.track_lunch = track_lunch
     account.save(update_fields=["track_lunch"])
+    follow_tracking(account, timezone.now())
     return account
 
 
@@ -61,6 +65,7 @@ def set_blocked(actor, account, blocked):
         ensure_other_admin_remains(account)
     account.is_active = not blocked
     account.save(update_fields=["is_active"])
+    follow_tracking(account, timezone.now())
     if blocked:
         revoke_all_sessions(account)
     return account
