@@ -3,6 +3,8 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
 import AppShell from "../src/components/shell/AppShell.vue";
+import { useLightMode } from "../src/composables/useLightMode";
+import { reducedMotion, stillMotion } from "../src/device/motion";
 import { useSession } from "../src/stores/session";
 import { routeFetch } from "./helpers";
 import { me } from "./people";
@@ -35,6 +37,8 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  useLightMode().choose("auto");
+  localStorage.clear();
   window.history.replaceState(null, "");
 });
 
@@ -71,6 +75,23 @@ describe("leaving the account", () => {
     expect(replace).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the farewell in light mode, which only drops the heavy effects", async () => {
+    device(false);
+    useLightMode().choose("on");
+    const spy = routeFetch(LOGOUT);
+    const wrapper = shell();
+
+    wrapper.findComponent(NavStub).vm.$emit("logout");
+    await flushPromises();
+
+    expect(wrapper.find(".farewell .auth-badge--farewell").exists()).toBe(true);
+    expect(logoutCalls(spy)).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(FAREWELL_MS);
+
+    expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: true } });
+  });
+
   it("leaves at once without the farewell on calm devices", async () => {
     device(true);
     const spy = routeFetch(LOGOUT);
@@ -82,6 +103,23 @@ describe("leaving the account", () => {
     expect(wrapper.find(".farewell").exists()).toBe(false);
     expect(logoutCalls(spy)).toBe(1);
     expect(replace).toHaveBeenCalledWith({ name: "login", state: { farewell: false } });
+  });
+});
+
+describe("motion preferences", () => {
+  it("lets light mode still the heavy rabbit but not the light animations", () => {
+    device(false);
+    useLightMode().choose("on");
+
+    expect(stillMotion()).toBe(true);
+    expect(reducedMotion()).toBe(false);
+  });
+
+  it("stills everything when the system asks for less motion", () => {
+    device(true);
+
+    expect(stillMotion()).toBe(true);
+    expect(reducedMotion()).toBe(true);
   });
 });
 
