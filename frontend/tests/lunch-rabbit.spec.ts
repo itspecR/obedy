@@ -1,0 +1,231 @@
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { createPinia, setActivePinia } from "pinia";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, nextTick } from "vue";
+import type { Lunch, LunchState } from "../src/api/lunch";
+import { lunchProgress } from "../src/components/lunch/countdown";
+import LunchControl from "../src/components/lunch/LunchControl.vue";
+import LunchRabbit from "../src/components/lunch/LunchRabbit.vue";
+import ButtonMorph from "../src/components/rabbit/ButtonMorph.vue";
+import { useToasts } from "../src/composables/useToasts";
+import { MORPH_MS, SWAP_IN, SWAP_OUT, type Box } from "../src/rabbit/morph";
+import LunchPage from "../src/pages/LunchPage.vue";
+import { useSession } from "../src/stores/session";
+import { routeFetch } from "./helpers";
+import { me } from "./people";
+
+const NOON = "2026-10-08T09:00:00Z";
+const at = (minutes: number) => Date.parse(NOON) + minutes * 60_000;
+const iso = (minutes: number) => new Date(at(minutes)).toISOString();
+
+function lunch(overrides: Partial<Lunch> = {}): Lunch {
+  return { id: 1, day: "2026-10-08", started_at: NOON, ended_at: null, limit_minutes: 40, status: "ongoing", duration_seconds: 0, auto_closed: false, correction: null, ...overrides };
+}
+
+function state(overrides: Partial<LunchState> = {}): LunchState {
+  return { server_time: NOON, tracked: true, limit_minutes: 40, warning_minutes: 5, undo_seconds: 300, today: null, can_start: true, refusal: "", undo_until: null, ...overrides };
+}
+
+const SpriteStub = defineComponent({ name: "RabbitSprite", props: ["scene", "speed", "still", "repeat"], emits: ["ended"], template: "<i :data-scene='scene' :data-still='still' />" });
+const stubs = { RabbitSprite: SpriteStub };
+const BUTTON: Box = { left: 20, top: 400, width: 300, height: 48 };
+const morphs = () => document.body.querySelectorAll(".button-morph").length;
+
+enableAutoUnmount(afterEach);
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+describe("lunch progress", () => {
+  it("is the share of the limit that has passed, kept between start and hole", () => {
+    expect(lunchProgress(NOON, 40, at(10))).toBe(0.25);
+    expect(lunchProgress(NOON, 40, at(-1))).toBe(0);
+    expect(lunchProgress(NOON, 40, at(55))).toBe(1);
+  });
+});
+
+describe("LunchRabbit", () => {
+  const rabbit = (props: Partial<{ progress: number; still: boolean; from: Box | null; parting: boolean; button: () => Box; late: boolean }> = {}) =>
+    mount(LunchRabbit, { props: { progress: 0.5, still: false, ...props }, global: { stubs } });
+  const hidden = (wrapper: ReturnType<typeof rabbit>) => wrapper.get(".lunch-rabbit__body").classes().includes("lunch-rabbit__body--hidden");
+  const scene = (wrapper: ReturnType<typeof rabbit>) => wrapper.get("i").attributes("data-scene");
+  const end = async (wrapper: ReturnType<typeof rabbit>) => {
+    wrapper.findComponent(SpriteStub).vm.$emit("ended");
+    await flushPromises();
+  };
+
+  it("stands on its share of the path and runs when the page opens mid-lunch", () => {
+    const wrapper = rabbit({ progress: 0.25 });
+
+    expect(scene(wrapper)).toBe("run");
+    expect(wrapper.get(".lunch-rabbit__runner").attributes("style")).toContain("* 0.25)");
+  });
+
+  it("flows out of the button, starts and then runs after going to lunch", async () => {
+    vi.useFakeTimers();
+    const wrapper = rabbit({ from: BUTTON, progress: 0 });
+    await nextTick();
+
+    expect(hidden(wrapper)).toBe(true);
+    expect(morphs()).toBe(1);
+    expect(wrapper.get("i").attributes("data-still")).toBe("true");
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_IN + 10);
+    expect(hidden(wrapper)).toBe(false);
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
+    expect(morphs()).toBe(0);
+    expect(scene(wrapper)).toBe("start");
+    expect(wrapper.get("i").attributes("data-still")).toBe("false");
+    await end(wrapper);
+    expect(scene(wrapper)).toBe("run");
+  });
+
+  it("nods, closes the hole and flows back into the button after an on-time return", async () => {
+    vi.useFakeTimers();
+    const wrapper = rabbit({ button: () => BUTTON });
+
+    await wrapper.setProps({ parting: true });
+    expect(scene(wrapper)).toBe("ontime");
+    expect(wrapper.get(".lunch-rabbit__hole").classes()).not.toContain("rabbit-hole--open");
+    await end(wrapper);
+    await nextTick();
+    expect(morphs()).toBe(1);
+    expect(wrapper.findComponent(ButtonMorph).props("from")).toEqual(BUTTON);
+    expect(hidden(wrapper)).toBe(false);
+    await vi.advanceTimersByTimeAsync(MORPH_MS * SWAP_OUT + 10);
+    expect(hidden(wrapper)).toBe(true);
+    expect(wrapper.emitted("parted")).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(MORPH_MS);
+    expect(wrapper.emitted("parted")).toHaveLength(1);
+  });
+
+  it("falls into the hole when time runs out, rises and taps the watch until the return", async () => {
+    vi.useFakeTimers();
+    const wrapper = rabbit({ progress: 1 });
+
+    await wrapper.setProps({ late: true });
+    expect(scene(wrapper)).toBe("dive");
+    expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--fall");
+    await vi.advanceTimersByTimeAsync(450);
+    expect(wrapper.find(".lunch-rabbit__runner").exists()).toBe(false);
+    expect(wrapper.get(".lunch-rabbit__peek-body").classes()).toContain("lunch-rabbit__peek-body--rise");
+    await vi.advanceTimersByTimeAsync(650);
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.get(".lunch-rabbit__peek-body").classes()).not.toContain("lunch-rabbit__peek-body--rise");
+    expect(wrapper.get(".lunch-rabbit__hole").classes()).toContain("rabbit-hole--open");
+  });
+
+  it("is already in the hole when the page opens after the limit", () => {
+    const wrapper = rabbit({ progress: 1, late: true });
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.find(".lunch-rabbit__runner").exists()).toBe(false);
+  });
+
+  it("skips the fall on calm devices", async () => {
+    const wrapper = rabbit({ progress: 1, still: true });
+
+    await wrapper.setProps({ late: true });
+
+    expect(scene(wrapper)).toBe("late");
+    expect(wrapper.get("i").attributes("data-still")).toBe("true");
+  });
+
+  it("stays still on calm devices and leaves at once", async () => {
+    const wrapper = rabbit({ still: true, from: BUTTON });
+
+    expect(scene(wrapper)).toBe("run");
+    expect(wrapper.get("i").attributes("data-still")).toBe("true");
+    expect(morphs()).toBe(0);
+    await wrapper.setProps({ parting: true });
+    expect(wrapper.emitted("parted")).toHaveLength(1);
+  });
+});
+
+describe("LunchControl with the rabbit", () => {
+  const view = { still: false, from: null, parting: false };
+
+  it("shows the rabbit only while on lunch and only when it is switched on", () => {
+    const ongoing = state({ today: lunch(), can_start: false });
+
+    expect(mount(LunchControl, { props: { state: ongoing, now: at(10), busy: false, rabbit: view }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(true);
+    expect(mount(LunchControl, { props: { state: ongoing, now: at(10), busy: false, rabbit: null }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(false);
+    expect(mount(LunchControl, { props: { state: state(), now: at(10), busy: false, rabbit: view }, global: { stubs } }).find(".lunch-rabbit").exists()).toBe(false);
+  });
+
+  it("puts the rabbit into the hole once the limit is over", () => {
+    const ongoing = state({ today: lunch(), can_start: false });
+    const wrapper = mount(LunchControl, { props: { state: ongoing, now: at(41), busy: false, rabbit: view }, global: { stubs } });
+
+    expect(wrapper.find(".lunch-rabbit__peek").exists()).toBe(true);
+  });
+
+  it("says goodbye where the rabbit stopped when the employee came back in time", () => {
+    const back = state({ today: lunch({ ended_at: iso(30), status: "on_time", duration_seconds: 1800 }), can_start: false });
+    const wrapper = mount(LunchControl, { props: { state: back, now: at(31), busy: false, rabbit: { ...view, parting: true } }, global: { stubs } });
+
+    expect(wrapper.text()).toContain("Вы вернулись вовремя");
+    expect(wrapper.get(".lunch-rabbit__runner").attributes("style")).toContain("* 0.75)");
+    expect(wrapper.get(".control__main--left").attributes("disabled")).toBeDefined();
+  });
+});
+
+describe("LunchPage with the rabbit", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    useSession().me = me("employee");
+  });
+  afterEach(() => {
+    const { items, dismiss } = useToasts();
+    [...items].forEach((toast) => dismiss(toast.id));
+  });
+
+  async function mounted(routes: Record<string, [number, unknown]>, rabbit = true) {
+    routeFetch({ "/api/lunch/history": [200, { month: "2026-10", lunches: [], summary: { count: 0, violations: 0, average_minutes: null } }], "/api/appearance": [200, { rabbit }], ...routes });
+    const wrapper = mount(LunchPage, { global: { stubs } });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("lets the rabbit out of the button when going to lunch", async () => {
+    const wrapper = await mounted({ "/api/lunch/me": [200, state()], "/api/lunch/start": [200, state({ today: lunch(), can_start: false })] });
+
+    await wrapper.get(".control button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get(".lunch-rabbit__body").classes()).toContain("lunch-rabbit__body--appear");
+    expect(morphs()).toBe(1);
+  });
+
+  it("plays the goodbye only for an on-time return and then shows the summary", async () => {
+    const back = state({ today: lunch({ ended_at: iso(30), status: "on_time", duration_seconds: 1800 }), can_start: false });
+    const wrapper = await mounted({ "/api/lunch/me": [200, state({ today: lunch(), can_start: false })], "/api/lunch/finish": [200, back] });
+
+    await wrapper.get(".control__main").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("Вы вернулись вовремя");
+
+    wrapper.findComponent(LunchRabbit).vm.$emit("parted");
+    await flushPromises();
+    expect(wrapper.text()).toContain("Сегодня обед уже отмечен");
+  });
+
+  it("skips the goodbye after an overrun", async () => {
+    const late = state({ today: lunch({ ended_at: iso(50), status: "overrun", duration_seconds: 3000 }), can_start: false });
+    const wrapper = await mounted({ "/api/lunch/me": [200, state({ today: lunch(), can_start: false })], "/api/lunch/finish": [200, late] });
+
+    await wrapper.get(".control__main").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Сегодня обед уже отмечен");
+    expect(wrapper.find(".lunch-rabbit").exists()).toBe(false);
+  });
+
+  it("shows no rabbit when it is switched off", async () => {
+    const wrapper = await mounted({ "/api/lunch/me": [200, state({ today: lunch(), can_start: false })] }, false);
+
+    expect(wrapper.find(".lunch-rabbit").exists()).toBe(false);
+  });
+});

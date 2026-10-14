@@ -1,0 +1,208 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--canvas);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: var(--text-h1);
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: var(--text-h2);
+}
+
+h3 {
+  font-size: var(--text-h3);
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--field-solid) inset;
+  caret-color: var(--ink);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: var(--text-small);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--material-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel), var(--card-shine);
+}
+
+.glass-card {
+  background: var(--card-fill);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card), var(--card-shine);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.code {
+  font-family: var(--font-mono);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 1150px) {
+  h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 650px), (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .glass-card {
+    background: var(--surface-glass-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+:root.light-mode {
+  --glass-blur: none;
+  --card-fill: var(--surface-glass-strong);
+  --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-blur: none;
+    --muted: #c8cbd2;
+    --line: rgba(255, 255, 255, 0.28);
+    --card-edge: rgba(255, 255, 255, 0.32);
+    --card-fill: var(--surface-glass-strong);
+    --material-surface: var(--surface-glass-strong);
+    --material-float: var(--surface-glass-strong);
+  }
+}
+
+.field-label {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-field);
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion), background var(--motion), box-shadow var(--motion);
+}
+
+.field-control:focus-visible,
+.field-control--open {
+  border-color: var(--accent);
+  background: var(--field-focus);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+  outline: none;
+}
+
+.field-control:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.field-placeholder {
+  color: var(--placeholder);
+}
+
+.popover {
+  position: absolute;
+  z-index: 950;
+  top: calc(100% + 6px);
+  left: 0;
+  padding: 12px;
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-menu);
+  background: var(--material-float);
+  box-shadow: var(--shadow-float), var(--card-shine);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  animation: popover-in var(--motion) ease-out;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
